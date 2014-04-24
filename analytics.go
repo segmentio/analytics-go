@@ -221,7 +221,7 @@ func (c *client) flush() error {
 		// TODO: how the fuck ^
 	}
 
-	return nil
+	return err
 }
 
 //
