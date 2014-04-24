@@ -1,15 +1,49 @@
-# analytics
---
-    import "github.com/segmentio/analytics-go"
+# analytics-go
 
+  Segment.io analytics client for Go.
 
-## Usage
+## Installation
+
+    $ go get github.com/segmentio/analytics-go
+
+## Example
+
+```go
+package main
+
+import "github.com/segmentio/analytics-go"
+import "time"
+
+type Download struct {
+  Application string `json:"application"`
+  Version     string `json:"version"`
+  Platform    string `json:"platform"`
+}
+
+func main() {
+  client := analytics.New("your-writeKey-here")
+  client.FlushInterval = 30 * time.Second
+  client.BufferSize = 1000
+  client.Debug = true
+
+  for {
+    client.Track("Download", Download{"segmentio", "1.0.0", "osx"})
+    client.Identify(User{"tobi", "tobi@ferret.com"})
+    time.Sleep(100 * time.Millisecond)
+  }
+}
+```
+
+## API
 
 ```go
 const Version = "0.0.1"
 ```
 
 #### type Client
+
+ By default messages are flushed in batches of __500__ or after
+ the default flush interval of __30__ seconds.
 
 ```go
 type Client struct {

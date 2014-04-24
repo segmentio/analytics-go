@@ -137,7 +137,7 @@ func New(key string) (c *Client) {
 	return &Client{
 		Debug:         false,
 		BufferSize:    500,
-		FlushInterval: 10 * time.Second,
+		FlushInterval: 30 * time.Second,
 		Key:           key,
 		Endpoint:      api,
 		buffer:        make([]*interface{}, 0),
