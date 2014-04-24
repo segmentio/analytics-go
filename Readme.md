@@ -26,3 +26,7 @@ func main() {
   }
 }
 ```
+
+# License
+
+ MIT
