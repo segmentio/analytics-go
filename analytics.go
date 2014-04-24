@@ -124,13 +124,16 @@ type batch struct {
 //
 
 func Client(key string) *client {
-	return &client{
-		key:        key,
-		url:        api,
-		flushAt:    500,
-		flushAfter: 10 * time.Second,
-		buffer:     make([]*interface{}, 0),
+	c := &client{
+		key:    key,
+		url:    api,
+		buffer: make([]*interface{}, 0),
 	}
+
+	c.FlushAt(500)
+	c.FlushAfter(10 * time.Second)
+
+	return c
 }
 
 //
