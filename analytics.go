@@ -216,6 +216,13 @@ func createBatch(msgs []*interface{}) (*batch, error) {
 //
 
 func (c *client) flush() error {
+	if len(c.buffer) == 0 {
+		if c.debug {
+			log.Print("no messages to flush")
+		}
+		return nil
+	}
+
 	log.Printf("flushing %d messages", len(c.buffer))
 	batch, err := createBatch(c.buffer)
 
