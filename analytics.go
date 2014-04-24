@@ -277,6 +277,7 @@ func (c *Client) flush() error {
 
 	client := &http.Client{}
 	url := c.Endpoint + "/v1/batch"
+	c.log("request %s with %d bytes", url, len(json))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 
 	if err != nil {
