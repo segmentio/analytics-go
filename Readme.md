@@ -65,37 +65,37 @@ func New(key string) (c *Client)
 #### func (*Client) Alias
 
 ```go
-func (c *Client) Alias(previousId string) error
+func (c *Client) Alias(previousId string)
 ```
 
 #### func (*Client) Group
 
 ```go
-func (c *Client) Group(id string, traits interface{}) error
+func (c *Client) Group(id string, traits interface{})
 ```
 
 #### func (*Client) Identify
 
 ```go
-func (c *Client) Identify(traits interface{}) error
+func (c *Client) Identify(traits interface{})
 ```
 
 #### func (*Client) Page
 
 ```go
-func (c *Client) Page(name string, category string, properties interface{}) error
+func (c *Client) Page(name string, category string, properties interface{})
 ```
 
 #### func (*Client) Screen
 
 ```go
-func (c *Client) Screen(name string, category string, properties interface{}) error
+func (c *Client) Screen(name string, category string, properties interface{})
 ```
 
 #### func (*Client) Track
 
 ```go
-func (c *Client) Track(event string, properties interface{}) error
+func (c *Client) Track(event string, properties interface{})
 ```
 
 ## Debugging

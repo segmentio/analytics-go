@@ -129,7 +129,7 @@ func New(key string) (c *Client) {
 			for {
 				time.Sleep(c.FlushInterval)
 				c.log("interval %v reached", c.FlushInterval)
-				c.flush()
+				go c.flush()
 			}
 		}()
 	}()
@@ -148,48 +148,48 @@ func New(key string) (c *Client) {
 // Buffer an alias message
 //
 
-func (c *Client) Alias(previousId string) error {
-	return c.bufferMessage(&alias{"Alias", previousId, timestamp()})
+func (c *Client) Alias(previousId string) {
+	c.bufferMessage(&alias{"Alias", previousId, timestamp()})
 }
 
 //
 // Buffer a page message
 //
 
-func (c *Client) Page(name string, category string, properties interface{}) error {
-	return c.bufferMessage(&page{"Page", name, category, properties, timestamp()})
+func (c *Client) Page(name string, category string, properties interface{}) {
+	c.bufferMessage(&page{"Page", name, category, properties, timestamp()})
 }
 
 //
 // Buffer a screen message
 //
 
-func (c *Client) Screen(name string, category string, properties interface{}) error {
-	return c.bufferMessage(&page{"Screen", name, category, properties, timestamp()})
+func (c *Client) Screen(name string, category string, properties interface{}) {
+	c.bufferMessage(&page{"Screen", name, category, properties, timestamp()})
 }
 
 //
 // Buffer a group message
 //
 
-func (c *Client) Group(id string, traits interface{}) error {
-	return c.bufferMessage(&group{"Group", id, traits, timestamp()})
+func (c *Client) Group(id string, traits interface{}) {
+	c.bufferMessage(&group{"Group", id, traits, timestamp()})
 }
 
 //
 // Buffer an identify message
 //
 
-func (c *Client) Identify(traits interface{}) error {
-	return c.bufferMessage(&identify{"Identify", traits, timestamp()})
+func (c *Client) Identify(traits interface{}) {
+	c.bufferMessage(&identify{"Identify", traits, timestamp()})
 }
 
 //
 // Buffer a track message
 //
 
-func (c *Client) Track(event string, properties interface{}) error {
-	return c.bufferMessage(&track{"Track", event, properties, timestamp()})
+func (c *Client) Track(event string, properties interface{}) {
+	c.bufferMessage(&track{"Track", event, properties, timestamp()})
 }
 
 //
@@ -215,16 +215,14 @@ func (c *Client) log(format string, v ...interface{}) {
 // when the buffer exceeds .BufferSize.
 //
 
-func (c *Client) bufferMessage(msg interface{}) error {
+func (c *Client) bufferMessage(msg interface{}) {
 	c.buffer = append(c.buffer, &msg)
 
 	c.log("buffer (%d/%d) %v", len(c.buffer), c.BufferSize, msg)
 
 	if len(c.buffer) >= c.BufferSize {
-		return c.flush()
+		go c.flush()
 	}
-
-	return nil
 }
 
 // Return a batch message primed
