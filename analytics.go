@@ -109,7 +109,7 @@ type page struct {
 type batch struct {
 	Context   context        `json:"context"`
 	RequestId string         `json:"requestId"`
-	Messages  []*interface{} `json:"messages"`
+	Messages  []*interface{} `json:"batch"`
 }
 
 //
