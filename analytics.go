@@ -29,12 +29,13 @@ const api = "https://api.segment.io"
 //
 
 type client struct {
-	debug      bool
-	key        string
-	url        string
-	flushAt    int
-	flushAfter time.Duration
-	buffer     []*interface{}
+	debug         bool
+	running       bool
+	key           string
+	url           string
+	flushCount    int
+	flushInterval time.Duration
+	buffer        []*interface{}
 }
 
 //
@@ -141,7 +142,7 @@ func Client(key string) *client {
 //
 
 func (c *client) FlushAt(n int) {
-	c.flushAt = n
+	c.flushCount = n
 }
 
 //
@@ -149,12 +150,18 @@ func (c *client) FlushAt(n int) {
 //
 
 func (c *client) FlushAfter(interval time.Duration) {
-	c.flushAfter = interval
+	c.flushInterval = interval
+
+	if c.running {
+		return
+	}
+
+	c.running = true
 
 	go func() {
 		for {
-			time.Sleep(interval)
-			c.log("interval %v reached", interval)
+			time.Sleep(c.flushInterval)
+			c.log("interval %v reached", c.flushInterval)
 			c.flush()
 		}
 	}()
@@ -253,15 +260,15 @@ func (c *client) flush() error {
 
 //
 // Buffer the given message and flush
-// when the buffer exceeds .flushAt.
+// when the buffer exceeds .flushCount.
 //
 
 func (c *client) bufferMessage(msg interface{}) error {
 	c.buffer = append(c.buffer, &msg)
 
-	c.log("buffer (%d/%d) %v", len(c.buffer), c.flushAt, msg)
+	c.log("buffer (%d/%d) %v", len(c.buffer), c.flushCount, msg)
 
-	if len(c.buffer) >= c.flushAt {
+	if len(c.buffer) >= c.flushCount {
 		return c.flush()
 	}
 
