@@ -97,3 +97,23 @@ func (c *Client) Screen(name string, category string, properties interface{}) er
 ```go
 func (c *Client) Track(event string, properties interface{}) error
 ```
+
+## Debugging
+
+ Enable `.Debug` to output verbose debugging info:
+
+```
+2014/04/23 18:56:57 buffer (110/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:57-0700}
+2014/04/23 18:56:58 buffer (111/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
+2014/04/23 18:56:58 buffer (112/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
+2014/04/23 18:56:58 buffer (113/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
+2014/04/23 18:56:58 buffer (114/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
+2014/04/23 18:56:58 buffer (115/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
+2014/04/23 18:56:58 buffer (116/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
+2014/04/23 18:56:58 buffer (117/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
+2014/04/23 18:56:58 buffer (118/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
+```
+
+## License
+
+ MIT
