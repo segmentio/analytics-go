@@ -145,109 +145,6 @@ func New(key string) (c *Client) {
 }
 
 //
-// Return formatted timestamp.
-//
-
-func timestamp() string {
-	return strftime.Format("%Y-%m-%dT%H:%M:%S%z", time.Now())
-}
-
-// Return a batch message primed
-// with context properties
-//
-
-func createBatch(msgs []*interface{}) (*batch, error) {
-	uid, err := uuid.NewV4()
-
-	if err != nil {
-		return nil, err
-	}
-
-	batch := &batch{
-		RequestId: uid.String(),
-		Messages:  msgs,
-		Context: context{
-			Library: contextLibrary{
-				Name:    "analytics-go",
-				Version: Version,
-			},
-		},
-	}
-
-	return batch, nil
-}
-
-//
-// Flush the buffered messages.
-//
-
-func (c *Client) flush() error {
-	if len(c.buffer) == 0 {
-		c.log("no messages to flush")
-		return nil
-	}
-
-	c.log("flushing %d messages", len(c.buffer))
-	batch, err := createBatch(c.buffer)
-
-	if err != nil {
-		return err
-	}
-
-	json, err := Marshal(batch)
-
-	if err != nil {
-		return err
-	}
-
-	c.buffer = nil
-
-	client := &http.Client{}
-	url := c.Endpoint + "/v1/batch"
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
-
-	if err != nil {
-		return err
-	}
-
-	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Content-Length", string(len(json)))
-	req.SetBasicAuth(c.Key, "")
-
-	_, err = client.Do(req)
-
-	return err
-}
-
-//
-// Buffer the given message and flush
-// when the buffer exceeds .BufferSize.
-//
-
-func (c *Client) bufferMessage(msg interface{}) error {
-	c.buffer = append(c.buffer, &msg)
-
-	c.log("buffer (%d/%d) %v", len(c.buffer), c.BufferSize, msg)
-
-	if len(c.buffer) >= c.BufferSize {
-		return c.flush()
-	}
-
-	return nil
-}
-
-//
-// Log in debug mode.
-//
-
-func (c *Client) log(format string, v ...interface{}) {
-	if c.Debug {
-		log.Printf(format, v...)
-	}
-}
-
-//
 // Buffer an alias message
 //
 
@@ -293,4 +190,107 @@ func (c *Client) Identify(traits interface{}) error {
 
 func (c *Client) Track(event string, properties interface{}) error {
 	return c.bufferMessage(&track{"Track", event, properties, timestamp()})
+}
+
+//
+// Return formatted timestamp.
+//
+
+func timestamp() string {
+	return strftime.Format("%Y-%m-%dT%H:%M:%S%z", time.Now())
+}
+
+//
+// Log in debug mode.
+//
+
+func (c *Client) log(format string, v ...interface{}) {
+	if c.Debug {
+		log.Printf(format, v...)
+	}
+}
+
+//
+// Buffer the given message and flush
+// when the buffer exceeds .BufferSize.
+//
+
+func (c *Client) bufferMessage(msg interface{}) error {
+	c.buffer = append(c.buffer, &msg)
+
+	c.log("buffer (%d/%d) %v", len(c.buffer), c.BufferSize, msg)
+
+	if len(c.buffer) >= c.BufferSize {
+		return c.flush()
+	}
+
+	return nil
+}
+
+// Return a batch message primed
+// with context properties
+//
+
+func batchMessage(msgs []*interface{}) (*batch, error) {
+	uid, err := uuid.NewV4()
+
+	if err != nil {
+		return nil, err
+	}
+
+	batch := &batch{
+		RequestId: uid.String(),
+		Messages:  msgs,
+		Context: context{
+			Library: contextLibrary{
+				Name:    "analytics-go",
+				Version: Version,
+			},
+		},
+	}
+
+	return batch, nil
+}
+
+//
+// Flush the buffered messages.
+//
+
+func (c *Client) flush() error {
+	if len(c.buffer) == 0 {
+		c.log("no messages to flush")
+		return nil
+	}
+
+	c.log("flushing %d messages", len(c.buffer))
+	batch, err := batchMessage(c.buffer)
+
+	if err != nil {
+		return err
+	}
+
+	json, err := Marshal(batch)
+
+	if err != nil {
+		return err
+	}
+
+	c.buffer = nil
+
+	client := &http.Client{}
+	url := c.Endpoint + "/v1/batch"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
+
+	if err != nil {
+		return err
+	}
+
+	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Content-Length", string(len(json)))
+	req.SetBasicAuth(c.Key, "")
+
+	_, err = client.Do(req)
+
+	return err
 }
