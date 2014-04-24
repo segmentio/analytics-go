@@ -246,11 +246,7 @@ func (c *client) flush() error {
 	req.Header.Add("Content-Length", string(len(json)))
 	req.SetBasicAuth(c.key, "")
 
-	res, err := client.Do(req)
-
-	if res != nil {
-		// TODO: how the fuck do you ignore res ^
-	}
+	_, err = client.Do(req)
 
 	return err
 }
