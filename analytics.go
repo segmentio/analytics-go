@@ -171,14 +171,14 @@ func createBatch(msgs []*interface{}) (*batch, error) {
 	}
 
 	batch := &batch{
+		RequestId: uid.String(),
+		Messages:  msgs,
 		Context: context{
 			Library: contextLibrary{
 				Name:    "analytics-go",
 				Version: Version,
 			},
 		},
-		RequestId: uid.String(),
-		Messages:  msgs,
 	}
 
 	return batch, nil
