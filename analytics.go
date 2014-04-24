@@ -203,13 +203,13 @@ func createBatch(msgs []*interface{}) (*batch, error) {
 //
 
 func (c *client) flush() error {
-	b, err := createBatch(c.buffer)
+	batch, err := createBatch(c.buffer)
 
 	if err != nil {
 		return err
 	}
 
-	json, err := Marshal(b)
+	json, err := Marshal(batch)
 
 	if err != nil {
 		return err
