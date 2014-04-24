@@ -278,7 +278,7 @@ func (c *Client) flush() error {
 
 	client := &http.Client{}
 	url := c.Endpoint + "/v1/import"
-	c.log("request %s with %d bytes", url, len(json))
+	c.log("POST %s with %d bytes", url, len(json))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 
 	if err != nil {
@@ -291,11 +291,11 @@ func (c *Client) flush() error {
 	req.SetBasicAuth(c.Key, "")
 
 	res, err := client.Do(req)
-	c.log("response %v", res)
+	c.log("%d response", res.StatusCode)
 
 	if res.StatusCode >= 500 {
 		body, _ := ioutil.ReadAll(res.Body)
-		c.log("body %s", string(body))
+		c.log("error: %s", string(body))
 	}
 
 	return err
