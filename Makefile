@@ -1,6 +1,6 @@
 
 Readme.md: analytics.go
-	godocdown --heading analytics-go > $@
+	godocdown > $@
 
 clean:
 	rm -f Readme.md
