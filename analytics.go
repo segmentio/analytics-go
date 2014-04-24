@@ -32,8 +32,8 @@ type Client struct {
 	Debug         bool
 	BufferSize    int
 	FlushInterval time.Duration
-	key           string
-	url           string
+	Endpoint      string
+	Key           string
 	buffer        []*interface{}
 }
 
@@ -138,18 +138,10 @@ func New(key string) (c *Client) {
 		Debug:         false,
 		BufferSize:    500,
 		FlushInterval: 10 * time.Second,
-		key:           key,
-		url:           api,
+		Key:           key,
+		Endpoint:      api,
 		buffer:        make([]*interface{}, 0),
 	}
-}
-
-//
-// Set target url
-//
-
-func (c *Client) URL(url string) {
-	c.url = url
 }
 
 //
@@ -211,7 +203,8 @@ func (c *Client) flush() error {
 	c.buffer = nil
 
 	client := &http.Client{}
-	req, err := http.NewRequest("POST", c.url+"/v1/batch", bytes.NewBuffer(json))
+	url := c.Endpoint + "/v1/batch"
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 
 	if err != nil {
 		return err
@@ -220,7 +213,7 @@ func (c *Client) flush() error {
 	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Content-Length", string(len(json)))
-	req.SetBasicAuth(c.key, "")
+	req.SetBasicAuth(c.Key, "")
 
 	_, err = client.Do(req)
 
