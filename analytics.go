@@ -209,7 +209,7 @@ func (c *client) flush() error {
 		return err
 	}
 
-	j, err := Marshal(b)
+	json, err := Marshal(b)
 
 	if err != nil {
 		return err
@@ -218,7 +218,7 @@ func (c *client) flush() error {
 	c.buffer = nil
 
 	client := &http.Client{}
-	req, err := http.NewRequest("POST", c.url+"/v1/batch", bytes.NewBuffer(j))
+	req, err := http.NewRequest("POST", c.url+"/v1/batch", bytes.NewBuffer(json))
 
 	if err != nil {
 		return err
@@ -226,7 +226,7 @@ func (c *client) flush() error {
 
 	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Content-Length", string(len(j)))
+	req.Header.Add("Content-Length", string(len(json)))
 	req.SetBasicAuth(c.key, "")
 
 	res, err := client.Do(req)
