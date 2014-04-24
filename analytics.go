@@ -150,6 +150,16 @@ func (c *client) FlushAt(n int) {
 
 func (c *client) FlushAfter(interval time.Duration) {
 	c.flushAfter = interval
+
+	go func() {
+		for {
+			time.Sleep(interval)
+			if c.debug {
+				log.Printf("interval %v reached", interval)
+				c.flush()
+			}
+		}
+	}()
 }
 
 //
@@ -206,6 +216,7 @@ func createBatch(msgs []*interface{}) (*batch, error) {
 //
 
 func (c *client) flush() error {
+	log.Printf("flushing %d messages", len(c.buffer))
 	batch, err := createBatch(c.buffer)
 
 	if err != nil {
@@ -254,7 +265,6 @@ func (c *client) bufferMessage(msg interface{}) error {
 	}
 
 	if len(c.buffer) >= c.flushAt {
-		log.Printf("flushing %d messages", len(c.buffer))
 		return c.flush()
 	}
 
