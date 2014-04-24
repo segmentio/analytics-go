@@ -1,32 +1,16 @@
+# analytics
+--
+    import "github.com/segmentio/analytics-go"
 
-## analytics-go
 
- Segment.io analytics client for golang.
-
-## Example
+## Usage
 
 ```go
-package main
-
-import "github.com/segmentio/analytics-go"
-import "time"
-
-type Download struct {
-  Application string `json:"application"`
-  Version     string `json:"version"`
-  Platform    string `json:"platform"`
-}
-
-func main() {
-  client := analytics.Client("segmentio. writeKey here")
-
-  for {
-    client.Track("Download", Download{"segmentio", "1.0.0", "osx"})
-    time.Sleep(50 * time.Millisecond)
-  }
-}
+const Version = "0.0.1"
 ```
 
-# License
+#### func  Client
 
- MIT
+```go
+func Client(key string) *client
+```

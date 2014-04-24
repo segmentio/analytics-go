@@ -28,7 +28,7 @@ const api = "https://api.segment.io"
 // Segment.io client
 //
 
-type client struct {
+type Client struct {
 	debug         bool
 	running       bool
 	key           string
@@ -124,8 +124,8 @@ type batch struct {
 // with the given write key.
 //
 
-func Client(key string) *client {
-	c := &client{
+func New(key string) *Client {
+	c := &Client{
 		key:    key,
 		url:    api,
 		buffer: make([]*interface{}, 0),
@@ -141,7 +141,7 @@ func Client(key string) *client {
 // Set buffer max.
 //
 
-func (c *client) FlushAt(n int) {
+func (c *Client) FlushAt(n int) {
 	c.flushCount = n
 }
 
@@ -149,7 +149,7 @@ func (c *client) FlushAt(n int) {
 // Set buffer flush interal.
 //
 
-func (c *client) FlushAfter(interval time.Duration) {
+func (c *Client) FlushAfter(interval time.Duration) {
 	c.flushInterval = interval
 
 	if c.running {
@@ -171,7 +171,7 @@ func (c *client) FlushAfter(interval time.Duration) {
 // Enable debug mode.
 //
 
-func (c *client) Debug() {
+func (c *Client) Debug() {
 	c.debug = true
 }
 
@@ -179,7 +179,7 @@ func (c *client) Debug() {
 // Set target url
 //
 
-func (c *client) URL(url string) {
+func (c *Client) URL(url string) {
 	c.url = url
 }
 
@@ -220,7 +220,7 @@ func createBatch(msgs []*interface{}) (*batch, error) {
 // Flush the buffered messages.
 //
 
-func (c *client) flush() error {
+func (c *Client) flush() error {
 	if len(c.buffer) == 0 {
 		c.log("no messages to flush")
 		return nil
@@ -263,7 +263,7 @@ func (c *client) flush() error {
 // when the buffer exceeds .flushCount.
 //
 
-func (c *client) bufferMessage(msg interface{}) error {
+func (c *Client) bufferMessage(msg interface{}) error {
 	c.buffer = append(c.buffer, &msg)
 
 	c.log("buffer (%d/%d) %v", len(c.buffer), c.flushCount, msg)
@@ -279,7 +279,7 @@ func (c *client) bufferMessage(msg interface{}) error {
 // Log in debug mode.
 //
 
-func (c *client) log(format string, v ...interface{}) {
+func (c *Client) log(format string, v ...interface{}) {
 	if c.debug {
 		log.Printf(format, v...)
 	}
@@ -289,7 +289,7 @@ func (c *client) log(format string, v ...interface{}) {
 // Buffer an alias message
 //
 
-func (c *client) Alias(previousId string) error {
+func (c *Client) Alias(previousId string) error {
 	return c.bufferMessage(&alias{"Alias", previousId, timestamp()})
 }
 
@@ -297,7 +297,7 @@ func (c *client) Alias(previousId string) error {
 // Buffer a page message
 //
 
-func (c *client) Page(name string, category string, properties interface{}) error {
+func (c *Client) Page(name string, category string, properties interface{}) error {
 	return c.bufferMessage(&page{"Page", name, category, properties, timestamp()})
 }
 
@@ -305,7 +305,7 @@ func (c *client) Page(name string, category string, properties interface{}) erro
 // Buffer a screen message
 //
 
-func (c *client) Screen(name string, category string, properties interface{}) error {
+func (c *Client) Screen(name string, category string, properties interface{}) error {
 	return c.bufferMessage(&page{"Screen", name, category, properties, timestamp()})
 }
 
@@ -313,7 +313,7 @@ func (c *client) Screen(name string, category string, properties interface{}) er
 // Buffer a group message
 //
 
-func (c *client) Group(id string, traits interface{}) error {
+func (c *Client) Group(id string, traits interface{}) error {
 	return c.bufferMessage(&group{"Group", id, traits, timestamp()})
 }
 
@@ -321,7 +321,7 @@ func (c *client) Group(id string, traits interface{}) error {
 // Buffer an identify message
 //
 
-func (c *client) Identify(traits interface{}) error {
+func (c *Client) Identify(traits interface{}) error {
 	return c.bufferMessage(&identify{"Identify", traits, timestamp()})
 }
 
@@ -329,6 +329,6 @@ func (c *client) Identify(traits interface{}) error {
 // Buffer a track message
 //
 
-func (c *client) Track(event string, properties interface{}) error {
+func (c *Client) Track(event string, properties interface{}) error {
 	return c.bufferMessage(&track{"Track", event, properties, timestamp()})
 }
