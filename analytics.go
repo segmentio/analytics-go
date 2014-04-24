@@ -218,7 +218,7 @@ func (c *client) flush() error {
 	res, err := client.Do(req)
 
 	if res != nil {
-		// TODO: how the fuck ^
+		// TODO: how the fuck do you ignore res ^
 	}
 
 	return err
