@@ -223,7 +223,9 @@ func (c *client) flush() error {
 		return nil
 	}
 
-	log.Printf("flushing %d messages", len(c.buffer))
+	if c.debug {
+		log.Printf("flushing %d messages", len(c.buffer))
+	}
 	batch, err := createBatch(c.buffer)
 
 	if err != nil {
