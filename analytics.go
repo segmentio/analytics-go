@@ -29,11 +29,11 @@ const api = "https://api.segment.io"
 //
 
 type Client struct {
-	debug         bool
+	Debug         bool
+	BufferSize    int
 	running       bool
 	key           string
 	url           string
-	flushCount    int
 	flushInterval time.Duration
 	buffer        []*interface{}
 }
@@ -126,23 +126,16 @@ type batch struct {
 
 func New(key string) *Client {
 	c := &Client{
-		key:    key,
-		url:    api,
-		buffer: make([]*interface{}, 0),
+		Debug:      false,
+		BufferSize: 500,
+		key:        key,
+		url:        api,
+		buffer:     make([]*interface{}, 0),
 	}
 
-	c.FlushAt(500)
 	c.FlushAfter(10 * time.Second)
 
 	return c
-}
-
-//
-// Set buffer max.
-//
-
-func (c *Client) FlushAt(n int) {
-	c.flushCount = n
 }
 
 //
@@ -165,14 +158,6 @@ func (c *Client) FlushAfter(interval time.Duration) {
 			c.flush()
 		}
 	}()
-}
-
-//
-// Enable debug mode.
-//
-
-func (c *Client) Debug() {
-	c.debug = true
 }
 
 //
@@ -260,15 +245,15 @@ func (c *Client) flush() error {
 
 //
 // Buffer the given message and flush
-// when the buffer exceeds .flushCount.
+// when the buffer exceeds .BufferSize.
 //
 
 func (c *Client) bufferMessage(msg interface{}) error {
 	c.buffer = append(c.buffer, &msg)
 
-	c.log("buffer (%d/%d) %v", len(c.buffer), c.flushCount, msg)
+	c.log("buffer (%d/%d) %v", len(c.buffer), c.BufferSize, msg)
 
-	if len(c.buffer) >= c.flushCount {
+	if len(c.buffer) >= c.BufferSize {
 		return c.flush()
 	}
 
@@ -280,7 +265,7 @@ func (c *Client) bufferMessage(msg interface{}) error {
 //
 
 func (c *Client) log(format string, v ...interface{}) {
-	if c.debug {
+	if c.Debug {
 		log.Printf(format, v...)
 	}
 }
