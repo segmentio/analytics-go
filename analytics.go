@@ -59,8 +59,9 @@ type context struct {
 //
 
 type identify struct {
-	Action string      `json:"action"`
-	Traits interface{} `json:"trailts"`
+	Action    string      `json:"action"`
+	Traits    interface{} `json:"trailts"`
+	Timestamp string      `json:"timestamp"`
 }
 
 //
@@ -70,6 +71,7 @@ type identify struct {
 type alias struct {
 	Action     string `json:"action"`
 	PreviousId string `json:"previousId"`
+	Timestamp  string `json:"timestamp"`
 }
 
 //
@@ -80,6 +82,7 @@ type track struct {
 	Action     string      `json:"action"`
 	Event      string      `json:"event"`
 	Properties interface{} `json:"properties"`
+	Timestamp  string      `json:"timestamp"`
 }
 
 //
@@ -87,9 +90,10 @@ type track struct {
 //
 
 type group struct {
-	Action  string      `json:"action"`
-	GroupId string      `json:"groupId"`
-	Traits  interface{} `json:"trailts"`
+	Action    string      `json:"action"`
+	GroupId   string      `json:"groupId"`
+	Traits    interface{} `json:"trailts"`
+	Timestamp string      `json:"timestamp"`
 }
 
 //
@@ -101,6 +105,7 @@ type page struct {
 	Category   string      `json:"category"`
 	Name       string      `json:"name"`
 	Properties interface{} `json:"properties"`
+	Timestamp  string      `json:"timestamp"`
 }
 
 //
@@ -108,7 +113,6 @@ type page struct {
 //
 
 type batch struct {
-	Timestamp string         `json:"timestamp"`
 	Context   context        `json:"context"`
 	RequestId string         `json:"requestId"`
 	Messages  []*interface{} `json:"batch"`
@@ -161,6 +165,14 @@ func (c *client) URL(url string) {
 	c.url = url
 }
 
+//
+// Return formatted timestamp.
+//
+
+func timestamp() string {
+	return strftime.Format("%Y-%m-%dT%H:%M:%S%z", time.Now())
+}
+
 // Return a batch message primed
 // with context properties
 //
@@ -173,7 +185,6 @@ func createBatch(msgs []*interface{}) (*batch, error) {
 	}
 
 	batch := &batch{
-		Timestamp: strftime.Format("%Y-%m-%dT%H:%M:%S%z", time.Now()),
 		RequestId: uid.String(),
 		Messages:  msgs,
 		Context: context{
@@ -252,7 +263,7 @@ func (c *client) bufferMessage(msg interface{}) error {
 //
 
 func (c *client) Alias(previousId string) error {
-	return c.bufferMessage(&alias{"Alias", previousId})
+	return c.bufferMessage(&alias{"Alias", previousId, timestamp()})
 }
 
 //
@@ -260,7 +271,7 @@ func (c *client) Alias(previousId string) error {
 //
 
 func (c *client) Page(name string, category string, properties interface{}) error {
-	return c.bufferMessage(&page{"Page", name, category, properties})
+	return c.bufferMessage(&page{"Page", name, category, properties, timestamp()})
 }
 
 //
@@ -268,7 +279,7 @@ func (c *client) Page(name string, category string, properties interface{}) erro
 //
 
 func (c *client) Screen(name string, category string, properties interface{}) error {
-	return c.bufferMessage(&page{"Screen", name, category, properties})
+	return c.bufferMessage(&page{"Screen", name, category, properties, timestamp()})
 }
 
 //
@@ -276,7 +287,7 @@ func (c *client) Screen(name string, category string, properties interface{}) er
 //
 
 func (c *client) Group(id string, traits interface{}) error {
-	return c.bufferMessage(&group{"Group", id, traits})
+	return c.bufferMessage(&group{"Group", id, traits, timestamp()})
 }
 
 //
@@ -284,7 +295,7 @@ func (c *client) Group(id string, traits interface{}) error {
 //
 
 func (c *client) Identify(traits interface{}) error {
-	return c.bufferMessage(&identify{"Identify", traits})
+	return c.bufferMessage(&identify{"Identify", traits, timestamp()})
 }
 
 //
@@ -292,5 +303,5 @@ func (c *client) Identify(traits interface{}) error {
 //
 
 func (c *client) Track(event string, properties interface{}) error {
-	return c.bufferMessage(&track{"Track", event, properties})
+	return c.bufferMessage(&track{"Track", event, properties, timestamp()})
 }
