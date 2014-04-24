@@ -31,10 +31,9 @@ const api = "https://api.segment.io"
 type Client struct {
 	Debug         bool
 	BufferSize    int
-	running       bool
+	FlushInterval time.Duration
 	key           string
 	url           string
-	flushInterval time.Duration
 	buffer        []*interface{}
 }
 
@@ -124,40 +123,25 @@ type batch struct {
 // with the given write key.
 //
 
-func New(key string) *Client {
-	c := &Client{
-		Debug:      false,
-		BufferSize: 500,
-		key:        key,
-		url:        api,
-		buffer:     make([]*interface{}, 0),
-	}
-
-	c.FlushAfter(10 * time.Second)
-
-	return c
-}
-
-//
-// Set buffer flush interal.
-//
-
-func (c *Client) FlushAfter(interval time.Duration) {
-	c.flushInterval = interval
-
-	if c.running {
-		return
-	}
-
-	c.running = true
-
-	go func() {
-		for {
-			time.Sleep(c.flushInterval)
-			c.log("interval %v reached", c.flushInterval)
-			c.flush()
-		}
+func New(key string) (c *Client) {
+	defer func() {
+		go func() {
+			for {
+				time.Sleep(c.FlushInterval)
+				c.log("interval %v reached", c.FlushInterval)
+				c.flush()
+			}
+		}()
 	}()
+
+	return &Client{
+		Debug:         false,
+		BufferSize:    500,
+		FlushInterval: 10 * time.Second,
+		key:           key,
+		url:           api,
+		buffer:        make([]*interface{}, 0),
+	}
 }
 
 //
