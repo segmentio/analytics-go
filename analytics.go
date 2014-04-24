@@ -4,6 +4,7 @@ package analytics
 // dependencies
 //
 
+import "github.com/jehiah/go-strftime"
 import "github.com/nu7hatch/gouuid"
 import . "encoding/json"
 import "net/http"
@@ -107,6 +108,7 @@ type page struct {
 //
 
 type batch struct {
+	Timestamp string         `json:"timestamp"`
 	Context   context        `json:"context"`
 	RequestId string         `json:"requestId"`
 	Messages  []*interface{} `json:"batch"`
@@ -171,6 +173,7 @@ func createBatch(msgs []*interface{}) (*batch, error) {
 	}
 
 	batch := &batch{
+		Timestamp: strftime.Format("%Y-%m-%dT%H:%M:%S%z", time.Now()),
 		RequestId: uid.String(),
 		Messages:  msgs,
 		Context: context{
@@ -289,6 +292,5 @@ func (c *client) Identify(traits interface{}) error {
 //
 
 func (c *client) Track(event string, properties interface{}) error {
-	// TODO: .timestamp ISO-8601-formatted string.
 	return c.bufferMessage(&track{"Track", event, properties})
 }
