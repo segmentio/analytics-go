@@ -7,6 +7,7 @@ package analytics
 import "github.com/jehiah/go-strftime"
 import "github.com/nu7hatch/gouuid"
 import . "encoding/json"
+import "io/ioutil"
 import "net/http"
 import "bytes"
 import "time"
@@ -276,7 +277,7 @@ func (c *Client) flush() error {
 	c.buffer = nil
 
 	client := &http.Client{}
-	url := c.Endpoint + "/v1/batch"
+	url := c.Endpoint + "/v1/import"
 	c.log("request %s with %d bytes", url, len(json))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 
@@ -291,6 +292,11 @@ func (c *Client) flush() error {
 
 	res, err := client.Do(req)
 	c.log("response %v", res)
+
+	if res.StatusCode >= 500 {
+		body, _ := ioutil.ReadAll(res.Body)
+		c.log("body %s", string(body))
+	}
 
 	return err
 }
