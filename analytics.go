@@ -156,8 +156,8 @@ func (c *client) FlushAfter(interval time.Duration) {
 			time.Sleep(interval)
 			if c.debug {
 				log.Printf("interval %v reached", interval)
-				c.flush()
 			}
+			c.flush()
 		}
 	}()
 }
