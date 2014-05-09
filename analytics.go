@@ -9,6 +9,7 @@ import "github.com/nu7hatch/gouuid"
 import . "encoding/json"
 import "io/ioutil"
 import "net/http"
+import "reflect"
 import "bytes"
 import "time"
 import "log"
@@ -60,9 +61,11 @@ type context struct {
 //
 
 type identify struct {
-	Type      string      `json:"type"`
-	Traits    interface{} `json:"trailts"`
-	Timestamp string      `json:"timestamp"`
+	Type        string      `json:"type"`
+	Traits      interface{} `json:"trailts"`
+	Timestamp   string      `json:"timestamp"`
+	UserId      string      `json:"userId"`
+	AnonymousId string      `json:"anonymousId"`
 }
 
 //
@@ -80,10 +83,12 @@ type alias struct {
 //
 
 type track struct {
-	Type       string      `json:"type"`
-	Event      string      `json:"event"`
-	Properties interface{} `json:"properties"`
-	Timestamp  string      `json:"timestamp"`
+	Type        string      `json:"type"`
+	Event       string      `json:"event"`
+	Properties  interface{} `json:"properties"`
+	Timestamp   string      `json:"timestamp"`
+	UserId      string      `json:"userId"`
+	AnonymousId string      `json:"anonymousId"`
 }
 
 //
@@ -91,10 +96,12 @@ type track struct {
 //
 
 type group struct {
-	Type      string      `json:"type"`
-	GroupId   string      `json:"groupId"`
-	Traits    interface{} `json:"trailts"`
-	Timestamp string      `json:"timestamp"`
+	Type        string      `json:"type"`
+	GroupId     string      `json:"groupId"`
+	Traits      interface{} `json:"trailts"`
+	Timestamp   string      `json:"timestamp"`
+	UserId      string      `json:"userId"`
+	AnonymousId string      `json:"anonymousId"`
 }
 
 //
@@ -174,7 +181,8 @@ func (c *Client) Screen(name string, category string, properties interface{}) {
 //
 
 func (c *Client) Group(id string, traits interface{}) {
-	c.bufferMessage(&group{"group", id, traits, timestamp()})
+	user, anon := ids(traits)
+	c.bufferMessage(&group{"group", id, traits, timestamp(), user, anon})
 }
 
 //
@@ -182,7 +190,8 @@ func (c *Client) Group(id string, traits interface{}) {
 //
 
 func (c *Client) Identify(traits interface{}) {
-	c.bufferMessage(&identify{"identify", traits, timestamp()})
+	user, anon := ids(traits)
+	c.bufferMessage(&identify{"identify", traits, timestamp(), user, anon})
 }
 
 //
@@ -190,7 +199,33 @@ func (c *Client) Identify(traits interface{}) {
 //
 
 func (c *Client) Track(event string, properties interface{}) {
-	c.bufferMessage(&track{"track", event, properties, timestamp()})
+	user, anon := ids(properties)
+	c.bufferMessage(&track{"track", event, properties, timestamp(), user, anon})
+}
+
+//
+// Return UserId or AnonymousId field value.
+//
+
+func ids(properties interface{}) (string, string) {
+	userId := ""
+	anonId := ""
+
+	val := reflect.ValueOf(properties)
+
+	user := val.FieldByName("UserId")
+
+	if user.IsValid() {
+		userId = user.String()
+	}
+
+	anon := val.FieldByName("AnonymousId")
+
+	if anon.IsValid() {
+		anonId = anon.String()
+	}
+
+	return userId, anonId
 }
 
 //

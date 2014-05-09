@@ -18,6 +18,7 @@ type Download struct {
   Application string `json:"application"`
   Version     string `json:"version"`
   Platform    string `json:"platform"`
+  UserId      string `json:"userId"`
 }
 
 func main() {
@@ -27,7 +28,7 @@ func main() {
   client.Debug = true
 
   for {
-    client.Track("Download", Download{"segmentio", "1.0.0", "osx"})
+    client.Track("Download", Download{"segmentio", "1.0.0", "osx", "some-id"})
     client.Identify(User{"tobi", "tobi@ferret.com"})
     time.Sleep(100 * time.Millisecond)
   }
@@ -55,26 +56,31 @@ type Client struct {
 }
 ```
 
-
 #### func  New
 
 ```go
 func New(key string) (c *Client)
 ```
 
-#### func (*Client) Alias
+#### func (*Client) Track
+
+ You must pass `UserId` or `AnonymousId`.
 
 ```go
-func (c *Client) Alias(previousId string)
+func (c *Client) Track(event string, properties interface{})
 ```
 
 #### func (*Client) Group
+
+You must pass `UserId` or `AnonymousId`.
 
 ```go
 func (c *Client) Group(id string, traits interface{})
 ```
 
 #### func (*Client) Identify
+
+You must pass `UserId` or `AnonymousId`.
 
 ```go
 func (c *Client) Identify(traits interface{})
@@ -92,10 +98,10 @@ func (c *Client) Page(name string, category string, properties interface{})
 func (c *Client) Screen(name string, category string, properties interface{})
 ```
 
-#### func (*Client) Track
+#### func (*Client) Alias
 
 ```go
-func (c *Client) Track(event string, properties interface{})
+func (c *Client) Alias(previousId string)
 ```
 
 ## Debugging
