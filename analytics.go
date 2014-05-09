@@ -342,6 +342,7 @@ func (c *Client) flush() error {
 	if res.StatusCode >= 400 {
 		body, _ := ioutil.ReadAll(res.Body)
 		c.log("error: %s", string(body))
+		c.log("error: %s", string(json))
 	}
 
 	return err
