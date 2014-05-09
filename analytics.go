@@ -60,7 +60,7 @@ type context struct {
 //
 
 type identify struct {
-	Action    string      `json:"action"`
+	Type      string      `json:"type"`
 	Traits    interface{} `json:"trailts"`
 	Timestamp string      `json:"timestamp"`
 }
@@ -70,7 +70,7 @@ type identify struct {
 //
 
 type alias struct {
-	Action     string `json:"action"`
+	Type       string `json:"type"`
 	PreviousId string `json:"previousId"`
 	Timestamp  string `json:"timestamp"`
 }
@@ -80,7 +80,7 @@ type alias struct {
 //
 
 type track struct {
-	Action     string      `json:"action"`
+	Type       string      `json:"type"`
 	Event      string      `json:"event"`
 	Properties interface{} `json:"properties"`
 	Timestamp  string      `json:"timestamp"`
@@ -91,7 +91,7 @@ type track struct {
 //
 
 type group struct {
-	Action    string      `json:"action"`
+	Type      string      `json:"type"`
 	GroupId   string      `json:"groupId"`
 	Traits    interface{} `json:"trailts"`
 	Timestamp string      `json:"timestamp"`
@@ -102,7 +102,7 @@ type group struct {
 //
 
 type page struct {
-	Action     string      `json:"action"`
+	Type       string      `json:"type"`
 	Category   string      `json:"category"`
 	Name       string      `json:"name"`
 	Properties interface{} `json:"properties"`
@@ -150,7 +150,7 @@ func New(key string) (c *Client) {
 //
 
 func (c *Client) Alias(previousId string) {
-	c.bufferMessage(&alias{"Alias", previousId, timestamp()})
+	c.bufferMessage(&alias{"alias", previousId, timestamp()})
 }
 
 //
@@ -158,7 +158,7 @@ func (c *Client) Alias(previousId string) {
 //
 
 func (c *Client) Page(name string, category string, properties interface{}) {
-	c.bufferMessage(&page{"Page", name, category, properties, timestamp()})
+	c.bufferMessage(&page{"page", name, category, properties, timestamp()})
 }
 
 //
@@ -166,7 +166,7 @@ func (c *Client) Page(name string, category string, properties interface{}) {
 //
 
 func (c *Client) Screen(name string, category string, properties interface{}) {
-	c.bufferMessage(&page{"Screen", name, category, properties, timestamp()})
+	c.bufferMessage(&page{"screen", name, category, properties, timestamp()})
 }
 
 //
@@ -174,7 +174,7 @@ func (c *Client) Screen(name string, category string, properties interface{}) {
 //
 
 func (c *Client) Group(id string, traits interface{}) {
-	c.bufferMessage(&group{"Group", id, traits, timestamp()})
+	c.bufferMessage(&group{"group", id, traits, timestamp()})
 }
 
 //
@@ -182,7 +182,7 @@ func (c *Client) Group(id string, traits interface{}) {
 //
 
 func (c *Client) Identify(traits interface{}) {
-	c.bufferMessage(&identify{"Identify", traits, timestamp()})
+	c.bufferMessage(&identify{"identify", traits, timestamp()})
 }
 
 //
@@ -190,7 +190,7 @@ func (c *Client) Identify(traits interface{}) {
 //
 
 func (c *Client) Track(event string, properties interface{}) {
-	c.bufferMessage(&track{"Track", event, properties, timestamp()})
+	c.bufferMessage(&track{"track", event, properties, timestamp()})
 }
 
 //
