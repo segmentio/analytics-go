@@ -293,7 +293,7 @@ func (c *Client) flush() error {
 	res, err := client.Do(req)
 	c.log("%d response", res.StatusCode)
 
-	if res.StatusCode >= 500 {
+	if res.StatusCode >= 400 {
 		body, _ := ioutil.ReadAll(res.Body)
 		c.log("error: %s", string(body))
 	}
