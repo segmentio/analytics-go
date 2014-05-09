@@ -66,6 +66,7 @@ type identify struct {
 	Timestamp   string      `json:"timestamp"`
 	UserId      string      `json:"userId"`
 	AnonymousId string      `json:"anonymousId"`
+	RequestId   string      `json:"requestId"`
 }
 
 //
@@ -76,6 +77,7 @@ type alias struct {
 	Type       string `json:"type"`
 	PreviousId string `json:"previousId"`
 	Timestamp  string `json:"timestamp"`
+	RequestId  string `json:"requestId"`
 }
 
 //
@@ -89,6 +91,7 @@ type track struct {
 	Timestamp   string      `json:"timestamp"`
 	UserId      string      `json:"userId"`
 	AnonymousId string      `json:"anonymousId"`
+	RequestId   string      `json:"requestId"`
 }
 
 //
@@ -102,6 +105,7 @@ type group struct {
 	Timestamp   string      `json:"timestamp"`
 	UserId      string      `json:"userId"`
 	AnonymousId string      `json:"anonymousId"`
+	RequestId   string      `json:"requestId"`
 }
 
 //
@@ -114,6 +118,7 @@ type page struct {
 	Name       string      `json:"name"`
 	Properties interface{} `json:"properties"`
 	Timestamp  string      `json:"timestamp"`
+	RequestId  string      `json:"requestId"`
 }
 
 //
@@ -157,7 +162,8 @@ func New(key string) (c *Client) {
 //
 
 func (c *Client) Alias(previousId string) {
-	c.bufferMessage(&alias{"alias", previousId, timestamp()})
+	uid, _ := uuid.NewV4()
+	c.bufferMessage(&alias{"alias", previousId, timestamp(), uid.String()})
 }
 
 //
@@ -165,7 +171,8 @@ func (c *Client) Alias(previousId string) {
 //
 
 func (c *Client) Page(name string, category string, properties interface{}) {
-	c.bufferMessage(&page{"page", name, category, properties, timestamp()})
+	uid, _ := uuid.NewV4()
+	c.bufferMessage(&page{"page", name, category, properties, timestamp(), uid.String()})
 }
 
 //
@@ -173,7 +180,8 @@ func (c *Client) Page(name string, category string, properties interface{}) {
 //
 
 func (c *Client) Screen(name string, category string, properties interface{}) {
-	c.bufferMessage(&page{"screen", name, category, properties, timestamp()})
+	uid, _ := uuid.NewV4()
+	c.bufferMessage(&page{"screen", name, category, properties, timestamp(), uid.String()})
 }
 
 //
@@ -181,8 +189,9 @@ func (c *Client) Screen(name string, category string, properties interface{}) {
 //
 
 func (c *Client) Group(id string, traits interface{}) {
+	uid, _ := uuid.NewV4()
 	user, anon := ids(traits)
-	c.bufferMessage(&group{"group", id, traits, timestamp(), user, anon})
+	c.bufferMessage(&group{"group", id, traits, timestamp(), user, anon, uid.String()})
 }
 
 //
@@ -190,8 +199,9 @@ func (c *Client) Group(id string, traits interface{}) {
 //
 
 func (c *Client) Identify(traits interface{}) {
+	uid, _ := uuid.NewV4()
 	user, anon := ids(traits)
-	c.bufferMessage(&identify{"identify", traits, timestamp(), user, anon})
+	c.bufferMessage(&identify{"identify", traits, timestamp(), user, anon, uid.String()})
 }
 
 //
@@ -199,8 +209,9 @@ func (c *Client) Identify(traits interface{}) {
 //
 
 func (c *Client) Track(event string, properties interface{}) {
+	uid, _ := uuid.NewV4()
 	user, anon := ids(properties)
-	c.bufferMessage(&track{"track", event, properties, timestamp(), user, anon})
+	c.bufferMessage(&track{"track", event, properties, timestamp(), user, anon, uid.String()})
 }
 
 //
