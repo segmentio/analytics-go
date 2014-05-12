@@ -102,7 +102,7 @@ func (c *Client) Alias(msg Message) error {
 		return errors.New("You must pass a 'previousId'.")
 	}
 
-	c.queue(message(msg))
+	c.queue(message(msg, "alias"))
 
 	return nil
 }
@@ -116,7 +116,7 @@ func (c *Client) Page(msg Message) error {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
 	}
 
-	c.queue(message(msg))
+	c.queue(message(msg, "page"))
 
 	return nil
 }
@@ -130,7 +130,7 @@ func (c *Client) Screen(msg Message) error {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
 	}
 
-	c.queue(message(msg))
+	c.queue(message(msg, "screen"))
 
 	return nil
 }
@@ -148,7 +148,7 @@ func (c *Client) Group(msg Message) error {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
 	}
 
-	c.queue(message(msg))
+	c.queue(message(msg, "group"))
 
 	return nil
 }
@@ -162,7 +162,7 @@ func (c *Client) Identify(msg Message) error {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
 	}
 
-	c.queue(message(msg))
+	c.queue(message(msg, "identify"))
 
 	return nil
 }
@@ -180,7 +180,7 @@ func (c *Client) Track(msg Message) error {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
 	}
 
-	c.queue(message(msg))
+	c.queue(message(msg, "track"))
 
 	return nil
 }
@@ -190,8 +190,8 @@ func (c *Client) Track(msg Message) error {
 // with `msg` values and context merged.
 //
 
-func message(msg Message) Message {
-	m := newMessage()
+func message(msg Message, call string) Message {
+	m := newMessage(call)
 
 	if msg["context"] != nil {
 		merge(m["context"].(map[string]interface{}), msg["context"].(map[string]interface{}))
@@ -207,8 +207,9 @@ func message(msg Message) Message {
 // Return new initialzed message map.
 //
 
-func newMessage() Message {
+func newMessage(call string) Message {
 	return Message{
+		"type":      call,
 		"timestamp": timestamp(),
 		"messageId": uid(),
 		"context": map[string]interface{}{
