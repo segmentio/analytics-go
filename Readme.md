@@ -18,8 +18,34 @@ import "github.com/segmentio/analytics-go"
 import "time"
 
 func main() {
-  client := analytics.New("h97jamjwbh")
-  client.Endpoint = "http://localhost:3000"
+  client := analytics.New("h97jamjw3h")
+
+  for {
+    client.Track(map[string]interface{}{
+      "event":  "Download",
+      "userId": "123456",
+      "properties": map[string]interface{}{
+        "application": "Segment Desktop",
+        "version":     "1.1.0",
+        "platform":    "osx",
+      },
+    })
+
+    time.Sleep(50 * time.Millisecond)
+  }
+}
+```
+
+With customized client:
+
+```go
+package main
+
+import "github.com/segmentio/analytics-go"
+import "time"
+
+func main() {
+  client := analytics.New("h97jamjw3h")
   client.FlushInterval = 5 * time.Second
   client.BufferSize = 20
   client.Debug = true
