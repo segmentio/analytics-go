@@ -1,12 +1,15 @@
 # analytics-go
 
-  Segment.io analytics client for Go.
+  Segment.io analytics client for Go. For additional documentation
+  visit [https://segment.io/docs/tracking-api/](https://segment.io/docs/tracking-api/).
 
 ## Installation
 
     $ go get github.com/segmentio/analytics-go
 
 ## Example
+
+  Full example void of `client.Track` error-handling for brevity:
 
 ```go
 package main
@@ -22,17 +25,45 @@ type Download struct {
 }
 
 func main() {
-  client := analytics.New("your-writeKey-here")
-  client.FlushInterval = 30 * time.Second
-  client.BufferSize = 1000
+  client := analytics.New("h97jamjwbh")
+  client.Endpoint = "http://localhost:3000"
+  client.FlushInterval = 5 * time.Second
+  client.BufferSize = 20
   client.Debug = true
 
   for {
-    client.Track("Download", Download{"segmentio", "1.0.0", "osx", "some-id"})
-    client.Identify(User{"tobi", "tobi@ferret.com"})
-    time.Sleep(100 * time.Millisecond)
+    client.Track(map[string]interface{}{
+      "event":  "Download",
+      "userId": "123456",
+      "properties": map[string]interface{}{
+        "application": "Segment Desktop",
+        "version":     "1.1.0",
+        "platform":    "osx",
+      },
+    })
+
+    time.Sleep(50 * time.Millisecond)
   }
 }
+```
+
+For each call a `context` map may be passed, which
+is merged with the original values.
+
+```go
+client.Track(map[string]interface{}{
+  "event":  "Download",
+  "userId": "123456",
+  "properties": map[string]interface{}{
+    "application": "Segment Desktop",
+    "version":     "1.1.0",
+    "platform":    "osx",
+  },
+  "context": map[string]interface{}{
+    "appVersion": "2.0.0",
+    "appHostname": "some-host"
+  }
+})
 ```
 
 ## API
@@ -62,46 +93,46 @@ type Client struct {
 func New(key string) (c *Client)
 ```
 
-#### func (*Client) Track
-
- You must pass `UserId` or `AnonymousId`.
+#### func (*Client) Alias
 
 ```go
-func (c *Client) Track(event string, properties interface{})
+func (c *Client) Alias(msg Message) error
 ```
 
 #### func (*Client) Group
 
-You must pass `UserId` or `AnonymousId`.
-
 ```go
-func (c *Client) Group(id string, traits interface{})
+func (c *Client) Group(msg Message) error
 ```
 
 #### func (*Client) Identify
 
-You must pass `UserId` or `AnonymousId`.
-
 ```go
-func (c *Client) Identify(traits interface{})
+func (c *Client) Identify(msg Message) error
 ```
 
 #### func (*Client) Page
 
 ```go
-func (c *Client) Page(name string, category string, properties interface{})
+func (c *Client) Page(msg Message) error
 ```
 
 #### func (*Client) Screen
 
 ```go
-func (c *Client) Screen(name string, category string, properties interface{})
+func (c *Client) Screen(msg Message) error
 ```
 
-#### func (*Client) Alias
+#### func (*Client) Track
 
 ```go
-func (c *Client) Alias(previousId string)
+func (c *Client) Track(msg Message) error
+```
+
+#### type Message
+
+```go
+type Message map[string]interface{}
 ```
 
 ## Debugging

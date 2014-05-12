@@ -9,7 +9,7 @@ import "github.com/twinj/uuid"
 import . "encoding/json"
 import "io/ioutil"
 import "net/http"
-import "reflect"
+import "errors"
 import "bytes"
 import "time"
 import "log"
@@ -27,6 +27,12 @@ const Version = "0.0.1"
 const api = "https://api.segment.io"
 
 //
+// Message type.
+//
+
+type Message map[string]interface{}
+
+//
 // Segment.io client
 //
 
@@ -36,94 +42,7 @@ type Client struct {
 	FlushInterval time.Duration
 	Endpoint      string
 	Key           string
-	buffer        []*interface{}
-}
-
-//
-// Message context library
-//
-
-type contextLibrary struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
-}
-
-//
-// Message context
-//
-
-type context struct {
-	Library contextLibrary `json:"library"`
-}
-
-//
-// Identify message
-//
-
-type identify struct {
-	Type        string      `json:"type"`
-	Traits      interface{} `json:"trailts"`
-	Timestamp   string      `json:"timestamp"`
-	UserId      string      `json:"userId"`
-	AnonymousId string      `json:"anonymousId"`
-	Context     *context    `json:"context"`
-	MessageId   string      `json:"messageId"`
-}
-
-//
-// Alias message
-//
-
-type alias struct {
-	Type       string   `json:"type"`
-	PreviousId string   `json:"previousId"`
-	Timestamp  string   `json:"timestamp"`
-	Context    *context `json:"context"`
-	MessageId  string   `json:"messageId"`
-}
-
-//
-// Track message
-//
-
-type track struct {
-	Type        string      `json:"type"`
-	Event       string      `json:"event"`
-	Properties  interface{} `json:"properties"`
-	Timestamp   string      `json:"timestamp"`
-	UserId      string      `json:"userId"`
-	AnonymousId string      `json:"anonymousId"`
-	Context     *context    `json:"context"`
-	MessageId   string      `json:"messageId"`
-}
-
-//
-// Group message
-//
-
-type group struct {
-	Type        string      `json:"type"`
-	GroupId     string      `json:"groupId"`
-	Traits      interface{} `json:"trailts"`
-	Timestamp   string      `json:"timestamp"`
-	UserId      string      `json:"userId"`
-	AnonymousId string      `json:"anonymousId"`
-	Context     *context    `json:"context"`
-	MessageId   string      `json:"messageId"`
-}
-
-//
-// Page message
-//
-
-type page struct {
-	Type       string      `json:"type"`
-	Category   string      `json:"category"`
-	Name       string      `json:"name"`
-	Properties interface{} `json:"properties"`
-	Timestamp  string      `json:"timestamp"`
-	Context    *context    `json:"context"`
-	MessageId  string      `json:"messageId"`
+	buffer        []Message
 }
 
 //
@@ -131,8 +50,17 @@ type page struct {
 //
 
 type batch struct {
-	Messages  []*interface{} `json:"batch"`
-	MessageId string         `json:"messageId"`
+	Messages  []Message `json:"batch"`
+	MessageId string    `json:"messageId"`
+}
+
+//
+// UUID formatting.
+//
+
+func init() {
+	// TODO: wtf, this is lame
+	uuid.SwitchFormat(uuid.CleanHyphen, false)
 }
 
 //
@@ -157,65 +85,147 @@ func New(key string) (c *Client) {
 		FlushInterval: 30 * time.Second,
 		Key:           key,
 		Endpoint:      api,
-		buffer:        make([]*interface{}, 0),
+		buffer:        make([]Message, 0),
 	}
 }
 
 //
-// Buffer an alias message
+// Buffer an alias message.
 //
 
-func (c *Client) Alias(previousId string) {
-	ctx := messageContext()
-	c.bufferMessage(&alias{"alias", previousId, timestamp(), ctx, uid()})
+func (c *Client) Alias(msg Message) error {
+	if msg["userId"] == nil {
+		return errors.New("You must pass a 'userId'.")
+	}
+
+	if msg["previousId"] == nil {
+		return errors.New("You must pass a 'previousId'.")
+	}
+
+	c.queue(message(msg))
+
+	return nil
 }
 
 //
-// Buffer a page message
+// Buffer a page message.
 //
 
-func (c *Client) Page(name string, category string, properties interface{}) {
-	ctx := messageContext()
-	c.bufferMessage(&page{"page", name, category, properties, timestamp(), ctx, uid()})
+func (c *Client) Page(msg Message) error {
+	if msg["userId"] == nil && msg["anonymousId"] == nil {
+		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
+	}
+
+	c.queue(message(msg))
+
+	return nil
 }
 
 //
-// Buffer a screen message
+// Buffer a screen message.
 //
 
-func (c *Client) Screen(name string, category string, properties interface{}) {
-	ctx := messageContext()
-	c.bufferMessage(&page{"screen", name, category, properties, timestamp(), ctx, uid()})
+func (c *Client) Screen(msg Message) error {
+	if msg["userId"] == nil && msg["anonymousId"] == nil {
+		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
+	}
+
+	c.queue(message(msg))
+
+	return nil
 }
 
 //
-// Buffer a group message
+// Buffer a group message.
 //
 
-func (c *Client) Group(id string, traits interface{}) {
-	user, anon := ids(traits)
-	ctx := messageContext()
-	c.bufferMessage(&group{"group", id, traits, timestamp(), user, anon, ctx, uid()})
+func (c *Client) Group(msg Message) error {
+	if msg["groupId"] == nil {
+		return errors.New("You must pass a 'groupId'.")
+	}
+
+	if msg["userId"] == nil && msg["anonymousId"] == nil {
+		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
+	}
+
+	c.queue(message(msg))
+
+	return nil
 }
 
 //
-// Buffer an identify message
+// Buffer an identify message.
 //
 
-func (c *Client) Identify(traits interface{}) {
-	user, anon := ids(traits)
-	ctx := messageContext()
-	c.bufferMessage(&identify{"identify", traits, timestamp(), user, anon, ctx, uid()})
+func (c *Client) Identify(msg Message) error {
+	if msg["userId"] == nil && msg["anonymousId"] == nil {
+		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
+	}
+
+	c.queue(message(msg))
+
+	return nil
 }
 
 //
-// Buffer a track message
+// Buffer a track message.
 //
 
-func (c *Client) Track(event string, properties interface{}) {
-	user, anon := ids(properties)
-	ctx := messageContext()
-	c.bufferMessage(&track{"track", event, properties, timestamp(), user, anon, ctx, uid()})
+func (c *Client) Track(msg Message) error {
+	if msg["event"] == nil {
+		return errors.New("You must pass 'event'.")
+	}
+
+	if msg["userId"] == nil && msg["anonymousId"] == nil {
+		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
+	}
+
+	c.queue(message(msg))
+
+	return nil
+}
+
+//
+// Return a new initialized message map
+// with `msg` values and context merged.
+//
+
+func message(msg Message) Message {
+	m := newMessage()
+
+	if msg["context"] != nil {
+		merge(m["context"].(map[string]interface{}), msg["context"].(map[string]interface{}))
+		delete(msg, "context")
+	}
+
+	merge(m, msg)
+
+	return m
+}
+
+//
+// Return new initialzed message map.
+//
+
+func newMessage() Message {
+	return Message{
+		"timestamp": timestamp(),
+		"messageId": uid(),
+		"context": map[string]interface{}{
+			"version": Version,
+			"library": "analytics-go",
+		},
+	}
+}
+
+//
+// Merge two maps.
+//
+
+func merge(dst Message, src Message) {
+	for k, v := range src {
+		dst[k] = v
+	}
 }
 
 //
@@ -224,31 +234,6 @@ func (c *Client) Track(event string, properties interface{}) {
 
 func uid() string {
 	return uuid.NewV4().String()
-}
-
-//
-// Return UserId or AnonymousId field value.
-//
-
-func ids(properties interface{}) (string, string) {
-	userId := ""
-	anonId := ""
-
-	val := reflect.ValueOf(properties)
-
-	user := val.FieldByName("UserId")
-
-	if user.IsValid() {
-		userId = user.String()
-	}
-
-	anon := val.FieldByName("AnonymousId")
-
-	if anon.IsValid() {
-		anonId = anon.String()
-	}
-
-	return userId, anonId
 }
 
 //
@@ -274,8 +259,8 @@ func (c *Client) log(format string, v ...interface{}) {
 // when the buffer exceeds .BufferSize.
 //
 
-func (c *Client) bufferMessage(msg interface{}) {
-	c.buffer = append(c.buffer, &msg)
+func (c *Client) queue(msg Message) {
+	c.buffer = append(c.buffer, msg)
 
 	c.log("buffer (%d/%d) %v", len(c.buffer), c.BufferSize, msg)
 
@@ -285,24 +270,11 @@ func (c *Client) bufferMessage(msg interface{}) {
 }
 
 //
-// Return message context.
-//
-
-func messageContext() *context {
-	return &context{
-		Library: contextLibrary{
-			Name:    "analytics-go",
-			Version: Version,
-		},
-	}
-}
-
-//
 // Return a batch message primed
 // with context properties
 //
 
-func batchMessage(msgs []*interface{}) *batch {
+func batchMessage(msgs []Message) *batch {
 	return &batch{
 		MessageId: uid(),
 		Messages:  msgs,
@@ -311,6 +283,11 @@ func batchMessage(msgs []*interface{}) *batch {
 
 //
 // Flush the buffered messages.
+//
+// TODO: better error-handling,
+// this is really meh, it would
+// be better if we used a chan
+// to deliver them.
 //
 
 func (c *Client) flush() error {
@@ -323,6 +300,7 @@ func (c *Client) flush() error {
 	json, err := Marshal(batchMessage(c.buffer))
 
 	if err != nil {
+		c.log("error: %v", err)
 		return err
 	}
 
@@ -334,6 +312,7 @@ func (c *Client) flush() error {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 
 	if err != nil {
+		c.log("error: %v", err)
 		return err
 	}
 
@@ -343,6 +322,12 @@ func (c *Client) flush() error {
 	req.SetBasicAuth(c.Key, "")
 
 	res, err := client.Do(req)
+
+	if err != nil {
+		c.log("error: %v", err)
+		return err
+	}
+
 	c.log("%d response", res.StatusCode)
 
 	if res.StatusCode >= 400 {
