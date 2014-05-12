@@ -17,13 +17,6 @@ package main
 import "github.com/segmentio/analytics-go"
 import "time"
 
-type Download struct {
-  Application string `json:"application"`
-  Version     string `json:"version"`
-  Platform    string `json:"platform"`
-  UserId      string `json:"userId"`
-}
-
 func main() {
   client := analytics.New("h97jamjwbh")
   client.Endpoint = "http://localhost:3000"
