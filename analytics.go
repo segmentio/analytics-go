@@ -5,7 +5,7 @@ package analytics
 //
 
 import "github.com/jehiah/go-strftime"
-import "github.com/nu7hatch/gouuid"
+import "github.com/twinj/uuid"
 import . "encoding/json"
 import "io/ioutil"
 import "net/http"
@@ -66,7 +66,8 @@ type identify struct {
 	Timestamp   string      `json:"timestamp"`
 	UserId      string      `json:"userId"`
 	AnonymousId string      `json:"anonymousId"`
-	RequestId   string      `json:"requestId"`
+	Context     *context    `json:"context"`
+	MessageId   string      `json:"messageId"`
 }
 
 //
@@ -74,10 +75,11 @@ type identify struct {
 //
 
 type alias struct {
-	Type       string `json:"type"`
-	PreviousId string `json:"previousId"`
-	Timestamp  string `json:"timestamp"`
-	RequestId  string `json:"requestId"`
+	Type       string   `json:"type"`
+	PreviousId string   `json:"previousId"`
+	Timestamp  string   `json:"timestamp"`
+	Context    *context `json:"context"`
+	MessageId  string   `json:"messageId"`
 }
 
 //
@@ -91,7 +93,8 @@ type track struct {
 	Timestamp   string      `json:"timestamp"`
 	UserId      string      `json:"userId"`
 	AnonymousId string      `json:"anonymousId"`
-	RequestId   string      `json:"requestId"`
+	Context     *context    `json:"context"`
+	MessageId   string      `json:"messageId"`
 }
 
 //
@@ -105,7 +108,8 @@ type group struct {
 	Timestamp   string      `json:"timestamp"`
 	UserId      string      `json:"userId"`
 	AnonymousId string      `json:"anonymousId"`
-	RequestId   string      `json:"requestId"`
+	Context     *context    `json:"context"`
+	MessageId   string      `json:"messageId"`
 }
 
 //
@@ -118,7 +122,8 @@ type page struct {
 	Name       string      `json:"name"`
 	Properties interface{} `json:"properties"`
 	Timestamp  string      `json:"timestamp"`
-	RequestId  string      `json:"requestId"`
+	Context    *context    `json:"context"`
+	MessageId  string      `json:"messageId"`
 }
 
 //
@@ -126,9 +131,8 @@ type page struct {
 //
 
 type batch struct {
-	Context   context        `json:"context"`
-	RequestId string         `json:"requestId"`
 	Messages  []*interface{} `json:"batch"`
+	MessageId string         `json:"messageId"`
 }
 
 //
@@ -162,8 +166,8 @@ func New(key string) (c *Client) {
 //
 
 func (c *Client) Alias(previousId string) {
-	uid, _ := uuid.NewV4()
-	c.bufferMessage(&alias{"alias", previousId, timestamp(), uid.String()})
+	ctx := messageContext()
+	c.bufferMessage(&alias{"alias", previousId, timestamp(), ctx, uid()})
 }
 
 //
@@ -171,8 +175,8 @@ func (c *Client) Alias(previousId string) {
 //
 
 func (c *Client) Page(name string, category string, properties interface{}) {
-	uid, _ := uuid.NewV4()
-	c.bufferMessage(&page{"page", name, category, properties, timestamp(), uid.String()})
+	ctx := messageContext()
+	c.bufferMessage(&page{"page", name, category, properties, timestamp(), ctx, uid()})
 }
 
 //
@@ -180,8 +184,8 @@ func (c *Client) Page(name string, category string, properties interface{}) {
 //
 
 func (c *Client) Screen(name string, category string, properties interface{}) {
-	uid, _ := uuid.NewV4()
-	c.bufferMessage(&page{"screen", name, category, properties, timestamp(), uid.String()})
+	ctx := messageContext()
+	c.bufferMessage(&page{"screen", name, category, properties, timestamp(), ctx, uid()})
 }
 
 //
@@ -189,9 +193,9 @@ func (c *Client) Screen(name string, category string, properties interface{}) {
 //
 
 func (c *Client) Group(id string, traits interface{}) {
-	uid, _ := uuid.NewV4()
 	user, anon := ids(traits)
-	c.bufferMessage(&group{"group", id, traits, timestamp(), user, anon, uid.String()})
+	ctx := messageContext()
+	c.bufferMessage(&group{"group", id, traits, timestamp(), user, anon, ctx, uid()})
 }
 
 //
@@ -199,9 +203,9 @@ func (c *Client) Group(id string, traits interface{}) {
 //
 
 func (c *Client) Identify(traits interface{}) {
-	uid, _ := uuid.NewV4()
 	user, anon := ids(traits)
-	c.bufferMessage(&identify{"identify", traits, timestamp(), user, anon, uid.String()})
+	ctx := messageContext()
+	c.bufferMessage(&identify{"identify", traits, timestamp(), user, anon, ctx, uid()})
 }
 
 //
@@ -209,9 +213,17 @@ func (c *Client) Identify(traits interface{}) {
 //
 
 func (c *Client) Track(event string, properties interface{}) {
-	uid, _ := uuid.NewV4()
 	user, anon := ids(properties)
-	c.bufferMessage(&track{"track", event, properties, timestamp(), user, anon, uid.String()})
+	ctx := messageContext()
+	c.bufferMessage(&track{"track", event, properties, timestamp(), user, anon, ctx, uid()})
+}
+
+//
+// Return uuid.
+//
+
+func uid() string {
+	return uuid.NewV4().String()
 }
 
 //
@@ -272,29 +284,29 @@ func (c *Client) bufferMessage(msg interface{}) {
 	}
 }
 
+//
+// Return message context.
+//
+
+func messageContext() *context {
+	return &context{
+		Library: contextLibrary{
+			Name:    "analytics-go",
+			Version: Version,
+		},
+	}
+}
+
+//
 // Return a batch message primed
 // with context properties
 //
 
-func batchMessage(msgs []*interface{}) (*batch, error) {
-	uid, err := uuid.NewV4()
-
-	if err != nil {
-		return nil, err
-	}
-
-	batch := &batch{
-		RequestId: uid.String(),
+func batchMessage(msgs []*interface{}) *batch {
+	return &batch{
+		MessageId: uid(),
 		Messages:  msgs,
-		Context: context{
-			Library: contextLibrary{
-				Name:    "analytics-go",
-				Version: Version,
-			},
-		},
 	}
-
-	return batch, nil
 }
 
 //
@@ -308,13 +320,7 @@ func (c *Client) flush() error {
 	}
 
 	c.log("flushing %d messages", len(c.buffer))
-	batch, err := batchMessage(c.buffer)
-
-	if err != nil {
-		return err
-	}
-
-	json, err := Marshal(batch)
+	json, err := Marshal(batchMessage(c.buffer))
 
 	if err != nil {
 		return err
