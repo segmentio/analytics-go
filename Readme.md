@@ -46,8 +46,8 @@ import "time"
 
 func main() {
   client := analytics.New("h97jamjw3h")
-  client.FlushInterval = 5 * time.Second
-  client.BufferSize = 20
+  client.FlushAfter = 30 * time.Second
+  client.FlushAt = 100
   client.Debug = true
 
   for {
@@ -99,8 +99,8 @@ const Version = "0.0.1"
 ```go
 type Client struct {
 	Debug         bool
-	BufferSize    int
-	FlushInterval time.Duration
+	FlushAt    int
+	FlushAfter time.Duration
 	Endpoint      string
 	Key           string
 }

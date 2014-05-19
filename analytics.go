@@ -37,12 +37,12 @@ type Message map[string]interface{}
 //
 
 type Client struct {
-	Debug         bool
-	BufferSize    int
-	FlushInterval time.Duration
-	Endpoint      string
-	Key           string
-	buffer        []Message
+	Debug      bool
+	FlushAt    int
+	FlushAfter time.Duration
+	Endpoint   string
+	Key        string
+	buffer     []Message
 }
 
 //
@@ -72,20 +72,20 @@ func New(key string) (c *Client) {
 	defer func() {
 		go func() {
 			for {
-				time.Sleep(c.FlushInterval)
-				c.log("interval %v reached", c.FlushInterval)
+				time.Sleep(c.FlushAfter)
+				c.log("interval %v reached", c.FlushAfter)
 				go c.flush()
 			}
 		}()
 	}()
 
 	return &Client{
-		Debug:         false,
-		BufferSize:    20,
-		FlushInterval: 5 * time.Second,
-		Key:           key,
-		Endpoint:      api,
-		buffer:        make([]Message, 0),
+		Debug:      false,
+		FlushAt:    20,
+		FlushAfter: 5 * time.Second,
+		Key:        key,
+		Endpoint:   api,
+		buffer:     make([]Message, 0),
 	}
 }
 
@@ -257,15 +257,15 @@ func (c *Client) log(format string, v ...interface{}) {
 
 //
 // Buffer the given message and flush
-// when the buffer exceeds .BufferSize.
+// when the buffer exceeds .FlushAt.
 //
 
 func (c *Client) queue(msg Message) {
 	c.buffer = append(c.buffer, msg)
 
-	c.log("buffer (%d/%d) %v", len(c.buffer), c.BufferSize, msg)
+	c.log("buffer (%d/%d) %v", len(c.buffer), c.FlushAt, msg)
 
-	if len(c.buffer) >= c.BufferSize {
+	if len(c.buffer) >= c.FlushAt {
 		go c.flush()
 	}
 }
