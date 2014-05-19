@@ -93,7 +93,7 @@ const Version = "0.0.1"
 
 #### type Client
 
- By default messages are flushed in batches of __500__ or after
+ By default messages are flushed in batches of __20__ or after
  the default flush interval of __30__ seconds.
 
 ```go

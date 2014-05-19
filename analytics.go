@@ -81,7 +81,7 @@ func New(key string) (c *Client) {
 
 	return &Client{
 		Debug:         false,
-		BufferSize:    500,
+		BufferSize:    20,
 		FlushInterval: 30 * time.Second,
 		Key:           key,
 		Endpoint:      api,
