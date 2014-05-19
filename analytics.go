@@ -82,7 +82,7 @@ func New(key string) (c *Client) {
 	return &Client{
 		Debug:         false,
 		BufferSize:    20,
-		FlushInterval: 30 * time.Second,
+		FlushInterval: 5 * time.Second,
 		Key:           key,
 		Endpoint:      api,
 		buffer:        make([]Message, 0),

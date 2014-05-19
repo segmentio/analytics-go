@@ -94,7 +94,7 @@ const Version = "0.0.1"
 #### type Client
 
  By default messages are flushed in batches of __20__ or after
- the default flush interval of __30__ seconds.
+ the default flush interval of __5__ seconds.
 
 ```go
 type Client struct {
