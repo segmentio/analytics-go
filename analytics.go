@@ -19,7 +19,7 @@ import "log"
 // Library version
 //
 
-const Version = "0.0.1"
+const Version = "0.0.2"
 
 //
 // Default API end-point
