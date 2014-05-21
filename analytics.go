@@ -71,18 +71,8 @@ func init() {
 // with the given write key.
 //
 
-func New(key string) (c *Client) {
-	defer func() {
-		go func() {
-			for {
-				time.Sleep(c.FlushAfter)
-				c.log("interval %v reached", c.FlushAfter)
-				c.flush()
-			}
-		}()
-	}()
-
-	return &Client{
+func New(key string) *Client {
+	c := &Client{
 		Debug:      false,
 		FlushAt:    20,
 		FlushAfter: 5 * time.Second,
@@ -90,6 +80,24 @@ func New(key string) (c *Client) {
 		Endpoint:   api,
 		buffer:     make([]Message, 0),
 	}
+
+	go c.Start()
+
+	return c
+}
+
+//
+// Start flusher.
+//
+
+func (c *Client) Start() {
+	go func() {
+		for {
+			time.Sleep(c.FlushAfter)
+			c.log("interval %v reached", c.FlushAfter)
+			c.flush()
+		}
+	}()
 }
 
 //
