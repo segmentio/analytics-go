@@ -11,6 +11,7 @@ import "io/ioutil"
 import "net/http"
 import "errors"
 import "bytes"
+import "sync"
 import "time"
 import "log"
 
@@ -37,12 +38,14 @@ type Message map[string]interface{}
 //
 
 type Client struct {
-	Debug      bool
-	FlushAt    int
-	FlushAfter time.Duration
-	Endpoint   string
-	Key        string
-	buffer     []Message
+	Debug       bool
+	FlushAt     int
+	FlushAfter  time.Duration
+	Endpoint    string
+	Key         string
+	buffer      []Message
+	bufferMutex sync.Mutex
+	flushMutex  sync.Mutex
 }
 
 //
@@ -74,7 +77,7 @@ func New(key string) (c *Client) {
 			for {
 				time.Sleep(c.FlushAfter)
 				c.log("interval %v reached", c.FlushAfter)
-				go c.flush()
+				c.flush()
 			}
 		}()
 	}()
@@ -261,6 +264,9 @@ func (c *Client) log(format string, v ...interface{}) {
 //
 
 func (c *Client) queue(msg Message) {
+	c.bufferMutex.Lock()
+	defer c.bufferMutex.Unlock()
+
 	c.buffer = append(c.buffer, msg)
 
 	c.log("buffer (%d/%d) %v", len(c.buffer), c.FlushAt, msg)
@@ -292,6 +298,9 @@ func batchMessage(msgs []Message) *batch {
 //
 
 func (c *Client) flush() error {
+	c.flushMutex.Lock()
+	defer c.flushMutex.Unlock()
+
 	if len(c.buffer) == 0 {
 		c.log("no messages to flush")
 		return nil
