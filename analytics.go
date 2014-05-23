@@ -4,6 +4,7 @@ package analytics
 // dependencies
 //
 
+import . "github.com/visionmedia/go-debug"
 import "github.com/jehiah/go-strftime"
 import "github.com/twinj/uuid"
 import . "encoding/json"
@@ -13,7 +14,6 @@ import "errors"
 import "bytes"
 import "sync"
 import "time"
-import "log"
 
 //
 // Library version
@@ -34,11 +34,16 @@ const api = "https://api.segment.io"
 type Message map[string]interface{}
 
 //
+// Debug.
+//
+
+var debug DebugFunction = Debug("analytics")
+
+//
 // Segment.io client
 //
 
 type Client struct {
-	Debug       bool
 	FlushAt     int
 	FlushAfter  time.Duration
 	Endpoint    string
@@ -73,7 +78,6 @@ func init() {
 
 func New(key string) *Client {
 	c := &Client{
-		Debug:      false,
 		FlushAt:    20,
 		FlushAfter: 5 * time.Second,
 		Key:        key,
@@ -94,7 +98,7 @@ func (c *Client) Start() {
 	go func() {
 		for {
 			time.Sleep(c.FlushAfter)
-			c.log("interval %v reached", c.FlushAfter)
+			debug("interval %v reached", c.FlushAfter)
 			c.flush()
 		}
 	}()
@@ -257,16 +261,6 @@ func timestamp() string {
 }
 
 //
-// Log in debug mode.
-//
-
-func (c *Client) log(format string, v ...interface{}) {
-	if c.Debug {
-		log.Printf(format, v...)
-	}
-}
-
-//
 // Buffer the given message and flush
 // when the buffer exceeds .FlushAt.
 //
@@ -277,7 +271,7 @@ func (c *Client) queue(msg Message) {
 
 	c.buffer = append(c.buffer, msg)
 
-	c.log("buffer (%d/%d) %v", len(c.buffer), c.FlushAt, msg)
+	debug("buffer (%d/%d) %v", len(c.buffer), c.FlushAt, msg)
 
 	if len(c.buffer) >= c.FlushAt {
 		go c.flush()
@@ -310,15 +304,15 @@ func (c *Client) flush() error {
 	defer c.flushMutex.Unlock()
 
 	if len(c.buffer) == 0 {
-		c.log("no messages to flush")
+		debug("no messages to flush")
 		return nil
 	}
 
-	c.log("flushing %d messages", len(c.buffer))
+	debug("flushing %d messages", len(c.buffer))
 	json, err := Marshal(batchMessage(c.buffer))
 
 	if err != nil {
-		c.log("error: %v", err)
+		debug("error: %v", err)
 		return err
 	}
 
@@ -326,11 +320,11 @@ func (c *Client) flush() error {
 
 	client := &http.Client{}
 	url := c.Endpoint + "/v1/import"
-	c.log("POST %s with %d bytes", url, len(json))
+	debug("POST %s with %d bytes", url, len(json))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 
 	if err != nil {
-		c.log("error: %v", err)
+		debug("error: %v", err)
 		return err
 	}
 
@@ -342,16 +336,16 @@ func (c *Client) flush() error {
 	res, err := client.Do(req)
 
 	if err != nil {
-		c.log("error: %v", err)
+		debug("error: %v", err)
 		return err
 	}
 
-	c.log("%d response", res.StatusCode)
+	debug("%d response", res.StatusCode)
 
 	if res.StatusCode >= 400 {
 		body, _ := ioutil.ReadAll(res.Body)
-		c.log("error: %s", string(body))
-		c.log("error: %s", string(json))
+		debug("error: %s", string(body))
+		debug("error: %s", string(json))
 	}
 
 	return err

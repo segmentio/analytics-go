@@ -48,7 +48,6 @@ func main() {
   client := analytics.New("h97jamjw3h")
   client.FlushAfter = 30 * time.Second
   client.FlushAt = 100
-  client.Debug = true
 
   for {
     client.Track(map[string]interface{}{
@@ -98,7 +97,6 @@ const Version = "0.0.1"
 
 ```go
 type Client struct {
-	Debug         bool
 	FlushAt    int
 	FlushAfter time.Duration
 	Endpoint      string
@@ -156,7 +154,7 @@ type Message map[string]interface{}
 
 ## Debugging
 
- Enable `.Debug` to output verbose debugging info:
+ Enable debug output via the __DEBUG__ environment variable, for example `DEBUG=analytics`:
 
 ```
 2014/04/23 18:56:57 buffer (110/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:57-0700}
