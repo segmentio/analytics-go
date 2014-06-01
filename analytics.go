@@ -37,20 +37,19 @@ type Message map[string]interface{}
 // Debug.
 //
 
-var debug DebugFunction = Debug("analytics")
+var debug = Debug("analytics")
 
 //
 // Segment.io client
 //
 
 type Client struct {
-	FlushAt     int
-	FlushAfter  time.Duration
-	Endpoint    string
-	Key         string
-	buffer      []Message
-	bufferMutex sync.Mutex
-	flushMutex  sync.Mutex
+	FlushAt    int
+	FlushAfter time.Duration
+	Endpoint   string
+	Key        string
+	buffer     []Message
+	sync.Mutex
 }
 
 //
@@ -266,8 +265,8 @@ func timestamp() string {
 //
 
 func (c *Client) queue(msg Message) {
-	c.bufferMutex.Lock()
-	defer c.bufferMutex.Unlock()
+	c.Lock()
+	defer c.Unlock()
 
 	c.buffer = append(c.buffer, msg)
 
@@ -300,11 +299,11 @@ func batchMessage(msgs []Message) *batch {
 //
 
 func (c *Client) flush() error {
-	c.flushMutex.Lock()
-	defer c.flushMutex.Unlock()
+	c.Lock()
 
 	if len(c.buffer) == 0 {
 		debug("no messages to flush")
+		c.Unlock()
 		return nil
 	}
 
@@ -313,10 +312,12 @@ func (c *Client) flush() error {
 
 	if err != nil {
 		debug("error: %v", err)
+		c.Unlock()
 		return err
 	}
 
 	c.buffer = nil
+	c.Unlock()
 
 	client := &http.Client{}
 	url := c.Endpoint + "/v1/import"
