@@ -1,6 +1,6 @@
 package main
 
-import "github.com/segmentio/analytics-go"
+import "github.com/ninnemana/analytics-go"
 import "time"
 import "log"
 
