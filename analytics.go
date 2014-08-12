@@ -227,8 +227,10 @@ func newMessage(call string) Message {
 		"timestamp": timestamp(),
 		"messageId": uid(),
 		"context": map[string]interface{}{
-			"version": Version,
-			"library": "analytics-go",
+			"library": map[string]interface{}{
+				"name": "analytics-go",
+				"version": Version,
+			},
 		},
 	}
 }
