@@ -1,4 +1,11 @@
 
+v1.0.0 / 2014-08-26
+==================
+
+ * fix response close
+ * change comments to be more go-like
+ * change uuid libraries
+
 0.1.2 / 2014-06-11
 ==================
 
