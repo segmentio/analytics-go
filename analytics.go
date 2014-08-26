@@ -1,12 +1,8 @@
 package analytics
 
-//
-// dependencies
-//
-
 import . "github.com/visionmedia/go-debug"
 import "github.com/jehiah/go-strftime"
-import "github.com/twinj/uuid"
+import "github.com/xtgo/uuid"
 import . "encoding/json"
 import "io/ioutil"
 import "net/http"
@@ -59,15 +55,6 @@ type Client struct {
 type batch struct {
 	Messages  []Message `json:"batch"`
 	MessageId string    `json:"messageId"`
-}
-
-//
-// UUID formatting.
-//
-
-func init() {
-	// TODO: wtf, this is lame
-	uuid.SwitchFormat(uuid.CleanHyphen, false)
 }
 
 //
@@ -248,7 +235,7 @@ func merge(dst Message, src Message) {
 //
 
 func uid() string {
-	return uuid.NewV4().String()
+	return uuid.NewRandom().String()
 }
 
 //
