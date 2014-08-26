@@ -257,12 +257,11 @@ func (c *Client) flush() error {
 	req.SetBasicAuth(c.Key, "")
 
 	res, err := client.Do(req)
-	defer res.Body.Close()
-
 	if err != nil {
 		debug("error: %v", err)
 		return err
 	}
+	defer res.Body.Close()
 
 	debug("%d response", res.StatusCode)
 
