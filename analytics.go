@@ -11,34 +11,19 @@ import "bytes"
 import "sync"
 import "time"
 
-//
-// Library version
-//
-
+// Library version.
 const Version = "0.0.2"
 
-//
-// Default API end-point
-//
-
+// Default API end-point.
 const api = "https://api.segment.io"
 
-//
 // Message type.
-//
-
 type Message map[string]interface{}
 
-//
 // Debug.
-//
-
 var debug = Debug("analytics")
 
-//
 // Segment.io client
-//
-
 type Client struct {
 	FlushAt    int
 	FlushAfter time.Duration
@@ -48,20 +33,14 @@ type Client struct {
 	sync.Mutex
 }
 
-//
-// Batch message
-//
-
+// Batch message.
 type batch struct {
 	Messages  []Message `json:"batch"`
 	MessageId string    `json:"messageId"`
 }
 
-//
-// Return a new Segment.io client
+// New creates a new Segment.io client
 // with the given write key.
-//
-
 func New(key string) *Client {
 	c := &Client{
 		FlushAt:    20,
@@ -76,10 +55,7 @@ func New(key string) *Client {
 	return c
 }
 
-//
 // Start flusher.
-//
-
 func (c *Client) Start() {
 	go func() {
 		for {
@@ -90,10 +66,7 @@ func (c *Client) Start() {
 	}()
 }
 
-//
-// Buffer an alias message.
-//
-
+// Alias buffers an "alias" message.
 func (c *Client) Alias(msg Message) error {
 	if msg["userId"] == nil {
 		return errors.New("You must pass a 'userId'.")
@@ -108,10 +81,7 @@ func (c *Client) Alias(msg Message) error {
 	return nil
 }
 
-//
-// Buffer a page message.
-//
-
+// Page buffers an "page" message.
 func (c *Client) Page(msg Message) error {
 	if msg["userId"] == nil && msg["anonymousId"] == nil {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
@@ -122,10 +92,7 @@ func (c *Client) Page(msg Message) error {
 	return nil
 }
 
-//
-// Buffer a screen message.
-//
-
+// Screen buffers an "screen" message.
 func (c *Client) Screen(msg Message) error {
 	if msg["userId"] == nil && msg["anonymousId"] == nil {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
@@ -136,10 +103,7 @@ func (c *Client) Screen(msg Message) error {
 	return nil
 }
 
-//
-// Buffer a group message.
-//
-
+// Group buffers an "group" message.
 func (c *Client) Group(msg Message) error {
 	if msg["groupId"] == nil {
 		return errors.New("You must pass a 'groupId'.")
@@ -154,10 +118,7 @@ func (c *Client) Group(msg Message) error {
 	return nil
 }
 
-//
-// Buffer an identify message.
-//
-
+// Identify buffers an "identify" message.
 func (c *Client) Identify(msg Message) error {
 	if msg["userId"] == nil && msg["anonymousId"] == nil {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
@@ -168,10 +129,7 @@ func (c *Client) Identify(msg Message) error {
 	return nil
 }
 
-//
-// Buffer a track message.
-//
-
+// Track buffers an "track" message.
 func (c *Client) Track(msg Message) error {
 	if msg["event"] == nil {
 		return errors.New("You must pass 'event'.")
@@ -186,11 +144,8 @@ func (c *Client) Track(msg Message) error {
 	return nil
 }
 
-//
 // Return a new initialized message map
 // with `msg` values and context merged.
-//
-
 func message(msg Message, call string) Message {
 	m := newMessage(call)
 
@@ -204,10 +159,7 @@ func message(msg Message, call string) Message {
 	return m
 }
 
-//
 // Return new initialzed message map.
-//
-
 func newMessage(call string) Message {
 	return Message{
 		"type":      call,
@@ -220,37 +172,25 @@ func newMessage(call string) Message {
 	}
 }
 
-//
 // Merge two maps.
-//
-
 func merge(dst Message, src Message) {
 	for k, v := range src {
 		dst[k] = v
 	}
 }
 
-//
 // Return uuid.
-//
-
 func uid() string {
 	return uuid.NewRandom().String()
 }
 
-//
 // Return formatted timestamp.
-//
-
 func timestamp() string {
 	return strftime.Format("%Y-%m-%dT%H:%M:%S%z", time.Now())
 }
 
-//
 // Buffer the given message and flush
 // when the buffer exceeds .FlushAt.
-//
-
 func (c *Client) queue(msg Message) {
 	c.Lock()
 	defer c.Unlock()
@@ -264,11 +204,8 @@ func (c *Client) queue(msg Message) {
 	}
 }
 
-//
 // Return a batch message primed
-// with context properties
-//
-
+// with context properties.
 func batchMessage(msgs []Message) *batch {
 	return &batch{
 		MessageId: uid(),
@@ -276,7 +213,6 @@ func batchMessage(msgs []Message) *batch {
 	}
 }
 
-//
 // Flush the buffered messages.
 //
 // TODO: better error-handling,
@@ -284,7 +220,6 @@ func batchMessage(msgs []Message) *batch {
 // be better if we used a chan
 // to deliver them.
 //
-
 func (c *Client) flush() error {
 	c.Lock()
 
