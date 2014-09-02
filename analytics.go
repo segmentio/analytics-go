@@ -30,6 +30,7 @@ type Client struct {
 	Endpoint   string
 	Key        string
 	buffer     []Message
+	wg         sync.WaitGroup
 	sync.Mutex
 }
 
@@ -50,13 +51,19 @@ func New(key string) *Client {
 		buffer:     make([]Message, 0),
 	}
 
-	go c.Start()
+	go c.start()
 
 	return c
 }
 
-// Start flusher.
-func (c *Client) Start() {
+// Stop the client, flush messages and wait for requests to complete.
+func (c *Client) Stop() {
+	c.flush()
+	c.wg.Wait()
+}
+
+// start flusher.
+func (c *Client) start() {
 	go func() {
 		for {
 			time.Sleep(c.FlushAfter)
@@ -149,8 +156,8 @@ func (c *Client) Track(msg Message) error {
 func message(msg Message, call string) Message {
 	m := newMessage(call)
 
-	if msg["context"] != nil {
-		merge(m["context"].(map[string]interface{}), msg["context"].(map[string]interface{}))
+	if ctx, ok := msg["context"].(map[string]interface{}); ok {
+		merge(m["context"].(map[string]interface{}), ctx)
 		delete(msg, "context")
 	}
 
@@ -197,6 +204,7 @@ func (c *Client) queue(msg Message) {
 	c.Lock()
 	defer c.Unlock()
 
+	c.wg.Add(1)
 	c.buffer = append(c.buffer, msg)
 
 	debug("buffer (%d/%d) %v", len(c.buffer), c.FlushAt, msg)
@@ -216,12 +224,6 @@ func batchMessage(msgs []Message) *batch {
 }
 
 // Flush the buffered messages.
-//
-// TODO: better error-handling,
-// this is really meh, it would
-// be better if we used a chan
-// to deliver them.
-//
 func (c *Client) flush() error {
 	c.Lock()
 
@@ -232,6 +234,7 @@ func (c *Client) flush() error {
 	}
 
 	debug("flushing %d messages", len(c.buffer))
+	defer c.wg.Add(-len(c.buffer))
 	json, err := Marshal(batchMessage(c.buffer))
 
 	if err != nil {

@@ -7,7 +7,9 @@
 
     $ go get github.com/segmentio/analytics-go
 
-## Example
+## Examples
+
+### Basic
 
   Full example void of `client.Track` error-handling for brevity:
 
@@ -36,7 +38,9 @@ func main() {
 }
 ```
 
-With customized client:
+### Client options
+
+  Example with customized client:
 
 ```go
 package main
@@ -65,6 +69,8 @@ func main() {
 }
 ```
 
+### Context
+
 For each call a `context` map may be passed, which
 is merged with the original values.
 
@@ -84,72 +90,77 @@ client.Track(map[string]interface{}{
 })
 ```
 
-## API
+### Flushing on shutdown
+
+  The following example illustrates how `.Stop()`
+  may be used to flush and wait for pending calls
+  to be sent to Segment.
 
 ```go
-const Version = "0.0.1"
-```
+package main
 
-#### type Client
+import "github.com/visionmedia/go-gracefully"
+import "github.com/segmentio/analytics-go"
+import "time"
+import "log"
 
- By default messages are flushed in batches of __20__ or after
- the default flush interval of __5__ seconds.
-
-```go
-type Client struct {
-	FlushAt    int
-	FlushAfter time.Duration
-	Endpoint      string
-	Key           string
+type Worker struct {
+  analytics *analytics.Client
+  exit      chan struct{}
 }
-```
 
-#### func  New
+func (w *Worker) Start() {
+  println("starting")
 
-```go
-func New(key string) (c *Client)
-```
+  go func() {
+    for {
+      select {
+      case <-w.exit:
+        return
+      case <-time.Tick(50 * time.Millisecond):
+        log.Println("send track")
 
-#### func (*Client) Alias
+        w.analytics.Track(map[string]interface{}{
+          "event":  "Download",
+          "userId": "123456",
+          "properties": map[string]interface{}{
+            "application": "Segment Desktop",
+            "version":     "1.1.0",
+            "platform":    "osx",
+          },
+        })
+      }
+    }
+  }()
+}
 
-```go
-func (c *Client) Alias(msg Message) error
-```
+func (w *Worker) Stop() {
+  println("stopping")
+  close(w.exit)
+  println("flushing analytics")
+  w.analytics.Stop()
+  println("bye :)")
+}
 
-#### func (*Client) Group
+func NewWorker(client *analytics.Client) *Worker {
+  return &Worker{
+    analytics: client,
+    exit:      make(chan struct{}),
+  }
+}
 
-```go
-func (c *Client) Group(msg Message) error
-```
+// run with DEBUG=analytics to view
+// analytics-specific debug output
+func main() {
+  client := analytics.New("h97jamjw3h")
+  client.FlushAfter = 5 * time.Second
+  client.FlushAt = 25
 
-#### func (*Client) Identify
-
-```go
-func (c *Client) Identify(msg Message) error
-```
-
-#### func (*Client) Page
-
-```go
-func (c *Client) Page(msg Message) error
-```
-
-#### func (*Client) Screen
-
-```go
-func (c *Client) Screen(msg Message) error
-```
-
-#### func (*Client) Track
-
-```go
-func (c *Client) Track(msg Message) error
-```
-
-#### type Message
-
-```go
-type Message map[string]interface{}
+  w := NewWorker(client)
+  w.Start()
+  gracefully.Shutdown()
+  w.Stop()
+}
 ```
 
 ## Debugging
