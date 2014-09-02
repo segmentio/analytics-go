@@ -20,7 +20,7 @@ import "github.com/segmentio/analytics-go"
 import "time"
 
 func main() {
-  client := analytics.New("h97jamjw3h")
+  client := analytics.New("your-write-key-here")
 
   for {
     client.Track(map[string]interface{}{
@@ -49,7 +49,7 @@ import "github.com/segmentio/analytics-go"
 import "time"
 
 func main() {
-  client := analytics.New("h97jamjw3h")
+  client := analytics.New("your-write-key-here")
   client.FlushAfter = 30 * time.Second
   client.FlushAt = 100
 
@@ -152,7 +152,7 @@ func NewWorker(client *analytics.Client) *Worker {
 // run with DEBUG=analytics to view
 // analytics-specific debug output
 func main() {
-  client := analytics.New("h97jamjw3h")
+  client := analytics.New("your-write-key-here")
   client.FlushAfter = 5 * time.Second
   client.FlushAt = 25
 
