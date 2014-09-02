@@ -1,7 +1,7 @@
 # analytics-go
 
   Segment.io analytics client for Go. For additional documentation
-  visit [https://segment.io/docs/libraries/go/]https://segment.io/docs/libraries/go/) or view the [godocs](http://godoc.org/github.com/segmentio/analytics-go).
+  visit [https://segment.io/docs/libraries/go](https://segment.io/docs/libraries/go/) or view the [godocs](http://godoc.org/github.com/segmentio/analytics-go).
 
 ## Installation
 
