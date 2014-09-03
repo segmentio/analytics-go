@@ -138,7 +138,7 @@ func (w *Worker) Stop() {
   println("stopping")
   close(w.exit)
   println("flushing analytics")
-  w.analytics.Stop()
+  w.analytics.Close()
   println("bye :)")
 }
 

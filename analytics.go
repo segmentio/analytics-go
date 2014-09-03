@@ -56,8 +56,9 @@ func New(key string) *Client {
 	return c
 }
 
-// Stop the client, flush messages and wait for requests to complete.
-func (c *Client) Stop() {
+// Close the client, flushes pending messages and
+// wait for request(s) to complete.
+func (c *Client) Close() {
 	c.Flush()
 	c.wg.Wait()
 }
