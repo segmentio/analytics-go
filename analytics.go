@@ -58,7 +58,7 @@ func New(key string) *Client {
 
 // Stop the client, flush messages and wait for requests to complete.
 func (c *Client) Stop() {
-	c.flush()
+	c.Flush()
 	c.wg.Wait()
 }
 
@@ -68,7 +68,7 @@ func (c *Client) start() {
 		for {
 			time.Sleep(c.FlushAfter)
 			debug("interval %v reached", c.FlushAfter)
-			c.flush()
+			c.Flush()
 		}
 	}()
 }
@@ -210,7 +210,7 @@ func (c *Client) queue(msg Message) {
 	debug("buffer (%d/%d) %v", len(c.buffer), c.FlushAt, msg)
 
 	if len(c.buffer) >= c.FlushAt {
-		go c.flush()
+		go c.Flush()
 	}
 }
 
@@ -223,8 +223,8 @@ func batchMessage(msgs []Message) *batch {
 	}
 }
 
-// Flush the buffered messages.
-func (c *Client) flush() error {
+// Flush the buffered messages, returning an error if the request fails.
+func (c *Client) Flush() error {
 	c.Lock()
 
 	if len(c.buffer) == 0 {
