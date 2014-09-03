@@ -12,7 +12,7 @@ import "sync"
 import "time"
 
 // Library version.
-const Version = "1.1.0"
+const Version = "1.2.0"
 
 // Default API end-point.
 const api = "https://api.segment.io"
