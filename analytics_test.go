@@ -40,7 +40,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-// Identify should return an expected error if "userId" or "anonymousId" doesn't provided
+// Identify should return an expected error if "userId" or "anonymousId" doesn't exists
 func TestIdentify(t *testing.T) {
 	valid_client := New("this is a secret, you can't read it. don't you?")
 	cases := []struct {
@@ -74,6 +74,11 @@ func TestIdentify(t *testing.T) {
 		if err != nil && c.expected_err != nil {
 			if err.Error() != c.expected_err.Error() {
 				t.Errorf("got: %v, expected: %v", err, c.expected_err)
+			}
+		}
+
+	}
+}
 
 			}
 		}
