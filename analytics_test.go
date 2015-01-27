@@ -213,3 +213,71 @@ func TestScreen(t *testing.T) {
 
 	}
 }
+
+// Group should return an expected error if the following are true:
+// 1. "groupId" doesn't exists
+// 2. "userId" or "anonymousId" doesn't exists
+func TestGroup(t *testing.T) {
+	valid_client := New("OH: this is a secret boy!")
+	cases := []struct {
+		client       *Client
+		msg          Message
+		expected_err error
+	}{
+		{
+			valid_client,
+			Message{
+				"userId":  "1",
+				"groupId": "1",
+				"traits":  map[string]interface{}{},
+			},
+			nil,
+		},
+		{
+			valid_client,
+			Message{
+				"anonymousId": "1",
+				"groupId":     "1",
+				"traits":      map[string]interface{}{},
+			},
+			nil,
+		},
+		{
+			valid_client,
+			Message{
+				"groupId": "1",
+				"traits":  map[string]interface{}{},
+			},
+			errors.New("You must pass either an 'anonymousId' or 'userId'."),
+		},
+		{
+			valid_client,
+			Message{
+				"userId": "1",
+				"traits": map[string]interface{}{},
+			},
+			errors.New("You must pass a 'groupId'."),
+		},
+		{
+			valid_client,
+			Message{
+				"anonymousId": "1",
+				"traits":      map[string]interface{}{},
+			},
+			errors.New("You must pass a 'groupId'."),
+		},
+	}
+
+	for _, c := range cases {
+		err := valid_client.Group(c.msg)
+		if (err == nil && c.expected_err != nil) || (err != nil && c.expected_err == nil) {
+			t.Errorf("got: %v, expected: %v", err, c.expected_err)
+		}
+		if err != nil && c.expected_err != nil {
+			if err.Error() != c.expected_err.Error() {
+				t.Errorf("got: %v, expected: %v", err, c.expected_err)
+			}
+		}
+
+	}
+}
