@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"errors"
 	"testing"
 	"time"
 )
@@ -36,5 +37,46 @@ func TestNew(t *testing.T) {
 		if got.Endpoint != c.expected_client.Endpoint {
 			t.Errorf("got: %v, expected: %v", got.Endpoint, c.expected_client.Endpoint)
 		}
+	}
+}
+
+// Identify should return an expected error if "userId" or "anonymousId" doesn't provided
+func TestIdentify(t *testing.T) {
+	valid_client := New("this is a secret, you can't read it. don't you?")
+	cases := []struct {
+		client       *Client
+		msg          Message
+		expected_err error
+	}{
+		{
+			valid_client,
+			Message{"userId": "1", "traits": map[string]interface{}{}},
+			nil,
+		},
+		{
+			valid_client,
+			Message{"anonymousId": "1", "traits": map[string]interface{}{}},
+			nil,
+		},
+		{
+			valid_client,
+			Message{"traits": map[string]interface{}{}},
+			errors.New("You must pass either an 'anonymousId' or 'userId'."),
+		},
+	}
+
+	for _, c := range cases {
+		err := valid_client.Identify(c.msg)
+		if (err == nil && c.expected_err != nil) || (err != nil && c.expected_err == nil) {
+			t.Errorf("got: %v, expected: %v", err, c.expected_err)
+
+		}
+		if err != nil && c.expected_err != nil {
+			if err.Error() != c.expected_err.Error() {
+				t.Errorf("got: %v, expected: %v", err, c.expected_err)
+
+			}
+		}
+
 	}
 }
