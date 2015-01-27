@@ -281,3 +281,47 @@ func TestGroup(t *testing.T) {
 
 	}
 }
+
+// Alias should return an expected error if "userId" or "previousId" doesn't exists
+func TestAlias(t *testing.T) {
+	valid_client := New("Sugar ... Yes Please .. (Maroon 5 Sugar)")
+	cases := []struct {
+		client       *Client
+		msg          Message
+		expected_err error
+	}{
+		{
+			valid_client,
+			Message{"userId": "1", "previousId": "1"},
+			nil,
+		},
+		{
+			valid_client,
+			Message{"userId": "1"},
+			errors.New("You must pass a 'previousId'."),
+		},
+		{
+			valid_client,
+			Message{"previousId": "1"},
+			errors.New("You must pass a 'userId'."),
+		},
+		{
+			valid_client,
+			Message{"someId": "1", "otherId": "1"},
+			errors.New("You must pass a 'userId'."),
+		},
+	}
+
+	for _, c := range cases {
+		err := valid_client.Alias(c.msg)
+		if (err == nil && c.expected_err != nil) || (err != nil && c.expected_err == nil) {
+			t.Errorf("got: %v, expected: %v", err, c.expected_err)
+		}
+		if err != nil && c.expected_err != nil {
+			if err.Error() != c.expected_err.Error() {
+				t.Errorf("got: %v, expected: %v", err, c.expected_err)
+			}
+		}
+
+	}
+}
