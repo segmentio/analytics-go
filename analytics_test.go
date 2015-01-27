@@ -69,7 +69,6 @@ func TestIdentify(t *testing.T) {
 		err := valid_client.Identify(c.msg)
 		if (err == nil && c.expected_err != nil) || (err != nil && c.expected_err == nil) {
 			t.Errorf("got: %v, expected: %v", err, c.expected_err)
-
 		}
 		if err != nil && c.expected_err != nil {
 			if err.Error() != c.expected_err.Error() {
@@ -80,6 +79,53 @@ func TestIdentify(t *testing.T) {
 	}
 }
 
+// Track should return an expected error if the following are true:
+// 1. "event" doesn't exists
+// 2. "userId" or "anonymousId" doesn't exists
+func TestTrack(t *testing.T) {
+	valid_client := New("this is an another secret. please don't read it.")
+	cases := []struct {
+		client       *Client
+		msg          Message
+		expected_err error
+	}{
+		{
+			valid_client,
+			Message{"userId": "1", "event": "registered",
+				"properties": map[string]interface{}{}},
+			nil,
+		},
+		{
+			valid_client,
+			Message{"anonymousId": "1", "event": "registered",
+				"properties": map[string]interface{}{}},
+			nil,
+		},
+		{
+			valid_client,
+			Message{"event": "registered", "properties": map[string]interface{}{}},
+			errors.New("You must pass either an 'anonymousId' or 'userId'."),
+		},
+		{
+			valid_client,
+			Message{"userId": "1", "properties": map[string]interface{}{}},
+			errors.New("You must pass 'event'."),
+		},
+		{
+			valid_client,
+			Message{"anonymousId": "1", "properties": map[string]interface{}{}},
+			errors.New("You must pass 'event'."),
+		},
+	}
+
+	for _, c := range cases {
+		err := valid_client.Track(c.msg)
+		if (err == nil && c.expected_err != nil) || (err != nil && c.expected_err == nil) {
+			t.Errorf("got: %v, expected: %v", err, c.expected_err)
+		}
+		if err != nil && c.expected_err != nil {
+			if err.Error() != c.expected_err.Error() {
+				t.Errorf("got: %v, expected: %v", err, c.expected_err)
 			}
 		}
 
