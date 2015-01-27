@@ -172,3 +172,44 @@ func TestPage(t *testing.T) {
 
 	}
 }
+
+// Screen should return an expected error if userId" or "anonymousId" doesn't exists
+func TestScreen(t *testing.T) {
+	valid_client := New("i'm out")
+	cases := []struct {
+		client       *Client
+		msg          Message
+		expected_err error
+	}{
+		{
+			valid_client,
+			Message{"userId": "1", "name": "Cover", "category": "Guide",
+				"properties": map[string]interface{}{}},
+			nil,
+		},
+		{
+			valid_client,
+			Message{"anonymousId": "1", "name": "About", "category": "About",
+				"properties": map[string]interface{}{}},
+			nil,
+		},
+		{
+			valid_client,
+			Message{"name": "Post New", "properties": map[string]interface{}{}},
+			errors.New("You must pass either an 'anonymousId' or 'userId'."),
+		},
+	}
+
+	for _, c := range cases {
+		err := valid_client.Screen(c.msg)
+		if (err == nil && c.expected_err != nil) || (err != nil && c.expected_err == nil) {
+			t.Errorf("got: %v, expected: %v", err, c.expected_err)
+		}
+		if err != nil && c.expected_err != nil {
+			if err.Error() != c.expected_err.Error() {
+				t.Errorf("got: %v, expected: %v", err, c.expected_err)
+			}
+		}
+
+	}
+}
