@@ -37,16 +37,16 @@ type response struct {
 
 // Message fields common to all.
 type Message struct {
-	Type      string                 `json:"type,omitempty"`
-	MessageId string                 `json:"messageId,omitempty"`
-	Timestamp string                 `json:"timestamp,omitempty"`
-	SentAt    string                 `json:"sentAt,omitempty"`
-	Context   map[string]interface{} `json:"context,omitempty"`
+	Type      string `json:"type,omitempty"`
+	MessageId string `json:"messageId,omitempty"`
+	Timestamp string `json:"timestamp,omitempty"`
+	SentAt    string `json:"sentAt,omitempty"`
 }
 
 // Batch message.
 type Batch struct {
-	Messages []interface{} `json:"batch"`
+	Messages []interface{}          `json:"batch"`
+	Context  map[string]interface{} `json:"context,omitempty"`
 	Message
 }
 
@@ -55,6 +55,7 @@ type Identify struct {
 	Traits      map[string]interface{} `json:"traits,omitempty"`
 	AnonymousId string                 `json:"anonymousId,omitempty"`
 	UserId      string                 `json:"userId,omitempty"`
+	Context     map[string]interface{} `json:"context,omitempty"`
 	Message
 }
 
@@ -64,6 +65,7 @@ type Group struct {
 	AnonymousId string                 `json:"anonymousId,omitempty"`
 	UserId      string                 `json:"userId,omitempty"`
 	GroupId     string                 `json:"groupId"`
+	Context     map[string]interface{} `json:"context,omitempty"`
 	Message
 }
 
@@ -73,6 +75,7 @@ type Track struct {
 	AnonymousId string                 `json:"anonymousId,omitempty"`
 	UserId      string                 `json:"userId,omitempty"`
 	Event       string                 `json:"event"`
+	Context     map[string]interface{} `json:"context,omitempty"`
 	Message
 }
 
@@ -83,6 +86,7 @@ type Page struct {
 	UserId      string                 `json:"userId,omitempty"`
 	Category    string                 `json:"category,omitempty"`
 	Name        string                 `json:"name,omitempty"`
+	Context     map[string]interface{} `json:"context,omitempty"`
 	Message
 }
 
