@@ -45,48 +45,48 @@ type Message struct {
 
 // Batch message.
 type Batch struct {
-	Messages []interface{}          `json:"batch"`
 	Context  map[string]interface{} `json:"context,omitempty"`
+	Messages []interface{}          `json:"batch"`
 	Message
 }
 
 // Identify message.
 type Identify struct {
+	Context     map[string]interface{} `json:"context,omitempty"`
 	Traits      map[string]interface{} `json:"traits,omitempty"`
 	AnonymousId string                 `json:"anonymousId,omitempty"`
 	UserId      string                 `json:"userId,omitempty"`
-	Context     map[string]interface{} `json:"context,omitempty"`
 	Message
 }
 
 // Group message.
 type Group struct {
+	Context     map[string]interface{} `json:"context,omitempty"`
 	Traits      map[string]interface{} `json:"traits,omitempty"`
 	AnonymousId string                 `json:"anonymousId,omitempty"`
 	UserId      string                 `json:"userId,omitempty"`
 	GroupId     string                 `json:"groupId"`
-	Context     map[string]interface{} `json:"context,omitempty"`
 	Message
 }
 
 // Track message.
 type Track struct {
+	Context     map[string]interface{} `json:"context,omitempty"`
 	Properties  map[string]interface{} `json:"properties,omitempty"`
 	AnonymousId string                 `json:"anonymousId,omitempty"`
 	UserId      string                 `json:"userId,omitempty"`
 	Event       string                 `json:"event"`
-	Context     map[string]interface{} `json:"context,omitempty"`
 	Message
 }
 
 // Page message.
 type Page struct {
+	Context     map[string]interface{} `json:"context,omitempty"`
 	Traits      map[string]interface{} `json:"properties,omitempty"`
 	AnonymousId string                 `json:"anonymousId,omitempty"`
 	UserId      string                 `json:"userId,omitempty"`
 	Category    string                 `json:"category,omitempty"`
 	Name        string                 `json:"name,omitempty"`
-	Context     map[string]interface{} `json:"context,omitempty"`
 	Message
 }
 
