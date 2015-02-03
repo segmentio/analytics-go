@@ -284,14 +284,14 @@ func (c *Client) loop() {
 			}
 		case <-tick.C:
 			if len(msgs) > 0 {
-				c.verbose("interval reached - flushing")
+				c.verbose("interval reached - flushing %d", len(msgs))
 				c.send(msgs)
 				msgs = nil
 			} else {
 				c.verbose("interval reached – nothing to send")
 			}
 		case <-c.quit:
-			c.verbose("exit requested – flushing")
+			c.verbose("exit requested – flushing %d", len(msgs))
 			c.send(msgs)
 			c.verbose("exit")
 			c.quit <- true
