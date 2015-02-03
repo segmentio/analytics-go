@@ -1,281 +1,333 @@
 package analytics
 
-import . "github.com/visionmedia/go-debug"
 import "github.com/jehiah/go-strftime"
 import "github.com/xtgo/uuid"
-import . "encoding/json"
-import "io/ioutil"
+import "encoding/json"
 import "net/http"
 import "errors"
 import "bytes"
-import "sync"
 import "time"
+import "log"
 
-// Library version.
-const Version = "1.2.0"
+// Version of the client.
+var version = "2.0.0"
 
-// Default API end-point.
-const api = "https://api.segment.io"
+// Endpoint for the Segment API.
+var Endpoint = "https://api.segment.io"
 
-// Message type.
-type Message map[string]interface{}
+// DefaultContext of message batches.
+var DefaultContext = map[string]interface{}{
+	"library": map[string]interface{}{
+		"name":    "analytics-go",
+		"version": version,
+	},
+}
 
-// Debug.
-var debug = Debug("analytics")
+// Message interface.
+type message interface {
+	setMessageId(string)
+	setTimestamp(string)
+}
 
-// Segment.io client
-type Client struct {
-	FlushAt    int
-	FlushAfter time.Duration
-	Endpoint   string
-	Key        string
-	buffer     []Message
-	wg         sync.WaitGroup
-	sync.Mutex
+// Response from API.
+type response struct {
+	Message string `json:"message"`
+	Code    string `json:"code"`
+}
+
+// Message fields common to all.
+type Message struct {
+	Type      string                 `json:"type,omitempty"`
+	MessageId string                 `json:"messageId,omitempty"`
+	Timestamp string                 `json:"timestamp,omitempty"`
+	SentAt    string                 `json:"sentAt,omitempty"`
+	Context   map[string]interface{} `json:"context,omitempty"`
 }
 
 // Batch message.
-type batch struct {
-	Messages  []Message `json:"batch"`
-	MessageId string    `json:"messageId"`
+type Batch struct {
+	Messages []interface{} `json:"batch"`
+	Message
 }
 
-// New creates a new Segment.io client
-// with the given write key.
+// Identify message.
+type Identify struct {
+	Traits      map[string]interface{} `json:"traits,omitempty"`
+	AnonymousId string                 `json:"anonymousId,omitempty"`
+	UserId      string                 `json:"userId,omitempty"`
+	Message
+}
+
+// Group message.
+type Group struct {
+	Traits      map[string]interface{} `json:"traits,omitempty"`
+	AnonymousId string                 `json:"anonymousId,omitempty"`
+	UserId      string                 `json:"userId,omitempty"`
+	GroupId     string                 `json:"groupId"`
+	Message
+}
+
+// Track message.
+type Track struct {
+	Properties  map[string]interface{} `json:"properties,omitempty"`
+	AnonymousId string                 `json:"anonymousId,omitempty"`
+	UserId      string                 `json:"userId,omitempty"`
+	Event       string                 `json:"event"`
+	Message
+}
+
+// Page message.
+type Page struct {
+	Traits      map[string]interface{} `json:"properties,omitempty"`
+	AnonymousId string                 `json:"anonymousId,omitempty"`
+	UserId      string                 `json:"userId,omitempty"`
+	Category    string                 `json:"category,omitempty"`
+	Name        string                 `json:"name,omitempty"`
+	Message
+}
+
+// Alias message.
+type Alias struct {
+	PreviousId string `json:"previousId"`
+	UserId     string `json:"userId,omitempty"`
+	Message
+}
+
+// Client which batches messages and flushes at the given Interval or
+// when the Size limit is exceeded. Set Verbose to true to enable
+// logging output.
+type Client struct {
+	Endpoint string
+	Interval time.Duration
+	Verbose  bool
+	Size     int
+	key      string
+	msgs     chan interface{}
+	quit     chan bool
+
+	uid func() string
+	now func() time.Time
+}
+
+// New client with write key.
 func New(key string) *Client {
 	c := &Client{
-		FlushAt:    20,
-		FlushAfter: 5 * time.Second,
-		Key:        key,
-		Endpoint:   api,
-		buffer:     make([]Message, 0),
+		msgs:     make(chan interface{}, 100),
+		quit:     make(chan bool),
+		Interval: 5 * time.Second,
+		Endpoint: Endpoint,
+		Size:     250,
+		key:      key,
+		now:      time.Now,
+		uid:      uid,
 	}
 
-	go c.start()
+	go c.loop()
 
 	return c
 }
 
-// Close the client, flushes pending messages and
-// wait for request(s) to complete.
-func (c *Client) Close() {
-	c.Flush()
-	c.wg.Wait()
-}
-
-// start flusher.
-func (c *Client) start() {
-	go func() {
-		for {
-			time.Sleep(c.FlushAfter)
-			debug("interval %v reached", c.FlushAfter)
-			c.Flush()
-		}
-	}()
-}
-
 // Alias buffers an "alias" message.
-func (c *Client) Alias(msg Message) error {
-	if msg["userId"] == nil {
+func (c *Client) Alias(msg *Alias) error {
+	if msg.UserId == "" {
 		return errors.New("You must pass a 'userId'.")
 	}
 
-	if msg["previousId"] == nil {
+	if msg.PreviousId == "" {
 		return errors.New("You must pass a 'previousId'.")
 	}
 
-	c.queue(message(msg, "alias"))
+	msg.Type = "alias"
+	c.queue(msg)
 
 	return nil
 }
 
 // Page buffers an "page" message.
-func (c *Client) Page(msg Message) error {
-	if msg["userId"] == nil && msg["anonymousId"] == nil {
+func (c *Client) Page(msg *Page) error {
+	if msg.UserId == "" && msg.AnonymousId == "" {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
 	}
 
-	c.queue(message(msg, "page"))
-
-	return nil
-}
-
-// Screen buffers an "screen" message.
-func (c *Client) Screen(msg Message) error {
-	if msg["userId"] == nil && msg["anonymousId"] == nil {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
-	}
-
-	c.queue(message(msg, "screen"))
+	msg.Type = "page"
+	c.queue(msg)
 
 	return nil
 }
 
 // Group buffers an "group" message.
-func (c *Client) Group(msg Message) error {
-	if msg["groupId"] == nil {
+func (c *Client) Group(msg *Group) error {
+	if msg.GroupId == "" {
 		return errors.New("You must pass a 'groupId'.")
 	}
 
-	if msg["userId"] == nil && msg["anonymousId"] == nil {
+	if msg.UserId == "" && msg.AnonymousId == "" {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
 	}
 
-	c.queue(message(msg, "group"))
+	msg.Type = "group"
+	c.queue(msg)
 
 	return nil
 }
 
 // Identify buffers an "identify" message.
-func (c *Client) Identify(msg Message) error {
-	if msg["userId"] == nil && msg["anonymousId"] == nil {
+func (c *Client) Identify(msg *Identify) error {
+	if msg.UserId == "" && msg.AnonymousId == "" {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
 	}
 
-	c.queue(message(msg, "identify"))
+	msg.Type = "identify"
+	c.queue(msg)
 
 	return nil
 }
 
 // Track buffers an "track" message.
-func (c *Client) Track(msg Message) error {
-	if msg["event"] == nil {
+func (c *Client) Track(msg *Track) error {
+	if msg.Event == "" {
 		return errors.New("You must pass 'event'.")
 	}
 
-	if msg["userId"] == nil && msg["anonymousId"] == nil {
+	if msg.UserId == "" && msg.AnonymousId == "" {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
 	}
 
-	c.queue(message(msg, "track"))
+	msg.Type = "track"
+	c.queue(msg)
 
 	return nil
 }
 
-// Return a new initialized message map
-// with `msg` values and context merged.
-func message(msg Message, call string) Message {
-	m := newMessage(call)
-
-	if ctx, ok := msg["context"].(map[string]interface{}); ok {
-		merge(m["context"].(map[string]interface{}), ctx)
-		delete(msg, "context")
-	}
-
-	merge(m, msg)
-
-	return m
+// Queue message.
+func (c *Client) queue(msg message) {
+	msg.setMessageId(c.uid())
+	msg.setTimestamp(timestamp(c.now()))
+	c.msgs <- msg
 }
 
-// Return new initialzed message map.
-func newMessage(call string) Message {
-	return Message{
-		"type":      call,
-		"timestamp": timestamp(),
-		"messageId": uid(),
-		"context": map[string]interface{}{
-			"library": map[string]interface{}{
-				"name":    "analytics-go",
-				"version": Version,
-			},
-		},
-	}
+// Close and flush metrics.
+func (c *Client) Close() error {
+	c.quit <- true
+	close(c.msgs)
+	<-c.quit
+	return nil
 }
 
-// Merge two maps.
-func merge(dst Message, src Message) {
-	for k, v := range src {
-		dst[k] = v
-	}
-}
+// Send batch request.
+func (c *Client) send(msgs []interface{}) {
+	batch := new(Batch)
+	batch.Messages = msgs
+	batch.MessageId = c.uid()
+	batch.SentAt = timestamp(c.now())
+	batch.Context = DefaultContext
 
-// Return uuid.
-func uid() string {
-	return uuid.NewRandom().String()
-}
-
-// Return formatted timestamp.
-func timestamp() string {
-	return strftime.Format("%Y-%m-%dT%H:%M:%S%z", time.Now())
-}
-
-// Buffer the given message and flush
-// when the buffer exceeds .FlushAt.
-func (c *Client) queue(msg Message) {
-	c.Lock()
-	defer c.Unlock()
-
-	c.wg.Add(1)
-	c.buffer = append(c.buffer, msg)
-
-	debug("buffer (%d/%d) %v", len(c.buffer), c.FlushAt, msg)
-
-	if len(c.buffer) >= c.FlushAt {
-		go c.Flush()
-	}
-}
-
-// Return a batch message primed
-// with context properties.
-func batchMessage(msgs []Message) *batch {
-	return &batch{
-		MessageId: uid(),
-		Messages:  msgs,
-	}
-}
-
-// Flush the buffered messages, returning an error if the request fails.
-func (c *Client) Flush() error {
-	c.Lock()
-
-	if len(c.buffer) == 0 {
-		debug("no messages to flush")
-		c.Unlock()
-		return nil
-	}
-
-	debug("flushing %d messages", len(c.buffer))
-	defer c.wg.Add(-len(c.buffer))
-	json, err := Marshal(batchMessage(c.buffer))
-
+	b, err := json.Marshal(batch)
 	if err != nil {
-		debug("error: %v", err)
-		c.Unlock()
-		return err
+		c.log("error marshalling msgs: %s", err)
+		return
 	}
 
-	c.buffer = nil
-	c.Unlock()
-
-	client := &http.Client{}
-	url := c.Endpoint + "/v1/import"
-	debug("POST %s with %d bytes", url, len(json))
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
-
+	url := c.Endpoint + "/v1/batch"
+	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
-		debug("error: %v", err)
-		return err
+		c.log("error creating request: %s", err)
+		return
 	}
 
-	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
+	req.Header.Add("User-Agent", "analytics-go (version: "+version+")")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Content-Length", string(len(json)))
-	req.SetBasicAuth(c.Key, "")
+	req.Header.Add("Content-Length", string(len(b)))
+	req.SetBasicAuth(c.key, "")
 
-	res, err := client.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		debug("error: %v", err)
-		return err
+		c.log("error sending request: %s", err)
+		return
 	}
 	defer res.Body.Close()
 
-	debug("%d response", res.StatusCode)
+	c.report(res)
+}
 
-	if res.StatusCode >= 400 {
-		body, _ := ioutil.ReadAll(res.Body)
-		debug("error: %s", string(body))
-		debug("error: %s", string(json))
+// Report on response body.
+func (c *Client) report(res *http.Response) {
+	if res.StatusCode < 400 {
+		c.verbose("response %s", res.Status)
+		return
 	}
 
-	return err
+	msg := new(response)
+	err := json.NewDecoder(res.Body).Decode(msg)
+	if err != nil {
+		c.log("error reading response: %s", err)
+		return
+	}
+
+	c.log("response %s: %s – %s", res.Status, msg.Code, msg.Message)
+}
+
+// Batch loop.
+func (c *Client) loop() {
+	var msgs []interface{}
+	tick := time.NewTicker(c.Interval)
+
+	for {
+		select {
+		case msg := <-c.msgs:
+			c.verbose("buffer (%d/%d) %v", len(msgs), c.Size, msg)
+			msgs = append(msgs, msg)
+			if len(msgs) == c.Size {
+				c.verbose("exceeded %d messages – flushing", c.Size)
+				c.send(msgs)
+				msgs = nil
+			}
+		case <-tick.C:
+			if len(msgs) > 0 {
+				c.verbose("interval reached - flushing")
+				c.send(msgs)
+				msgs = nil
+			} else {
+				c.verbose("interval reached – nothing to send")
+			}
+		case <-c.quit:
+			c.verbose("exit requested – flushing")
+			c.send(msgs)
+			c.verbose("exit")
+			c.quit <- true
+			return
+		}
+	}
+}
+
+// Verbose log.
+func (c *Client) verbose(msg string, args ...interface{}) {
+	if c.Verbose {
+		log.Printf("segment: "+msg, args...)
+	}
+}
+
+// Unconditional log.
+func (c *Client) log(msg string, args ...interface{}) {
+	log.Printf("segment: "+msg, args...)
+}
+
+// Set message timestamp.
+func (m *Message) setTimestamp(s string) {
+	m.Timestamp = s
+}
+
+// Set message id.
+func (m *Message) setMessageId(s string) {
+	m.MessageId = s
+}
+
+// Return formatted timestamp.
+func timestamp(t time.Time) string {
+	return strftime.Format("%Y-%m-%dT%H:%M:%S%z", t)
+}
+
+// Return uuid string.
+func uid() string {
+	return uuid.NewRandom().String()
 }

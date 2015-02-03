@@ -3,181 +3,178 @@
   Segment analytics client for Go. For additional documentation
   visit [https://segment.com/docs/libraries/go](https://segment.com/docs/libraries/go/) or view the [godocs](http://godoc.org/github.com/segmentio/analytics-go).
 
-## Installation
-
-    $ go get github.com/segmentio/analytics-go
-
-## Examples
-
-### Basic
-
-  Full example void of `client.Track` error-handling for brevity:
+## Usage
 
 ```go
-package main
-
-import "github.com/segmentio/analytics-go"
-import "time"
-
-func main() {
-  client := analytics.New("your-write-key-here")
-
-  for {
-    client.Track(map[string]interface{}{
-      "event":  "Download",
-      "userId": "123456",
-      "properties": map[string]interface{}{
-        "application": "Segment Desktop",
-        "version":     "1.1.0",
-        "platform":    "osx",
-      },
-    })
-
-    time.Sleep(50 * time.Millisecond)
-  }
-}
-```
-
-### Client options
-
-  Example with customized client:
-
-```go
-package main
-
-import "github.com/segmentio/analytics-go"
-import "time"
-
-func main() {
-  client := analytics.New("your-write-key-here")
-  client.FlushAfter = 30 * time.Second
-  client.FlushAt = 100
-
-  for {
-    client.Track(map[string]interface{}{
-      "event":  "Download",
-      "userId": "123456",
-      "properties": map[string]interface{}{
-        "application": "Segment Desktop",
-        "version":     "1.1.0",
-        "platform":    "osx",
-      },
-    })
-
-    time.Sleep(50 * time.Millisecond)
-  }
-}
-```
-
-### Context
-
-For each call a `context` map may be passed, which
-is merged with the original values.
-
-```go
-client.Track(map[string]interface{}{
-  "event":  "Download",
-  "userId": "123456",
-  "properties": map[string]interface{}{
-    "application": "Segment Desktop",
-    "version":     "1.1.0",
-    "platform":    "osx",
+var DefaultContext = map[string]interface{}{
+  "library": map[string]interface{}{
+    "name":    "analytics-go",
+    "version": Version,
   },
-  "context": map[string]interface{}{
-    "appVersion": "2.0.0",
-    "appHostname": "some-host"
-  }
-})
+}
 ```
-
-### Flushing on shutdown
-
-  The following example illustrates how `.Stop()`
-  may be used to flush and wait for pending calls
-  to be sent to Segment.
+DefaultContext of message batches.
 
 ```go
-package main
+var Endpoint = "https://api.segment.io"
+```
+Endpoint for the Segment API.
 
-import "github.com/visionmedia/go-gracefully"
-import "github.com/segmentio/analytics-go"
-import "time"
-import "log"
+#### type Alias
 
-type Worker struct {
-  analytics *analytics.Client
-  exit      chan struct{}
-}
-
-func (w *Worker) Start() {
-  println("starting")
-
-  go func() {
-    for {
-      select {
-      case <-w.exit:
-        return
-      case <-time.Tick(50 * time.Millisecond):
-        log.Println("send track")
-
-        w.analytics.Track(map[string]interface{}{
-          "event":  "Download",
-          "userId": "123456",
-          "properties": map[string]interface{}{
-            "application": "Segment Desktop",
-            "version":     "1.1.0",
-            "platform":    "osx",
-          },
-        })
-      }
-    }
-  }()
-}
-
-func (w *Worker) Stop() {
-  println("stopping")
-  close(w.exit)
-  println("flushing analytics")
-  w.analytics.Close()
-  println("bye :)")
-}
-
-func NewWorker(client *analytics.Client) *Worker {
-  return &Worker{
-    analytics: client,
-    exit:      make(chan struct{}),
-  }
-}
-
-// run with DEBUG=analytics to view
-// analytics-specific debug output
-func main() {
-  client := analytics.New("your-write-key-here")
-  client.FlushAfter = 5 * time.Second
-  client.FlushAt = 25
-
-  w := NewWorker(client)
-  w.Start()
-  gracefully.Shutdown()
-  w.Stop()
+```go
+type Alias struct {
+  PreviousId string `json:"previousId"`
+  UserId     string `json:"userId,omitempty"`
+  Message
 }
 ```
 
-## Debugging
+Alias message.
 
- Enable debug output via the __DEBUG__ environment variable, for example `DEBUG=analytics`:
+#### type Batch
 
+```go
+type Batch struct {
+  Messages []interface{} `json:"batch"`
+  Message
+}
 ```
-2014/04/23 18:56:57 buffer (110/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:57-0700}
-2014/04/23 18:56:58 buffer (111/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
-2014/04/23 18:56:58 buffer (112/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
-2014/04/23 18:56:58 buffer (113/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
-2014/04/23 18:56:58 buffer (114/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
-2014/04/23 18:56:58 buffer (115/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
-2014/04/23 18:56:58 buffer (116/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
-2014/04/23 18:56:58 buffer (117/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
-2014/04/23 18:56:58 buffer (118/1000) &{Track Download {segmentio 1.0.0 osx} 2014-04-23T18:56:58-0700}
+
+Batch message.
+
+#### type Client
+
+```go
+type Client struct {
+  Endpoint string
+  Interval time.Duration
+  Verbose  bool
+  Size     int
+}
 ```
+
+Client which batches messages and flushes at the given Interval or when the Size
+limit is exceeded. Set Verbose to true to enable logging output.
+
+#### func  New
+
+```go
+func New(key string) *Client
+```
+New client with write key.
+
+#### func (*Client) Alias
+
+```go
+func (c *Client) Alias(msg *Alias) error
+```
+Alias buffers an "alias" message.
+
+#### func (*Client) Close
+
+```go
+func (c *Client) Close() error
+```
+Close and flush metrics.
+
+#### func (*Client) Group
+
+```go
+func (c *Client) Group(msg *Group) error
+```
+Group buffers an "group" message.
+
+#### func (*Client) Identify
+
+```go
+func (c *Client) Identify(msg *Identify) error
+```
+Identify buffers an "identify" message.
+
+#### func (*Client) Page
+
+```go
+func (c *Client) Page(msg *Page) error
+```
+Page buffers an "page" message.
+
+#### func (*Client) Track
+
+```go
+func (c *Client) Track(msg *Track) error
+```
+Track buffers an "track" message.
+
+#### type Group
+
+```go
+type Group struct {
+  Traits      map[string]interface{} `json:"traits,omitempty"`
+  AnonymousId string                 `json:"anonymousId,omitempty"`
+  UserId      string                 `json:"userId,omitempty"`
+  GroupId     string                 `json:"groupId"`
+  Message
+}
+```
+
+Group message.
+
+#### type Identify
+
+```go
+type Identify struct {
+  Traits      map[string]interface{} `json:"traits,omitempty"`
+  AnonymousId string                 `json:"anonymousId,omitempty"`
+  UserId      string                 `json:"userId,omitempty"`
+  Message
+}
+```
+
+Identify message.
+
+#### type Message
+
+```go
+type Message struct {
+  Type      string                 `json:"type,omitempty"`
+  MessageId string                 `json:"messageId,omitempty"`
+  Timestamp string                 `json:"timestamp,omitempty"`
+  SentAt    string                 `json:"sentAt,omitempty"`
+  Context   map[string]interface{} `json:"context,omitempty"`
+}
+```
+
+Message fields common to all.
+
+#### type Page
+
+```go
+type Page struct {
+  Traits      map[string]interface{} `json:"properties,omitempty"`
+  AnonymousId string                 `json:"anonymousId,omitempty"`
+  UserId      string                 `json:"userId,omitempty"`
+  Category    string                 `json:"category,omitempty"`
+  Name        string                 `json:"name,omitempty"`
+  Message
+}
+```
+
+Page message.
+
+#### type Track
+
+```go
+type Track struct {
+  Properties  map[string]interface{} `json:"properties,omitempty"`
+  AnonymousId string                 `json:"anonymousId,omitempty"`
+  UserId      string                 `json:"userId,omitempty"`
+  Event       string                 `json:"event"`
+  Message
+}
+```
+
+Track message.
 
 ## License
 
