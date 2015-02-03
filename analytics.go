@@ -89,7 +89,7 @@ type Page struct {
 // Alias message.
 type Alias struct {
 	PreviousId string `json:"previousId"`
-	UserId     string `json:"userId,omitempty"`
+	UserId     string `json:"userId"`
 	Message
 }
 
