@@ -220,6 +220,10 @@ func (c *Client) Close() error {
 
 // Send batch request.
 func (c *Client) send(msgs []interface{}) {
+	if len(msgs) == 0 {
+		return
+	}
+	
 	batch := new(Batch)
 	batch.Messages = msgs
 	batch.MessageId = c.uid()
