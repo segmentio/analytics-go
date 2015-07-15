@@ -8,8 +8,12 @@ import "time"
 import "fmt"
 import "io"
 
-func mockId() string      { return "I'm unique" }
-func mockTime() time.Time { return time.Unix(0, 0) }
+func mockId() string { return "I'm unique" }
+
+func mockTime() time.Time {
+	// time.Unix(0, 0) fails on Circle
+	return time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+}
 
 func mockServer() (chan []byte, *httptest.Server) {
 	done := make(chan []byte)
@@ -67,7 +71,7 @@ func ExampleTrack() {
 	//         "platform": "osx",
 	//         "version": "1.1.0"
 	//       },
-	//       "timestamp": "1969-12-31T16:00:00-0800",
+	//       "timestamp": "2009-11-10T23:00:00+0000",
 	//       "type": "track",
 	//       "userId": "123456"
 	//     }
@@ -79,7 +83,7 @@ func ExampleTrack() {
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
-	//   "sentAt": "1969-12-31T16:00:00-0800"
+	//   "sentAt": "2009-11-10T23:00:00+0000"
 	// }
 }
 
@@ -121,7 +125,7 @@ func ExampleTrack_context() {
 	//         "platform": "osx",
 	//         "version": "1.1.0"
 	//       },
-	//       "timestamp": "1969-12-31T16:00:00-0800",
+	//       "timestamp": "2009-11-10T23:00:00+0000",
 	//       "type": "track",
 	//       "userId": "123456"
 	//     }
@@ -133,7 +137,7 @@ func ExampleTrack_context() {
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
-	//   "sentAt": "1969-12-31T16:00:00-0800"
+	//   "sentAt": "2009-11-10T23:00:00+0000"
 	// }
 }
 
@@ -169,7 +173,7 @@ func ExampleTrack_many() {
 	//         "application": "Segment Desktop",
 	//         "version": 0
 	//       },
-	//       "timestamp": "1969-12-31T16:00:00-0800",
+	//       "timestamp": "2009-11-10T23:00:00+0000",
 	//       "type": "track",
 	//       "userId": "123456"
 	//     },
@@ -180,7 +184,7 @@ func ExampleTrack_many() {
 	//         "application": "Segment Desktop",
 	//         "version": 1
 	//       },
-	//       "timestamp": "1969-12-31T16:00:00-0800",
+	//       "timestamp": "2009-11-10T23:00:00+0000",
 	//       "type": "track",
 	//       "userId": "123456"
 	//     },
@@ -191,7 +195,7 @@ func ExampleTrack_many() {
 	//         "application": "Segment Desktop",
 	//         "version": 2
 	//       },
-	//       "timestamp": "1969-12-31T16:00:00-0800",
+	//       "timestamp": "2009-11-10T23:00:00+0000",
 	//       "type": "track",
 	//       "userId": "123456"
 	//     }
@@ -203,6 +207,6 @@ func ExampleTrack_many() {
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
-	//   "sentAt": "1969-12-31T16:00:00-0800"
+	//   "sentAt": "2009-11-10T23:00:00+0000"
 	// }
 }
