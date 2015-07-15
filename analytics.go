@@ -223,7 +223,7 @@ func (c *Client) send(msgs []interface{}) {
 	if len(msgs) == 0 {
 		return
 	}
-	
+
 	batch := new(Batch)
 	batch.Messages = msgs
 	batch.MessageId = c.uid()
@@ -320,9 +320,11 @@ func (c *Client) log(msg string, args ...interface{}) {
 	log.Printf("segment: "+msg, args...)
 }
 
-// Set message timestamp.
+// Set message timestamp if one is not already set.
 func (m *Message) setTimestamp(s string) {
-	m.Timestamp = s
+	if m.Timestamp == "" {
+		m.Timestamp = s
+	}
 }
 
 // Set message id.
