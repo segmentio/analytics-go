@@ -108,6 +108,7 @@ type Client struct {
 	Interval time.Duration
 	Size     int
 	Verbose  bool
+	Client   http.Client
 	key      string
 	msgs     chan interface{}
 	quit     chan bool
@@ -122,6 +123,7 @@ func New(key string) *Client {
 		Interval: 5 * time.Second,
 		Size:     250,
 		Verbose:  false,
+		Client:   *http.DefaultClient,
 		key:      key,
 		msgs:     make(chan interface{}, 100),
 		quit:     make(chan bool),
@@ -251,7 +253,7 @@ func (c *Client) send(msgs []interface{}) {
 	req.Header.Add("Content-Length", string(len(b)))
 	req.SetBasicAuth(c.key, "")
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := c.Client.Do(req)
 	if err != nil {
 		c.log("error sending request: %s", err)
 		return
