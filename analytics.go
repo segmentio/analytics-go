@@ -13,16 +13,16 @@ import (
 )
 
 // Version of the client.
-var version = "2.0.0"
+const Version = "2.0.0"
 
 // Endpoint for the Segment API.
-var Endpoint = "https://api.segment.io"
+const Endpoint = "https://api.segment.io"
 
 // DefaultContext of message batches.
 var DefaultContext = map[string]interface{}{
 	"library": map[string]interface{}{
 		"name":    "analytics-go",
-		"version": version,
+		"version": Version,
 	},
 }
 
@@ -246,7 +246,7 @@ func (c *Client) send(msgs []interface{}) {
 		return
 	}
 
-	req.Header.Add("User-Agent", "analytics-go (version: "+version+")")
+	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Content-Length", string(len(b)))
 	req.SetBasicAuth(c.key, "")
