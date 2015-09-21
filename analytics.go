@@ -1,6 +1,8 @@
 package analytics
 
 import (
+	"os"
+
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -107,6 +109,7 @@ type Client struct {
 	Endpoint string
 	Interval time.Duration
 	Size     int
+	Logger   *log.Logger
 	Verbose  bool
 	Client   http.Client
 	key      string
@@ -122,6 +125,7 @@ func New(key string) *Client {
 		Endpoint: Endpoint,
 		Interval: 5 * time.Second,
 		Size:     250,
+		Logger:   log.New(os.Stderr, "segment ", log.LstdFlags),
 		Verbose:  false,
 		Client:   *http.DefaultClient,
 		key:      key,
@@ -316,13 +320,13 @@ func (c *Client) loop() {
 // Verbose log.
 func (c *Client) verbose(msg string, args ...interface{}) {
 	if c.Verbose {
-		log.Printf("segment: "+msg, args...)
+		c.Logger.Printf(msg, args...)
 	}
 }
 
 // Unconditional log.
 func (c *Client) log(msg string, args ...interface{}) {
-	log.Printf("segment: "+msg, args...)
+	c.Logger.Printf(msg, args...)
 }
 
 // Set message timestamp if one is not already set.
