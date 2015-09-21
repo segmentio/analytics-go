@@ -106,25 +106,25 @@ type Alias struct {
 type Client struct {
 	Endpoint string
 	Interval time.Duration
-	Verbose  bool
 	Size     int
+	Verbose  bool
 	key      string
 	msgs     chan interface{}
 	quit     chan bool
-
-	uid func() string
-	now func() time.Time
+	uid      func() string
+	now      func() time.Time
 }
 
 // New client with write key.
 func New(key string) *Client {
 	c := &Client{
+		Endpoint: Endpoint,
+		Interval: 5 * time.Second,
+		Size:     250,
+		Verbose:  false,
+		key:      key,
 		msgs:     make(chan interface{}, 100),
 		quit:     make(chan bool),
-		Interval: 5 * time.Second,
-		Endpoint: Endpoint,
-		Size:     250,
-		key:      key,
 		now:      time.Now,
 		uid:      uid,
 	}
