@@ -1,13 +1,16 @@
 package analytics
 
-import "github.com/jehiah/go-strftime"
-import "github.com/xtgo/uuid"
-import "encoding/json"
-import "net/http"
-import "errors"
-import "bytes"
-import "time"
-import "log"
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/jehiah/go-strftime"
+	"github.com/xtgo/uuid"
+)
 
 // Version of the client.
 var version = "2.0.0"
