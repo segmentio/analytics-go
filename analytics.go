@@ -222,8 +222,8 @@ func (c *Client) queue(msg message) {
 // Close and flush metrics.
 func (c *Client) Close() error {
 	c.quit <- true
-	close(c.msgs)
 	<-c.quit
+	close(c.msgs)
 	return nil
 }
 
