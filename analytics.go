@@ -222,8 +222,8 @@ func (c *Client) queue(msg message) {
 // Close and flush metrics.
 func (c *Client) Close() error {
 	c.quit <- true
-	<-c.quit
 	close(c.msgs)
+	<-c.quit
 	return nil
 }
 
@@ -309,24 +309,10 @@ func (c *Client) loop() {
 			}
 		case <-c.quit:
 			c.verbose("exit requested – flushing %d", len(msgs))
-			msgs = append(msgs, c.drain(c.msgs)...)
 			c.send(msgs)
 			c.verbose("exit")
 			c.quit <- true
 			return
-		}
-	}
-}
-
-func (c *Client) drain(ch chan interface{}) []interface{} {
-	msgs := make([]interface{}, 0)
-	for {
-		select {
-		case msg := <-ch:
-			c.verbose("buffer (%d/%d) %v", len(msgs), c.Size, msg)
-			msgs = append(msgs, msg)
-		default:
-			return msgs
 		}
 	}
 }
