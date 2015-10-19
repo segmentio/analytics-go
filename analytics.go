@@ -309,7 +309,7 @@ func (c *Client) loop() {
 			}
 		case <-c.quit:
 			c.verbose("exit requested – flushing %d", len(msgs))
-			msgs = append(msgs, c.drain(c.msgs))
+			msgs = append(msgs, c.drain(c.msgs)...)
 			c.send(msgs)
 			c.verbose("exit")
 			c.quit <- true
