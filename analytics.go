@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"io/ioutil"
 	"os"
 
 	"bytes"
@@ -32,12 +33,6 @@ var DefaultContext = map[string]interface{}{
 type message interface {
 	setMessageId(string)
 	setTimestamp(string)
-}
-
-// Response from API.
-type response struct {
-	Message string `json:"message"`
-	Code    string `json:"code"`
 }
 
 // Message fields common to all.
@@ -276,14 +271,14 @@ func (c *Client) report(res *http.Response) {
 		return
 	}
 
-	msg := new(response)
-	err := json.NewDecoder(res.Body).Decode(msg)
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		c.log("error reading response: %s", err)
+		c.log("error reading response body: %s", err)
 		return
 	}
 
-	c.log("response %s: %s – %s", res.Status, msg.Code, msg.Message)
+	c.log("response %s: %s – %s", res.Status, res.StatusCode, body)
 }
 
 // Batch loop.
