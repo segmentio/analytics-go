@@ -114,7 +114,8 @@ type Client struct {
 	Client   http.Client
 	key      string
 	msgs     chan interface{}
-	quit     chan bool
+	quit     chan struct{}
+	shutdown chan struct{}
 	uid      func() string
 	now      func() time.Time
 }
@@ -130,7 +131,8 @@ func New(key string) *Client {
 		Client:   *http.DefaultClient,
 		key:      key,
 		msgs:     make(chan interface{}, 100),
-		quit:     make(chan bool),
+		quit:     make(chan struct{}),
+		shutdown: make(chan struct{}),
 		now:      time.Now,
 		uid:      uid,
 	}
@@ -221,9 +223,9 @@ func (c *Client) queue(msg message) {
 
 // Close and flush metrics.
 func (c *Client) Close() error {
-	c.quit <- true
+	c.quit <- struct{}{}
 	close(c.msgs)
-	<-c.quit
+	<-c.shutdown
 	return nil
 }
 
@@ -308,10 +310,16 @@ func (c *Client) loop() {
 				c.verbose("interval reached – nothing to send")
 			}
 		case <-c.quit:
+			c.verbose("exit requested – draining msgs")
+			// drain the msg channel.
+			for msg := range c.msgs {
+				c.verbose("buffer (%d/%d) %v", len(msgs), c.Size, msg)
+				msgs = append(msgs, msg)
+			}
 			c.verbose("exit requested – flushing %d", len(msgs))
 			c.send(msgs)
 			c.verbose("exit")
-			c.quit <- true
+			c.shutdown <- struct{}{}
 			return
 		}
 	}
