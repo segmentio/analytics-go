@@ -16,7 +16,7 @@ func mockTime() time.Time {
 }
 
 func mockServer() (chan []byte, *httptest.Server) {
-	done := make(chan []byte)
+	done := make(chan []byte, 1)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		buf := bytes.NewBuffer(nil)
@@ -58,6 +58,55 @@ func ExampleTrack() {
 			"platform":    "osx",
 		},
 	})
+
+	fmt.Printf("%s\n", <-body)
+	// Output:
+	// {
+	//   "batch": [
+	//     {
+	//       "event": "Download",
+	//       "messageId": "I'm unique",
+	//       "properties": {
+	//         "application": "Segment Desktop",
+	//         "platform": "osx",
+	//         "version": "1.1.0"
+	//       },
+	//       "timestamp": "2009-11-10T23:00:00+0000",
+	//       "type": "track",
+	//       "userId": "123456"
+	//     }
+	//   ],
+	//   "context": {
+	//     "library": {
+	//       "name": "analytics-go",
+	//       "version": "2.0.0"
+	//     }
+	//   },
+	//   "messageId": "I'm unique",
+	//   "sentAt": "2009-11-10T23:00:00+0000"
+	// }
+}
+
+func ExampleClose() {
+	body, server := mockServer()
+	defer server.Close()
+
+	client := New("h97jamjwbh")
+	client.Endpoint = server.URL
+	client.now = mockTime
+	client.uid = mockId
+
+	client.Track(&Track{
+		Event:  "Download",
+		UserId: "123456",
+		Properties: map[string]interface{}{
+			"application": "Segment Desktop",
+			"version":     "1.1.0",
+			"platform":    "osx",
+		},
+	})
+
+	client.Close()
 
 	fmt.Printf("%s\n", <-body)
 	// Output:
