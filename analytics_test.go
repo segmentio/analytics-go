@@ -358,3 +358,61 @@ func ExampleTrack_many() {
 	//   "sentAt": "2009-11-10T23:00:00+0000"
 	// }
 }
+
+func ExampleTrackWithIntegrations() {
+	body, server := mockServer()
+	defer server.Close()
+
+	client := New("h97jamjwbh")
+	client.Endpoint = server.URL
+	client.now = mockTime
+	client.uid = mockId
+	client.Size = 1
+
+	client.Track(&Track{
+		Event:  "Download",
+		UserId: "123456",
+		Properties: map[string]interface{}{
+			"application": "Segment Desktop",
+			"version":     "1.1.0",
+			"platform":    "osx",
+		},
+		Integrations: map[string]interface{}{
+			"All":      true,
+			"Intercom": false,
+			"Mixpanel": true,
+		},
+	})
+
+	fmt.Printf("%s\n", <-body)
+	// Output:
+	// {
+	//   "batch": [
+	//     {
+	//       "event": "Download",
+	//       "integrations": {
+	//         "All": true,
+	//         "Intercom": false,
+	//         "Mixpanel": true
+	//       },
+	//       "messageId": "I'm unique",
+	//       "properties": {
+	//         "application": "Segment Desktop",
+	//         "platform": "osx",
+	//         "version": "1.1.0"
+	//       },
+	//       "timestamp": "2009-11-10T23:00:00+0000",
+	//       "type": "track",
+	//       "userId": "123456"
+	//     }
+	//   ],
+	//   "context": {
+	//     "library": {
+	//       "name": "analytics-go",
+	//       "version": "2.0.0"
+	//     }
+	//   },
+	//   "messageId": "I'm unique",
+	//   "sentAt": "2009-11-10T23:00:00+0000"
+	// }
+}
