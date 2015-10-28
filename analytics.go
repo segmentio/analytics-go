@@ -309,6 +309,7 @@ func (c *Client) loop() {
 				c.verbose("interval reached – nothing to send")
 			}
 		case <-c.quit:
+			tick.Stop()
 			c.verbose("exit requested – draining msgs")
 			// drain the msg channel.
 			for msg := range c.msgs {
