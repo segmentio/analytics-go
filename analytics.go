@@ -3,6 +3,7 @@ package analytics
 import (
 	"io/ioutil"
 	"os"
+	"sync"
 
 	"bytes"
 	"encoding/json"
@@ -106,6 +107,8 @@ type Alias struct {
 // logging output.
 type Client struct {
 	Endpoint string
+	// Interval represents the duration at which messages are flushed. It may be
+	// configured only before any messages are enqueued.
 	Interval time.Duration
 	Size     int
 	Logger   *log.Logger
@@ -117,6 +120,7 @@ type Client struct {
 	shutdown chan struct{}
 	uid      func() string
 	now      func() time.Time
+	once     sync.Once
 }
 
 // New client with write key.
@@ -135,8 +139,6 @@ func New(key string) *Client {
 		now:      time.Now,
 		uid:      uid,
 	}
-
-	go c.loop()
 
 	return c
 }
@@ -213,8 +215,13 @@ func (c *Client) Track(msg *Track) error {
 	return nil
 }
 
+func (c *Client) startLoop() {
+	go c.loop()
+}
+
 // Queue message.
 func (c *Client) queue(msg message) {
+	c.once.Do(c.startLoop)
 	msg.setMessageId(c.uid())
 	msg.setTimestamp(timestamp(c.now()))
 	c.msgs <- msg
