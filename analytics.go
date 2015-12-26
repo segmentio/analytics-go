@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jehiah/go-strftime"
+	"github.com/segmentio/backo-go"
 	"github.com/xtgo/uuid"
 )
 
@@ -29,6 +30,9 @@ var DefaultContext = map[string]interface{}{
 		"version": Version,
 	},
 }
+
+// Backoff policy.
+var Backo = backo.DefaultBacko()
 
 // Message interface.
 type message interface {
@@ -253,11 +257,21 @@ func (c *Client) send(msgs []interface{}) {
 		return
 	}
 
+	for i := 0; i < 10; i++ {
+		if err := c.upload(b); err == nil {
+			break
+		}
+		Backo.Sleep(i)
+	}
+}
+
+// Upload serialized batch message.
+func (c *Client) upload(b []byte) error {
 	url := c.Endpoint + "/v1/batch"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
 		c.log("error creating request: %s", err)
-		return
+		return err
 	}
 
 	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
@@ -268,11 +282,13 @@ func (c *Client) send(msgs []interface{}) {
 	res, err := c.Client.Do(req)
 	if err != nil {
 		c.log("error sending request: %s", err)
-		return
+		return err
 	}
 	defer res.Body.Close()
 
 	c.report(res)
+
+	return nil
 }
 
 // Report on response body.
