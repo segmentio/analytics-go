@@ -79,7 +79,7 @@ func ExampleTrack() {
 	//   "context": {
 	//     "library": {
 	//       "name": "analytics-go",
-	//       "version": "2.0.0"
+	//       "version": "2.1.0"
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
@@ -128,7 +128,7 @@ func ExampleClose() {
 	//   "context": {
 	//     "library": {
 	//       "name": "analytics-go",
-	//       "version": "2.0.0"
+	//       "version": "2.1.0"
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
@@ -176,7 +176,7 @@ func ExampleInterval() {
 	//   "context": {
 	//     "library": {
 	//       "name": "analytics-go",
-	//       "version": "2.0.0"
+	//       "version": "2.1.0"
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
@@ -227,7 +227,7 @@ func ExampleTrackWithTimestampSet() {
 	//   "context": {
 	//     "library": {
 	//       "name": "analytics-go",
-	//       "version": "2.0.0"
+	//       "version": "2.1.0"
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
@@ -281,7 +281,7 @@ func ExampleTrack_context() {
 	//   "context": {
 	//     "library": {
 	//       "name": "analytics-go",
-	//       "version": "2.0.0"
+	//       "version": "2.1.0"
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
@@ -351,7 +351,7 @@ func ExampleTrack_many() {
 	//   "context": {
 	//     "library": {
 	//       "name": "analytics-go",
-	//       "version": "2.0.0"
+	//       "version": "2.1.0"
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
@@ -409,7 +409,7 @@ func ExampleTrackWithIntegrations() {
 	//   "context": {
 	//     "library": {
 	//       "name": "analytics-go",
-	//       "version": "2.0.0"
+	//       "version": "2.1.0"
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
