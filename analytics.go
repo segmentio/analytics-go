@@ -143,7 +143,7 @@ func New(key string) *Client {
 		now:      time.Now,
 		uid:      uid,
 	}
-
+	c.startLoop()
 	return c
 }
 
@@ -225,7 +225,6 @@ func (c *Client) startLoop() {
 
 // Queue message.
 func (c *Client) queue(msg message) {
-	c.once.Do(c.startLoop)
 	msg.setMessageId(c.uid())
 	msg.setTimestamp(timestamp(c.now()))
 	c.msgs <- msg
