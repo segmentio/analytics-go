@@ -369,7 +369,9 @@ func (m *Message) setTimestamp(s string) {
 
 // Set message id.
 func (m *Message) setMessageId(s string) {
-	m.MessageId = s
+	if m.MessageId == "" {
+		m.MessageId = s
+	}
 }
 
 // Return formatted timestamp.
