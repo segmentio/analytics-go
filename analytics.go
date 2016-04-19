@@ -317,7 +317,7 @@ func (c *Client) upload(b []byte) error {
 		return fmt.Errorf("error reading response body: %s", err)
 	}
 
-	return fmt.Errorf("response %s: %s – %s", res.Status, res.StatusCode, string(body))
+	return fmt.Errorf("response %s: %d – %s", res.Status, res.StatusCode, string(body))
 }
 
 // Batch loop.
