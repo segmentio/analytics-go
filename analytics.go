@@ -333,7 +333,7 @@ func (c *Client) loop() {
 			if len(msgs) == c.Size {
 				c.verbose("exceeded %d messages – flushing", c.Size)
 				c.sendAsync(msgs)
-				msgs = nil
+				msgs = make([]interface{}, 0, c.Size)
 			}
 		case err := <-c.sendDone:
 			if err != nil {
@@ -344,7 +344,7 @@ func (c *Client) loop() {
 			if len(msgs) > 0 {
 				c.verbose("interval reached - flushing %d", len(msgs))
 				c.sendAsync(msgs)
-				msgs = nil
+				msgs = make([]interface{}, 0, c.Size)
 			} else {
 				c.verbose("interval reached – nothing to send")
 			}
