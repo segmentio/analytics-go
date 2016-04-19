@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -125,6 +126,8 @@ type Client struct {
 	uid      func() string
 	now      func() time.Time
 	once     sync.Once
+	inflight uint64
+	sendDone chan error
 }
 
 // New client with write key.
@@ -140,6 +143,7 @@ func New(key string) *Client {
 		msgs:     make(chan interface{}, 100),
 		quit:     make(chan struct{}),
 		shutdown: make(chan struct{}),
+		sendDone: make(chan error),
 		now:      time.Now,
 		uid:      uid,
 	}
@@ -239,10 +243,28 @@ func (c *Client) Close() error {
 	return nil
 }
 
+func (c *Client) sendAsync(msgs []interface{}) {
+	c.inflight++
+	go func() {
+		c.sendDone <- c.send(msgs)
+	}()
+}
+
+func (c *Client) awaitInflight() {
+	for c.inflight > 0 {
+		c.verbose("waiting for %d requests to finish..", c.inflight)
+		err := <-c.sendDone
+		if err != nil {
+			c.logf(err.Error())
+		}
+		c.inflight--
+	}
+}
+
 // Send batch request.
-func (c *Client) send(msgs []interface{}) {
+func (c *Client) send(msgs []interface{}) error {
 	if len(msgs) == 0 {
-		return
+		return nil
 	}
 
 	batch := new(Batch)
@@ -253,16 +275,17 @@ func (c *Client) send(msgs []interface{}) {
 
 	b, err := json.Marshal(batch)
 	if err != nil {
-		c.logf("error marshalling msgs: %s", err)
-		return
+		return fmt.Errorf("error marshalling msgs: %s", err)
 	}
 
 	for i := 0; i < 10; i++ {
-		if err := c.upload(b); err == nil {
-			break
+		if err = c.upload(b); err == nil {
+			return nil
 		}
 		Backo.Sleep(i)
 	}
+
+	return err
 }
 
 // Upload serialized batch message.
@@ -270,8 +293,7 @@ func (c *Client) upload(b []byte) error {
 	url := c.Endpoint + "/v1/batch"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
-		c.logf("error creating request: %s", err)
-		return err
+		return fmt.Errorf("error creating request: %s", err)
 	}
 
 	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
@@ -281,31 +303,21 @@ func (c *Client) upload(b []byte) error {
 
 	res, err := c.Client.Do(req)
 	if err != nil {
-		c.logf("error sending request: %s", err)
-		return err
+		return fmt.Errorf("error sending request: %s", err)
 	}
 	defer res.Body.Close()
 
-	c.report(res)
-
-	return nil
-}
-
-// Report on response body.
-func (c *Client) report(res *http.Response) {
 	if res.StatusCode < 400 {
 		c.verbose("response %s", res.Status)
-		return
+		return nil
 	}
 
-	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		c.logf("error reading response body: %s", err)
-		return
+		return fmt.Errorf("error reading response body: %s", err)
 	}
 
-	c.logf("response %s: %d – %s", res.Status, res.StatusCode, body)
+	return fmt.Errorf("response %s: %s – %s", res.Status, res.StatusCode, string(body))
 }
 
 // Batch loop.
@@ -320,13 +332,18 @@ func (c *Client) loop() {
 			msgs = append(msgs, msg)
 			if len(msgs) == c.Size {
 				c.verbose("exceeded %d messages – flushing", c.Size)
-				c.send(msgs)
+				c.sendAsync(msgs)
 				msgs = nil
 			}
+		case err := <-c.sendDone:
+			if err != nil {
+				c.logf(err.Error())
+			}
+			c.inflight--
 		case <-tick.C:
 			if len(msgs) > 0 {
 				c.verbose("interval reached - flushing %d", len(msgs))
-				c.send(msgs)
+				c.sendAsync(msgs)
 				msgs = nil
 			} else {
 				c.verbose("interval reached – nothing to send")
@@ -340,7 +357,9 @@ func (c *Client) loop() {
 				msgs = append(msgs, msg)
 			}
 			c.verbose("exit requested – flushing %d", len(msgs))
-			c.send(msgs)
+			c.sendAsync(msgs)
+			// wait for all inflight sends to complete or fail
+			c.awaitInflight()
 			c.verbose("exit")
 			c.shutdown <- struct{}{}
 			return
