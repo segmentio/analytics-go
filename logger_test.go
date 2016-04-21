@@ -11,7 +11,7 @@ import (
 // with the testLogger type.
 // If someone were to modify the interface in backward incompatible manner this
 // test would break.
-func TestDummyLogger(t *testing.T) {
+func TestTestingLogger(t *testing.T) {
 	_ = Logger(t)
 }
 
