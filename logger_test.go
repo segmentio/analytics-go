@@ -25,9 +25,9 @@ func TestStdLogger(t *testing.T) {
 	logger.Logf("The answer is %d", 42)
 	logger.Errorf("%s", errors.New("something went wrong!"))
 
-	const ref = `test INFO Hello World!
-test INFO The answer is 42
-test ERROR something went wrong!
+	const ref = `test INFO: Hello World!
+test INFO: The answer is 42
+test ERROR: something went wrong!
 `
 
 	if res := buffer.String(); ref != res {
