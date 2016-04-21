@@ -1,9 +1,9 @@
 package analytics
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
-	"sync"
 
 	"bytes"
 	"encoding/json"
@@ -124,7 +124,6 @@ type Client struct {
 	shutdown chan struct{}
 	uid      func() string
 	now      func() time.Time
-	once     sync.Once
 }
 
 // New client with write key.
@@ -143,7 +142,7 @@ func New(key string) *Client {
 		now:      time.Now,
 		uid:      uid,
 	}
-
+	go c.loop()
 	return c
 }
 
@@ -159,7 +158,6 @@ func (c *Client) Alias(msg Alias) error {
 
 	msg.Type = "alias"
 	c.queue(&msg)
-
 	return nil
 }
 
@@ -171,7 +169,6 @@ func (c *Client) Page(msg Page) error {
 
 	msg.Type = "page"
 	c.queue(&msg)
-
 	return nil
 }
 
@@ -187,7 +184,6 @@ func (c *Client) Group(msg Group) error {
 
 	msg.Type = "group"
 	c.queue(&msg)
-
 	return nil
 }
 
@@ -199,7 +195,6 @@ func (c *Client) Identify(msg Identify) error {
 
 	msg.Type = "identify"
 	c.queue(&msg)
-
 	return nil
 }
 
@@ -215,28 +210,28 @@ func (c *Client) Track(msg Track) error {
 
 	msg.Type = "track"
 	c.queue(&msg)
-
 	return nil
-}
-
-func (c *Client) startLoop() {
-	go c.loop()
 }
 
 // Queue message.
 func (c *Client) queue(msg message) {
-	c.once.Do(c.startLoop)
 	msg.setMessageId(c.uid())
 	msg.setTimestamp(timestamp(c.now()))
 	c.msgs <- msg
 }
 
 // Close and flush metrics.
-func (c *Client) Close() error {
+func (c *Client) Close() (err error) {
+	defer func() {
+		// Always recover, a panic could be raised if c.quit was closed which
+		// means the Close method was called more than once.
+		if recover() != nil {
+			err = io.EOF
+		}
+	}()
 	c.quit <- struct{}{}
-	close(c.msgs)
 	<-c.shutdown
-	return nil
+	return
 }
 
 // Send batch request.
@@ -310,8 +305,11 @@ func (c *Client) report(res *http.Response) {
 
 // Batch loop.
 func (c *Client) loop() {
+	defer close(c.quit)
+	defer close(c.shutdown)
+
 	var msgs []interface{}
-	tick := time.NewTicker(c.Interval)
+	var tick = time.NewTicker(c.Interval)
 
 	for {
 		select {
@@ -334,15 +332,24 @@ func (c *Client) loop() {
 		case <-c.quit:
 			tick.Stop()
 			c.verbose("exit requested – draining msgs")
-			// drain the msg channel.
+
+			// Drain the msg channel, we have to close it first so no more
+			// messages can be pushed and otherwise the loop would never end.
+			//
+			// Note that this is will cause calls to the send methods to panic
+			// if the client is used after being closed, definitely not ideal,
+			// we should return an error like io.EOF instead. Since this has
+			// been the historical behavior already I'll assume it hasn't been
+			// a problem and I'll fix it later.
+			close(c.msgs)
 			for msg := range c.msgs {
 				c.verbose("buffer (%d/%d) %v", len(msgs), c.Size, msg)
 				msgs = append(msgs, msg)
 			}
+
 			c.verbose("exit requested – flushing %d", len(msgs))
 			c.send(msgs)
 			c.verbose("exit")
-			c.shutdown <- struct{}{}
 			return
 		}
 	}
