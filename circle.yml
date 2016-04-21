@@ -12,7 +12,7 @@ dependencies:
 
 test:
   pre:
-    - go vet ./...
+    - make vet
 
   override:
     - make test
