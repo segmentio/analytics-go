@@ -2,18 +2,13 @@ machine:
   environment:
     IMPORT_PATH: "github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
 
-checkout:
-  post:
-    - mkdir -p ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}
-    - ln -sf $(pwd) ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}/$(basename $(pwd))
-
 dependencies:
   pre:
     - go get github.com/tools/godep
 
-#  override:
-#    - mkdir -p "$GOPATH/src/$IMPORT_PATH"
-#    - rsync -azC --delete ./ "$GOPATH/src/$IMPORT_PATH/"
+  override:
+    - mkdir -p "$GOPATH/src/$IMPORT_PATH"
+    - rsync -azC --delete ./ "$GOPATH/src/$IMPORT_PATH/"
 
 test:
   pre:
