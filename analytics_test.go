@@ -493,3 +493,41 @@ func TestTrackWithIntegrations(t *testing.T) {
 		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
 	}
 }
+
+func TestCloseTwice(t *testing.T) {
+	// This test is overly complex for what it attempts to verify but currently
+	// closing the client without sending anythinng blocks, I'll cleanup later.
+	body, server := mockServer()
+	defer server.Close()
+
+	client := New("0123456789")
+	client.Endpoint = server.URL
+	client.now = mockTime
+	client.uid = mockId
+	client.Size = 1
+
+	client.Track(Track{
+		Event:  "Download",
+		UserId: "123456",
+		Properties: map[string]interface{}{
+			"application": "Segment Desktop",
+			"version":     "1.1.0",
+			"platform":    "osx",
+		},
+		Integrations: map[string]interface{}{
+			"All":      true,
+			"Intercom": false,
+			"Mixpanel": true,
+		},
+	})
+
+	<-body
+
+	if err := client.Close(); err != nil {
+		t.Error("closing a client should not a return an error")
+	}
+
+	if err := client.Close(); err != io.EOF {
+		t.Error("closing a client a second time should return io.EOF:", err)
+	}
+}
