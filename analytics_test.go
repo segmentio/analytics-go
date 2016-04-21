@@ -505,3 +505,15 @@ func TestCloseTwice(t *testing.T) {
 		t.Error("closing a client a second time should return io.EOF:", err)
 	}
 }
+
+func TestCloseTwice(t *testing.T) {
+	client := New("0123456789")
+
+	if err := client.Close(); err != nil {
+		t.Error("closing a client should not a return an error")
+	}
+
+	if err := client.Close(); err != io.EOF {
+		t.Error("closing a client a second time should return io.EOF:", err)
+	}
+}
