@@ -35,11 +35,11 @@ type stdLogger struct {
 }
 
 func (l stdLogger) Logf(format string, args ...interface{}) {
-	l.logger.Printf("INFO "+format, args...)
+	l.logger.Printf("INFO: "+format, args...)
 }
 
 func (l stdLogger) Errorf(format string, args ...interface{}) {
-	l.logger.Printf("ERROR "+format, args...)
+	l.logger.Printf("ERROR: "+format, args...)
 }
 
 func newDefaultLogger() Logger {
