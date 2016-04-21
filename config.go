@@ -32,6 +32,17 @@ func WithFlushInterval(interval time.Duration) ClientConfigFunc {
 	}
 }
 
+// Overwrite the default flush interval of 5 seconds
+func Ratelimit(requestsPerSecond int) ClientConfigFunc {
+	return func(c *Client) error {
+		if requestsPerSecond <= 0 {
+			return fmt.Errorf("Ratelimit: invalid ratelimit '%d'", requestsPerSecond)
+		}
+		c.ratelimit = requestsPerSecond
+		return nil
+	}
+}
+
 // Overwrite the default buffersize (Note: Segment will reject payloads larger than 500 KB)
 func WithBufferSize(bufferSize int) ClientConfigFunc {
 	return func(c *Client) error {

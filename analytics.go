@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jehiah/go-strftime"
+	"github.com/juju/ratelimit"
 	"github.com/segmentio/backo-go"
 	"github.com/xtgo/uuid"
 )
@@ -25,6 +26,8 @@ const (
 	DefaultBufferSize = 250
 	// Default flush interval
 	DefaultInterval = 5 * time.Second
+	// Default ratelimit is 50 batched requests per second
+	DefaultRatelimit = 50
 )
 
 // DefaultContext of message batches.
@@ -37,6 +40,9 @@ var DefaultContext = map[string]interface{}{
 
 // Backoff policy.
 var expBacko = backo.DefaultBacko()
+
+// Ratelimiter
+var tokenbucket *ratelimit.Bucket
 
 // Message interface.
 type message interface {
@@ -116,7 +122,9 @@ type Alias struct {
 type Client struct {
 	endpoint string
 	// interval represents the duration at which messages are flushed
-	interval   time.Duration
+	interval time.Duration
+	// ratelimiter limits request per second to this value
+	ratelimit  int
 	bufferSize int
 	logger     *log.Logger
 	verbose    bool
@@ -135,6 +143,7 @@ func New(key string, configs ...ClientConfigFunc) (*Client, error) {
 	c := &Client{
 		endpoint:   DefaultEndpoint,
 		interval:   DefaultInterval,
+		ratelimit:  DefaultRatelimit,
 		bufferSize: DefaultBufferSize,
 		logger:     log.New(os.Stderr, "segment ", log.LstdFlags),
 		verbose:    false,
@@ -153,6 +162,8 @@ func New(key string, configs ...ClientConfigFunc) (*Client, error) {
 	}
 
 	c.msgs = make(chan interface{}, c.bufferSize)
+
+	tokenbucket = ratelimit.NewBucketWithQuantum(time.Second, int64(c.ratelimit), int64(c.ratelimit))
 
 	c.startLoop()
 
@@ -289,6 +300,9 @@ func (c *Client) upload(b []byte) error {
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Content-Length", string(len(b)))
 	req.SetBasicAuth(c.key, "")
+
+	// Ratelelimit
+	tokenbucket.Wait(1)
 
 	res, err := c.client.Do(req)
 	if err != nil {
