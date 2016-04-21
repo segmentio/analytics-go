@@ -154,6 +154,8 @@ func New(key string, configs ...ClientConfigFunc) (*Client, error) {
 
 	c.msgs = make(chan interface{}, c.bufferSize)
 
+	c.startLoop()
+
 	return c, nil
 }
 
@@ -235,7 +237,6 @@ func (c *Client) startLoop() {
 
 // Queue message.
 func (c *Client) queue(msg message) {
-	c.once.Do(c.startLoop)
 	msg.setMessageId(c.uid())
 	msg.setTimestamp(timestamp(c.now()))
 	c.msgs <- msg
