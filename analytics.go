@@ -34,78 +34,6 @@ var DefaultContext = map[string]interface{}{
 // Backoff policy.
 var Backo = backo.DefaultBacko()
 
-// Message interface.
-type message interface {
-	setMessageId(string)
-	setTimestamp(string)
-}
-
-// Message fields common to all.
-type Message struct {
-	Type      string `json:"type,omitempty"`
-	MessageId string `json:"messageId,omitempty"`
-	Timestamp string `json:"timestamp,omitempty"`
-	SentAt    string `json:"sentAt,omitempty"`
-}
-
-// Batch message.
-type Batch struct {
-	Context  map[string]interface{} `json:"context,omitempty"`
-	Messages []interface{}          `json:"batch"`
-	Message
-}
-
-// Identify message.
-type Identify struct {
-	Context      map[string]interface{} `json:"context,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
-	Traits       map[string]interface{} `json:"traits,omitempty"`
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	Message
-}
-
-// Group message.
-type Group struct {
-	Context      map[string]interface{} `json:"context,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
-	Traits       map[string]interface{} `json:"traits,omitempty"`
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	GroupId      string                 `json:"groupId"`
-	Message
-}
-
-// Track message.
-type Track struct {
-	Context      map[string]interface{} `json:"context,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
-	Properties   map[string]interface{} `json:"properties,omitempty"`
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	Event        string                 `json:"event"`
-	Message
-}
-
-// Page message.
-type Page struct {
-	Context      map[string]interface{} `json:"context,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
-	Traits       map[string]interface{} `json:"properties,omitempty"`
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	Category     string                 `json:"category,omitempty"`
-	Name         string                 `json:"name,omitempty"`
-	Message
-}
-
-// Alias message.
-type Alias struct {
-	PreviousId string `json:"previousId"`
-	UserId     string `json:"userId"`
-	Message
-}
-
 // Client which batches messages and flushes at the given Interval or
 // when the Size limit is exceeded. Set Verbose to true to enable
 // logging output.
@@ -119,7 +47,7 @@ type Client struct {
 	Verbose  bool
 	Client   http.Client
 	key      string
-	msgs     chan interface{}
+	msgs     chan Mesage{}
 	quit     chan struct{}
 	shutdown chan struct{}
 	uid      func() string
@@ -137,7 +65,7 @@ func New(key string) *Client {
 		Verbose:  false,
 		Client:   *http.DefaultClient,
 		key:      key,
-		msgs:     make(chan interface{}, 100),
+		msgs:     make(chan Message, 100),
 		quit:     make(chan struct{}),
 		shutdown: make(chan struct{}),
 		now:      time.Now,
@@ -147,20 +75,12 @@ func New(key string) *Client {
 	return c
 }
 
-// Alias buffers an "alias" message.
-func (c *Client) Alias(msg Alias) error {
-	if msg.UserId == "" {
-		return errors.New("You must pass a 'userId'.")
+func (c *Client) Enqueue(msg Message) (err error) {
+	if err = msg.validate(); err != nil {
+		return
 	}
 
-	if msg.PreviousId == "" {
-		return errors.New("You must pass a 'previousId'.")
-	}
-
-	msg.Type = "alias"
-	c.queue(&msg)
-
-	return nil
+	return
 }
 
 // Page buffers an "page" message.
