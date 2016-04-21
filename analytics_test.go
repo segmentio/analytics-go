@@ -1,6 +1,9 @@
 package analytics
 
-import "net/http/httptest"
+import (
+	"net/http/httptest"
+	"testing"
+)
 import "encoding/json"
 import "net/http"
 import "bytes"
@@ -49,7 +52,7 @@ func ExampleTrack() {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -79,7 +82,7 @@ func ExampleTrack() {
 	//   "context": {
 	//     "library": {
 	//       "name": "analytics-go",
-	//       "version": "2.1.0"
+	//       "version": "3.0.0"
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
@@ -87,7 +90,7 @@ func ExampleTrack() {
 	// }
 }
 
-func ExampleClose() {
+func TestTrack(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
@@ -96,7 +99,7 @@ func ExampleClose() {
 	client.now = mockTime
 	client.uid = mockId
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -108,44 +111,51 @@ func ExampleClose() {
 
 	client.Close()
 
-	fmt.Printf("%s\n", <-body)
-	// Output:
-	// {
-	//   "batch": [
-	//     {
-	//       "event": "Download",
-	//       "messageId": "I'm unique",
-	//       "properties": {
-	//         "application": "Segment Desktop",
-	//         "platform": "osx",
-	//         "version": "1.1.0"
-	//       },
-	//       "timestamp": "2009-11-10T23:00:00+0000",
-	//       "type": "track",
-	//       "userId": "123456"
-	//     }
-	//   ],
-	//   "context": {
-	//     "library": {
-	//       "name": "analytics-go",
-	//       "version": "2.1.0"
-	//     }
-	//   },
-	//   "messageId": "I'm unique",
-	//   "sentAt": "2009-11-10T23:00:00+0000"
-	// }
+	const ref = `{
+  "batch": [
+    {
+      "event": "Download",
+      "messageId": "I'm unique",
+      "properties": {
+        "application": "Segment Desktop",
+        "platform": "osx",
+        "version": "1.1.0"
+      },
+      "timestamp": "2009-11-10T23:00:00+0000",
+      "type": "track",
+      "userId": "123456"
+    }
+  ],
+  "context": {
+    "library": {
+      "name": "analytics-go",
+      "version": "3.0.0"
+    }
+  },
+  "messageId": "I'm unique",
+  "sentAt": "2009-11-10T23:00:00+0000"
+}`
+
+	if res := string(<-body); ref != res {
+		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
+	}
 }
 
-func ExampleInterval() {
+func TestTrackWithInterval(t *testing.T) {
+	const interval = 100 * time.Millisecond
+
 	body, server := mockServer()
 	defer server.Close()
 
+	t0 := time.Now()
+
 	client := New("h97jamjwbh")
 	client.Endpoint = server.URL
+	client.Interval = interval
 	client.now = mockTime
 	client.uid = mockId
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -155,36 +165,42 @@ func ExampleInterval() {
 		},
 	})
 
-	// Will flush in 5 seconds (default interval).
-	fmt.Printf("%s\n", <-body)
-	// Output:
-	// {
-	//   "batch": [
-	//     {
-	//       "event": "Download",
-	//       "messageId": "I'm unique",
-	//       "properties": {
-	//         "application": "Segment Desktop",
-	//         "platform": "osx",
-	//         "version": "1.1.0"
-	//       },
-	//       "timestamp": "2009-11-10T23:00:00+0000",
-	//       "type": "track",
-	//       "userId": "123456"
-	//     }
-	//   ],
-	//   "context": {
-	//     "library": {
-	//       "name": "analytics-go",
-	//       "version": "2.1.0"
-	//     }
-	//   },
-	//   "messageId": "I'm unique",
-	//   "sentAt": "2009-11-10T23:00:00+0000"
-	// }
+	const ref = `{
+  "batch": [
+    {
+      "event": "Download",
+      "messageId": "I'm unique",
+      "properties": {
+        "application": "Segment Desktop",
+        "platform": "osx",
+        "version": "1.1.0"
+      },
+      "timestamp": "2009-11-10T23:00:00+0000",
+      "type": "track",
+      "userId": "123456"
+    }
+  ],
+  "context": {
+    "library": {
+      "name": "analytics-go",
+      "version": "3.0.0"
+    }
+  },
+  "messageId": "I'm unique",
+  "sentAt": "2009-11-10T23:00:00+0000"
+}`
+
+	// Will flush in 100 milliseconds
+	if res := string(<-body); ref != res {
+		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
+	}
+
+	if t1 := time.Now(); t1.Sub(t0) < interval {
+		t.Error("the flushing interval is too short:", interval)
+	}
 }
 
-func ExampleTrackWithTimestampSet() {
+func TestTrackWithTimestamp(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
@@ -194,7 +210,7 @@ func ExampleTrackWithTimestampSet() {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -207,35 +223,37 @@ func ExampleTrackWithTimestampSet() {
 		},
 	})
 
-	fmt.Printf("%s\n", <-body)
-	// Output:
-	// {
-	//   "batch": [
-	//     {
-	//       "event": "Download",
-	//       "messageId": "I'm unique",
-	//       "properties": {
-	//         "application": "Segment Desktop",
-	//         "platform": "osx",
-	//         "version": "1.1.0"
-	//       },
-	//       "timestamp": "2015-07-10T23:00:00+0000",
-	//       "type": "track",
-	//       "userId": "123456"
-	//     }
-	//   ],
-	//   "context": {
-	//     "library": {
-	//       "name": "analytics-go",
-	//       "version": "2.1.0"
-	//     }
-	//   },
-	//   "messageId": "I'm unique",
-	//   "sentAt": "2009-11-10T23:00:00+0000"
-	// }
+	const ref = `{
+  "batch": [
+    {
+      "event": "Download",
+      "messageId": "I'm unique",
+      "properties": {
+        "application": "Segment Desktop",
+        "platform": "osx",
+        "version": "1.1.0"
+      },
+      "timestamp": "2015-07-10T23:00:00+0000",
+      "type": "track",
+      "userId": "123456"
+    }
+  ],
+  "context": {
+    "library": {
+      "name": "analytics-go",
+      "version": "3.0.0"
+    }
+  },
+  "messageId": "I'm unique",
+  "sentAt": "2009-11-10T23:00:00+0000"
+}`
+
+	if res := string(<-body); ref != res {
+		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
+	}
 }
 
-func ExampleTrackWithMessageIdSet() {
+func TestTrackWithMessageId(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
@@ -245,7 +263,7 @@ func ExampleTrackWithMessageIdSet() {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -258,35 +276,37 @@ func ExampleTrackWithMessageIdSet() {
 		},
 	})
 
-	fmt.Printf("%s\n", <-body)
-	// Output:
-	// {
-	//   "batch": [
-	//     {
-	//       "event": "Download",
-	//       "messageId": "abc",
-	//       "properties": {
-	//         "application": "Segment Desktop",
-	//         "platform": "osx",
-	//         "version": "1.1.0"
-	//       },
-	//       "timestamp": "2009-11-10T23:00:00+0000",
-	//       "type": "track",
-	//       "userId": "123456"
-	//     }
-	//   ],
-	//   "context": {
-	//     "library": {
-	//       "name": "analytics-go",
-	//       "version": "2.1.0"
-	//     }
-	//   },
-	//   "messageId": "I'm unique",
-	//   "sentAt": "2009-11-10T23:00:00+0000"
-	// }
+	const ref = `{
+  "batch": [
+    {
+      "event": "Download",
+      "messageId": "abc",
+      "properties": {
+        "application": "Segment Desktop",
+        "platform": "osx",
+        "version": "1.1.0"
+      },
+      "timestamp": "2009-11-10T23:00:00+0000",
+      "type": "track",
+      "userId": "123456"
+    }
+  ],
+  "context": {
+    "library": {
+      "name": "analytics-go",
+      "version": "3.0.0"
+    }
+  },
+  "messageId": "I'm unique",
+  "sentAt": "2009-11-10T23:00:00+0000"
+}`
+
+	if res := string(<-body); ref != res {
+		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
+	}
 }
 
-func ExampleTrack_context() {
+func TestTrackWithContext(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
@@ -296,7 +316,7 @@ func ExampleTrack_context() {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -309,38 +329,40 @@ func ExampleTrack_context() {
 		},
 	})
 
-	fmt.Printf("%s\n", <-body)
-	// Output:
-	// {
-	//   "batch": [
-	//     {
-	//       "context": {
-	//         "whatever": "here"
-	//       },
-	//       "event": "Download",
-	//       "messageId": "I'm unique",
-	//       "properties": {
-	//         "application": "Segment Desktop",
-	//         "platform": "osx",
-	//         "version": "1.1.0"
-	//       },
-	//       "timestamp": "2009-11-10T23:00:00+0000",
-	//       "type": "track",
-	//       "userId": "123456"
-	//     }
-	//   ],
-	//   "context": {
-	//     "library": {
-	//       "name": "analytics-go",
-	//       "version": "2.1.0"
-	//     }
-	//   },
-	//   "messageId": "I'm unique",
-	//   "sentAt": "2009-11-10T23:00:00+0000"
-	// }
+	const ref = `{
+  "batch": [
+    {
+      "context": {
+        "whatever": "here"
+      },
+      "event": "Download",
+      "messageId": "I'm unique",
+      "properties": {
+        "application": "Segment Desktop",
+        "platform": "osx",
+        "version": "1.1.0"
+      },
+      "timestamp": "2009-11-10T23:00:00+0000",
+      "type": "track",
+      "userId": "123456"
+    }
+  ],
+  "context": {
+    "library": {
+      "name": "analytics-go",
+      "version": "3.0.0"
+    }
+  },
+  "messageId": "I'm unique",
+  "sentAt": "2009-11-10T23:00:00+0000"
+}`
+
+	if res := string(<-body); ref != res {
+		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
+	}
 }
 
-func ExampleTrack_many() {
+func TestTrackMany(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
@@ -351,7 +373,7 @@ func ExampleTrack_many() {
 	client.Size = 3
 
 	for i := 0; i < 5; i++ {
-		client.Track(&Track{
+		client.Track(Track{
 			Event:  "Download",
 			UserId: "123456",
 			Properties: map[string]interface{}{
@@ -361,56 +383,58 @@ func ExampleTrack_many() {
 		})
 	}
 
-	fmt.Printf("%s\n", <-body)
-	// Output:
-	// {
-	//   "batch": [
-	//     {
-	//       "event": "Download",
-	//       "messageId": "I'm unique",
-	//       "properties": {
-	//         "application": "Segment Desktop",
-	//         "version": 0
-	//       },
-	//       "timestamp": "2009-11-10T23:00:00+0000",
-	//       "type": "track",
-	//       "userId": "123456"
-	//     },
-	//     {
-	//       "event": "Download",
-	//       "messageId": "I'm unique",
-	//       "properties": {
-	//         "application": "Segment Desktop",
-	//         "version": 1
-	//       },
-	//       "timestamp": "2009-11-10T23:00:00+0000",
-	//       "type": "track",
-	//       "userId": "123456"
-	//     },
-	//     {
-	//       "event": "Download",
-	//       "messageId": "I'm unique",
-	//       "properties": {
-	//         "application": "Segment Desktop",
-	//         "version": 2
-	//       },
-	//       "timestamp": "2009-11-10T23:00:00+0000",
-	//       "type": "track",
-	//       "userId": "123456"
-	//     }
-	//   ],
-	//   "context": {
-	//     "library": {
-	//       "name": "analytics-go",
-	//       "version": "2.1.0"
-	//     }
-	//   },
-	//   "messageId": "I'm unique",
-	//   "sentAt": "2009-11-10T23:00:00+0000"
-	// }
+	const ref = `{
+  "batch": [
+    {
+      "event": "Download",
+      "messageId": "I'm unique",
+      "properties": {
+        "application": "Segment Desktop",
+        "version": 0
+      },
+      "timestamp": "2009-11-10T23:00:00+0000",
+      "type": "track",
+      "userId": "123456"
+    },
+    {
+      "event": "Download",
+      "messageId": "I'm unique",
+      "properties": {
+        "application": "Segment Desktop",
+        "version": 1
+      },
+      "timestamp": "2009-11-10T23:00:00+0000",
+      "type": "track",
+      "userId": "123456"
+    },
+    {
+      "event": "Download",
+      "messageId": "I'm unique",
+      "properties": {
+        "application": "Segment Desktop",
+        "version": 2
+      },
+      "timestamp": "2009-11-10T23:00:00+0000",
+      "type": "track",
+      "userId": "123456"
+    }
+  ],
+  "context": {
+    "library": {
+      "name": "analytics-go",
+      "version": "3.0.0"
+    }
+  },
+  "messageId": "I'm unique",
+  "sentAt": "2009-11-10T23:00:00+0000"
+}`
+
+	if res := string(<-body); ref != res {
+		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
+	}
 }
 
-func ExampleTrackWithIntegrations() {
+func TestTrackWithIntegrations(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
@@ -420,7 +444,7 @@ func ExampleTrackWithIntegrations() {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -435,35 +459,61 @@ func ExampleTrackWithIntegrations() {
 		},
 	})
 
-	fmt.Printf("%s\n", <-body)
-	// Output:
-	// {
-	//   "batch": [
-	//     {
-	//       "event": "Download",
-	//       "integrations": {
-	//         "All": true,
-	//         "Intercom": false,
-	//         "Mixpanel": true
-	//       },
-	//       "messageId": "I'm unique",
-	//       "properties": {
-	//         "application": "Segment Desktop",
-	//         "platform": "osx",
-	//         "version": "1.1.0"
-	//       },
-	//       "timestamp": "2009-11-10T23:00:00+0000",
-	//       "type": "track",
-	//       "userId": "123456"
-	//     }
-	//   ],
-	//   "context": {
-	//     "library": {
-	//       "name": "analytics-go",
-	//       "version": "2.1.0"
-	//     }
-	//   },
-	//   "messageId": "I'm unique",
-	//   "sentAt": "2009-11-10T23:00:00+0000"
-	// }
+	const ref = `{
+  "batch": [
+    {
+      "event": "Download",
+      "integrations": {
+        "All": true,
+        "Intercom": false,
+        "Mixpanel": true
+      },
+      "messageId": "I'm unique",
+      "properties": {
+        "application": "Segment Desktop",
+        "platform": "osx",
+        "version": "1.1.0"
+      },
+      "timestamp": "2009-11-10T23:00:00+0000",
+      "type": "track",
+      "userId": "123456"
+    }
+  ],
+  "context": {
+    "library": {
+      "name": "analytics-go",
+      "version": "3.0.0"
+    }
+  },
+  "messageId": "I'm unique",
+  "sentAt": "2009-11-10T23:00:00+0000"
+}`
+
+	if res := string(<-body); ref != res {
+		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
+	}
+}
+
+func TestCloseTwice(t *testing.T) {
+	client := New("0123456789")
+
+	if err := client.Close(); err != nil {
+		t.Error("closing a client should not a return an error")
+	}
+
+	if err := client.Close(); err != io.EOF {
+		t.Error("closing a client a second time should return io.EOF:", err)
+	}
+}
+
+func TestCloseTwice(t *testing.T) {
+	client := New("0123456789")
+
+	if err := client.Close(); err != nil {
+		t.Error("closing a client should not a return an error")
+	}
+
+	if err := client.Close(); err != io.EOF {
+		t.Error("closing a client a second time should return io.EOF:", err)
+	}
 }

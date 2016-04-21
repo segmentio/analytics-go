@@ -19,7 +19,7 @@ out:
 			println("exiting")
 			break out
 		case <-tick:
-			client.Track(&analytics.Track{
+			client.Track(analytics.Track{
 				Event:  "Download",
 				UserId: "123456",
 				Properties: map[string]interface{}{
