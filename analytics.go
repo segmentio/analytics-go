@@ -229,7 +229,7 @@ func (c *Client) Close() (err error) {
 			err = io.EOF
 		}
 	}()
-	c.quit <- struct{}{}
+	close(c.quit)
 	<-c.shutdown
 	return
 }
@@ -305,7 +305,6 @@ func (c *Client) report(res *http.Response) {
 
 // Batch loop.
 func (c *Client) loop() {
-	defer close(c.quit)
 	defer close(c.shutdown)
 
 	var msgs []interface{}
