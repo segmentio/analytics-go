@@ -49,7 +49,7 @@ func ExampleTrack() {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -96,7 +96,7 @@ func ExampleClose() {
 	client.now = mockTime
 	client.uid = mockId
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -145,7 +145,7 @@ func ExampleInterval() {
 	client.now = mockTime
 	client.uid = mockId
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -194,7 +194,7 @@ func ExampleTrackWithTimestampSet() {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -245,7 +245,7 @@ func ExampleTrackWithMessageIdSet() {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -296,7 +296,7 @@ func ExampleTrack_context() {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -351,7 +351,7 @@ func ExampleTrack_many() {
 	client.Size = 3
 
 	for i := 0; i < 5; i++ {
-		client.Track(&Track{
+		client.Track(Track{
 			Event:  "Download",
 			UserId: "123456",
 			Properties: map[string]interface{}{
@@ -420,7 +420,7 @@ func ExampleTrackWithIntegrations() {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(&Track{
+	client.Track(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
