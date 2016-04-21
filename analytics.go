@@ -253,7 +253,7 @@ func (c *Client) send(msgs []interface{}) {
 
 	b, err := json.Marshal(batch)
 	if err != nil {
-		c.log("error marshalling msgs: %s", err)
+		c.logf("error marshalling msgs: %s", err)
 		return
 	}
 
@@ -270,7 +270,7 @@ func (c *Client) upload(b []byte) error {
 	url := c.Endpoint + "/v1/batch"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
-		c.log("error creating request: %s", err)
+		c.logf("error creating request: %s", err)
 		return err
 	}
 
@@ -281,7 +281,7 @@ func (c *Client) upload(b []byte) error {
 
 	res, err := c.Client.Do(req)
 	if err != nil {
-		c.log("error sending request: %s", err)
+		c.logf("error sending request: %s", err)
 		return err
 	}
 	defer res.Body.Close()
@@ -301,11 +301,11 @@ func (c *Client) report(res *http.Response) {
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		c.log("error reading response body: %s", err)
+		c.logf("error reading response body: %s", err)
 		return
 	}
 
-	c.log("response %s: %s – %s", res.Status, res.StatusCode, body)
+	c.logf("response %s: %d – %s", res.Status, res.StatusCode, body)
 }
 
 // Batch loop.
@@ -356,7 +356,7 @@ func (c *Client) verbose(msg string, args ...interface{}) {
 }
 
 // Unconditional log.
-func (c *Client) log(msg string, args ...interface{}) {
+func (c *Client) logf(msg string, args ...interface{}) {
 	c.Logger.Printf(msg, args...)
 }
 
