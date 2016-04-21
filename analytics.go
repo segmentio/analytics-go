@@ -18,7 +18,7 @@ import (
 )
 
 // Version of the client.
-const Version = "2.1.0"
+const Version = "3.0.0"
 
 // Endpoint for the Segment API.
 const Endpoint = "https://api.segment.io"
