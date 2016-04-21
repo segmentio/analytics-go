@@ -1,6 +1,9 @@
 package analytics
 
-import "net/http/httptest"
+import (
+	"net/http/httptest"
+	"testing"
+)
 import "encoding/json"
 import "net/http"
 import "bytes"
@@ -466,4 +469,16 @@ func ExampleTrackWithIntegrations() {
 	//   "messageId": "I'm unique",
 	//   "sentAt": "2009-11-10T23:00:00+0000"
 	// }
+}
+
+func TestCloseTwice(t *testing.T) {
+	client := New("0123456789")
+
+	if err := client.Close(); err != nil {
+		t.Error("closing a client should not a return an error")
+	}
+
+	if err := client.Close(); err != io.EOF {
+		t.Error("closing a client a second time should return io.EOF:", err)
+	}
 }
