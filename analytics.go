@@ -309,6 +309,7 @@ func (c *Client) loop() {
 
 	var msgs []interface{}
 	var tick = time.NewTicker(c.Interval)
+	defer tick.Stop()
 
 	for {
 		select {
@@ -329,7 +330,6 @@ func (c *Client) loop() {
 				c.verbose("interval reached – nothing to send")
 			}
 		case <-c.quit:
-			tick.Stop()
 			c.verbose("exit requested – draining msgs")
 
 			// Drain the msg channel, we have to close it first so no more
