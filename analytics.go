@@ -1,27 +1,34 @@
 package analytics
 
 import (
-	"io/ioutil"
-	"os"
-	"sync"
-
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/jehiah/go-strftime"
+	"github.com/juju/ratelimit"
 	"github.com/segmentio/backo-go"
 	"github.com/xtgo/uuid"
 )
 
-// Version of the client.
-const Version = "2.1.0"
-
-// Endpoint for the Segment API.
-const Endpoint = "https://api.segment.io"
+const (
+	// Version of the client.
+	Version = "2.1.0"
+	// Endpoint for the Segment API.
+	DefaultEndpoint = "https://api.segment.io"
+	// Number of buffered events before triggering a batch POST
+	DefaultBufferSize = 250
+	// Default flush interval
+	DefaultInterval = 5 * time.Second
+	// Default ratelimit is 50 batched requests per second
+	DefaultRatelimit = 50
+)
 
 // DefaultContext of message batches.
 var DefaultContext = map[string]interface{}{
@@ -32,7 +39,10 @@ var DefaultContext = map[string]interface{}{
 }
 
 // Backoff policy.
-var Backo = backo.DefaultBacko()
+var expBacko = backo.DefaultBacko()
+
+// Ratelimiter
+var tokenbucket *ratelimit.Bucket
 
 // Message interface.
 type message interface {
@@ -110,41 +120,54 @@ type Alias struct {
 // when the Size limit is exceeded. Set Verbose to true to enable
 // logging output.
 type Client struct {
-	Endpoint string
-	// Interval represents the duration at which messages are flushed. It may be
-	// configured only before any messages are enqueued.
-	Interval time.Duration
-	Size     int
-	Logger   *log.Logger
-	Verbose  bool
-	Client   http.Client
-	key      string
-	msgs     chan interface{}
-	quit     chan struct{}
-	shutdown chan struct{}
-	uid      func() string
-	now      func() time.Time
-	once     sync.Once
+	endpoint string
+	// interval represents the duration at which messages are flushed
+	interval time.Duration
+	// ratelimiter limits request per second to this value
+	ratelimit  int
+	bufferSize int
+	logger     *log.Logger
+	verbose    bool
+	client     *http.Client
+	key        string
+	msgs       chan interface{}
+	quit       chan struct{}
+	shutdown   chan struct{}
+	uid        func() string
+	now        func() time.Time
+	once       sync.Once
 }
 
 // New client with write key.
-func New(key string) *Client {
+func New(key string, configs ...ClientConfigFunc) (*Client, error) {
 	c := &Client{
-		Endpoint: Endpoint,
-		Interval: 5 * time.Second,
-		Size:     250,
-		Logger:   log.New(os.Stderr, "segment ", log.LstdFlags),
-		Verbose:  false,
-		Client:   *http.DefaultClient,
-		key:      key,
-		msgs:     make(chan interface{}, 100),
-		quit:     make(chan struct{}),
-		shutdown: make(chan struct{}),
-		now:      time.Now,
-		uid:      uid,
+		endpoint:   DefaultEndpoint,
+		interval:   DefaultInterval,
+		ratelimit:  DefaultRatelimit,
+		bufferSize: DefaultBufferSize,
+		logger:     log.New(os.Stderr, "segment ", log.LstdFlags),
+		verbose:    false,
+		client:     http.DefaultClient,
+		key:        key,
+		quit:       make(chan struct{}),
+		shutdown:   make(chan struct{}),
+		now:        time.Now,
+		uid:        uid,
 	}
 
-	return c
+	for _, conf := range configs {
+		if err := conf(c); err != nil {
+			return nil, err
+		}
+	}
+
+	c.msgs = make(chan interface{}, c.bufferSize)
+
+	tokenbucket = ratelimit.NewBucketWithQuantum(time.Second, int64(c.ratelimit), int64(c.ratelimit))
+
+	c.startLoop()
+
+	return c, nil
 }
 
 // Alias buffers an "alias" message.
@@ -225,7 +248,6 @@ func (c *Client) startLoop() {
 
 // Queue message.
 func (c *Client) queue(msg message) {
-	c.once.Do(c.startLoop)
 	msg.setMessageId(c.uid())
 	msg.setTimestamp(timestamp(c.now()))
 	c.msgs <- msg
@@ -261,13 +283,13 @@ func (c *Client) send(msgs []interface{}) {
 		if err := c.upload(b); err == nil {
 			break
 		}
-		Backo.Sleep(i)
+		expBacko.Sleep(i)
 	}
 }
 
 // Upload serialized batch message.
 func (c *Client) upload(b []byte) error {
-	url := c.Endpoint + "/v1/batch"
+	url := c.endpoint + "/v1/batch"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
 		c.logf("error creating request: %s", err)
@@ -279,7 +301,10 @@ func (c *Client) upload(b []byte) error {
 	req.Header.Add("Content-Length", string(len(b)))
 	req.SetBasicAuth(c.key, "")
 
-	res, err := c.Client.Do(req)
+	// Ratelelimit
+	tokenbucket.Wait(1)
+
+	res, err := c.client.Do(req)
 	if err != nil {
 		c.logf("error sending request: %s", err)
 		return err
@@ -294,7 +319,7 @@ func (c *Client) upload(b []byte) error {
 // Report on response body.
 func (c *Client) report(res *http.Response) {
 	if res.StatusCode < 400 {
-		c.verbose("response %s", res.Status)
+		c.verbosef("response %s", res.Status)
 		return
 	}
 
@@ -311,37 +336,37 @@ func (c *Client) report(res *http.Response) {
 // Batch loop.
 func (c *Client) loop() {
 	var msgs []interface{}
-	tick := time.NewTicker(c.Interval)
+	tick := time.NewTicker(c.interval)
 
 	for {
 		select {
 		case msg := <-c.msgs:
-			c.verbose("buffer (%d/%d) %v", len(msgs), c.Size, msg)
+			c.verbosef("buffer (%d/%d) %v", len(msgs), c.bufferSize, msg)
 			msgs = append(msgs, msg)
-			if len(msgs) == c.Size {
-				c.verbose("exceeded %d messages – flushing", c.Size)
+			if len(msgs) == c.bufferSize {
+				c.verbosef("exceeded %d messages – flushing", c.bufferSize)
 				c.send(msgs)
 				msgs = nil
 			}
 		case <-tick.C:
 			if len(msgs) > 0 {
-				c.verbose("interval reached - flushing %d", len(msgs))
+				c.verbosef("interval reached - flushing %d", len(msgs))
 				c.send(msgs)
 				msgs = nil
 			} else {
-				c.verbose("interval reached – nothing to send")
+				c.verbosef("interval reached – nothing to send")
 			}
 		case <-c.quit:
 			tick.Stop()
-			c.verbose("exit requested – draining msgs")
+			c.verbosef("exit requested – draining msgs")
 			// drain the msg channel.
 			for msg := range c.msgs {
-				c.verbose("buffer (%d/%d) %v", len(msgs), c.Size, msg)
+				c.verbosef("buffer (%d/%d) %v", len(msgs), c.bufferSize, msg)
 				msgs = append(msgs, msg)
 			}
-			c.verbose("exit requested – flushing %d", len(msgs))
+			c.verbosef("exit requested – flushing %d", len(msgs))
 			c.send(msgs)
-			c.verbose("exit")
+			c.verbosef("exit")
 			c.shutdown <- struct{}{}
 			return
 		}
@@ -349,15 +374,15 @@ func (c *Client) loop() {
 }
 
 // Verbose log.
-func (c *Client) verbose(msg string, args ...interface{}) {
-	if c.Verbose {
-		c.Logger.Printf(msg, args...)
+func (c *Client) verbosef(msg string, args ...interface{}) {
+	if c.verbose {
+		c.logger.Printf(msg, args...)
 	}
 }
 
 // Unconditional log.
 func (c *Client) logf(msg string, args ...interface{}) {
-	c.Logger.Printf(msg, args...)
+	c.logger.Printf(msg, args...)
 }
 
 // Set message timestamp if one is not already set.

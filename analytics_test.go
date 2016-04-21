@@ -1,6 +1,9 @@
 package analytics
 
-import "net/http/httptest"
+import (
+	"net/http/httptest"
+	"testing"
+)
 import "encoding/json"
 import "net/http"
 import "bytes"
@@ -43,11 +46,11 @@ func ExampleTrack() {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
+	client, _ := New("h97jamjwbh")
+	client.endpoint = server.URL
 	client.now = mockTime
 	client.uid = mockId
-	client.Size = 1
+	client.bufferSize = 1
 
 	client.Track(&Track{
 		Event:  "Download",
@@ -91,8 +94,8 @@ func ExampleClose() {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
+	client, _ := New("h97jamjwbh")
+	client.endpoint = server.URL
 	client.now = mockTime
 	client.uid = mockId
 
@@ -140,8 +143,8 @@ func ExampleInterval() {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
+	client, _ := New("h97jamjwbh")
+	client.endpoint = server.URL
 	client.now = mockTime
 	client.uid = mockId
 
@@ -188,11 +191,11 @@ func ExampleTrackWithTimestampSet() {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
+	client, _ := New("h97jamjwbh")
+	client.endpoint = server.URL
 	client.now = mockTime
 	client.uid = mockId
-	client.Size = 1
+	client.bufferSize = 1
 
 	client.Track(&Track{
 		Event:  "Download",
@@ -239,11 +242,11 @@ func ExampleTrackWithMessageIdSet() {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
+	client, _ := New("h97jamjwbh")
+	client.endpoint = server.URL
 	client.now = mockTime
 	client.uid = mockId
-	client.Size = 1
+	client.bufferSize = 1
 
 	client.Track(&Track{
 		Event:  "Download",
@@ -290,11 +293,11 @@ func ExampleTrack_context() {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
+	client, _ := New("h97jamjwbh")
+	client.endpoint = server.URL
 	client.now = mockTime
 	client.uid = mockId
-	client.Size = 1
+	client.bufferSize = 1
 
 	client.Track(&Track{
 		Event:  "Download",
@@ -344,11 +347,11 @@ func ExampleTrack_many() {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
+	client, _ := New("h97jamjwbh")
+	client.endpoint = server.URL
 	client.now = mockTime
 	client.uid = mockId
-	client.Size = 3
+	client.bufferSize = 3
 
 	for i := 0; i < 5; i++ {
 		client.Track(&Track{
@@ -414,11 +417,11 @@ func ExampleTrackWithIntegrations() {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
+	client, _ := New("h97jamjwbh")
+	client.endpoint = server.URL
 	client.now = mockTime
 	client.uid = mockId
-	client.Size = 1
+	client.bufferSize = 1
 
 	client.Track(&Track{
 		Event:  "Download",
@@ -466,4 +469,10 @@ func ExampleTrackWithIntegrations() {
 	//   "messageId": "I'm unique",
 	//   "sentAt": "2009-11-10T23:00:00+0000"
 	// }
+}
+
+// tests that close actually exits
+func TestCloseFinish(_ *testing.T) {
+	c, _ := New("test")
+	c.Close()
 }
