@@ -148,7 +148,7 @@ func New(key string) *Client {
 }
 
 // Alias buffers an "alias" message.
-func (c *Client) Alias(msg *Alias) error {
+func (c *Client) Alias(msg Alias) error {
 	if msg.UserId == "" {
 		return errors.New("You must pass a 'userId'.")
 	}
@@ -158,25 +158,25 @@ func (c *Client) Alias(msg *Alias) error {
 	}
 
 	msg.Type = "alias"
-	c.queue(msg)
+	c.queue(&msg)
 
 	return nil
 }
 
 // Page buffers an "page" message.
-func (c *Client) Page(msg *Page) error {
+func (c *Client) Page(msg Page) error {
 	if msg.UserId == "" && msg.AnonymousId == "" {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
 	}
 
 	msg.Type = "page"
-	c.queue(msg)
+	c.queue(&msg)
 
 	return nil
 }
 
 // Group buffers an "group" message.
-func (c *Client) Group(msg *Group) error {
+func (c *Client) Group(msg Group) error {
 	if msg.GroupId == "" {
 		return errors.New("You must pass a 'groupId'.")
 	}
@@ -186,25 +186,25 @@ func (c *Client) Group(msg *Group) error {
 	}
 
 	msg.Type = "group"
-	c.queue(msg)
+	c.queue(&msg)
 
 	return nil
 }
 
 // Identify buffers an "identify" message.
-func (c *Client) Identify(msg *Identify) error {
+func (c *Client) Identify(msg Identify) error {
 	if msg.UserId == "" && msg.AnonymousId == "" {
 		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
 	}
 
 	msg.Type = "identify"
-	c.queue(msg)
+	c.queue(&msg)
 
 	return nil
 }
 
 // Track buffers an "track" message.
-func (c *Client) Track(msg *Track) error {
+func (c *Client) Track(msg Track) error {
 	if msg.Event == "" {
 		return errors.New("You must pass 'event'.")
 	}
@@ -214,7 +214,7 @@ func (c *Client) Track(msg *Track) error {
 	}
 
 	msg.Type = "track"
-	c.queue(msg)
+	c.queue(&msg)
 
 	return nil
 }
