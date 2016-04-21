@@ -82,7 +82,7 @@ func ExampleTrack() {
 	//   "context": {
 	//     "library": {
 	//       "name": "analytics-go",
-	//       "version": "2.1.0"
+	//       "version": "3.0.0"
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
@@ -129,7 +129,7 @@ func TestTrack(t *testing.T) {
   "context": {
     "library": {
       "name": "analytics-go",
-      "version": "2.1.0"
+      "version": "3.0.0"
     }
   },
   "messageId": "I'm unique",
@@ -183,7 +183,7 @@ func TestTrackWithInterval(t *testing.T) {
   "context": {
     "library": {
       "name": "analytics-go",
-      "version": "2.1.0"
+      "version": "3.0.0"
     }
   },
   "messageId": "I'm unique",
@@ -241,7 +241,7 @@ func TestTrackWithTimestamp(t *testing.T) {
   "context": {
     "library": {
       "name": "analytics-go",
-      "version": "2.1.0"
+      "version": "3.0.0"
     }
   },
   "messageId": "I'm unique",
@@ -294,7 +294,7 @@ func TestTrackWithMessageId(t *testing.T) {
   "context": {
     "library": {
       "name": "analytics-go",
-      "version": "2.1.0"
+      "version": "3.0.0"
     }
   },
   "messageId": "I'm unique",
@@ -350,7 +350,7 @@ func TestTrackWithContext(t *testing.T) {
   "context": {
     "library": {
       "name": "analytics-go",
-      "version": "2.1.0"
+      "version": "3.0.0"
     }
   },
   "messageId": "I'm unique",
@@ -422,7 +422,7 @@ func TestTrackMany(t *testing.T) {
   "context": {
     "library": {
       "name": "analytics-go",
-      "version": "2.1.0"
+      "version": "3.0.0"
     }
   },
   "messageId": "I'm unique",
@@ -482,7 +482,7 @@ func TestTrackWithIntegrations(t *testing.T) {
   "context": {
     "library": {
       "name": "analytics-go",
-      "version": "2.1.0"
+      "version": "3.0.0"
     }
   },
   "messageId": "I'm unique",
