@@ -8,7 +8,7 @@ import (
 )
 
 // This test ensures that the interface doesn't get changed and stays compatible
-// with the testLogger type.
+// with the *testing.T type.
 // If someone were to modify the interface in backward incompatible manner this
 // test would break.
 func TestTestingLogger(t *testing.T) {
