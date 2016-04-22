@@ -34,7 +34,7 @@ func TestAliasMissingUserId(t *testing.T) {
 		Name:  "UserId",
 		Value: "",
 	}) {
-		t.Errorf("invalid error value returned when validating alias:", err)
+		t.Error("invalid error value returned when validating alias:", err)
 	}
 }
 
@@ -54,7 +54,7 @@ func TestAliasMissingPreviousId(t *testing.T) {
 		Name:  "PreviousId",
 		Value: "",
 	}) {
-		t.Errorf("invalid error value returned when validating alias:", err)
+		t.Error("invalid error value returned when validating alias:", err)
 	}
 }
 

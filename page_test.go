@@ -32,7 +32,7 @@ func TestPageMissingUserId(t *testing.T) {
 		Name:  "UserId",
 		Value: "",
 	}) {
-		t.Errorf("invalid error value returned when validating page:", err)
+		t.Error("invalid error value returned when validating page:", err)
 	}
 }
 

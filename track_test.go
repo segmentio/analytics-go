@@ -34,7 +34,7 @@ func TestTrackMissingEvent(t *testing.T) {
 		Name:  "Event",
 		Value: "",
 	}) {
-		t.Errorf("invalid error value returned when validating track:", err)
+		t.Error("invalid error value returned when validating track:", err)
 	}
 }
 
@@ -54,7 +54,7 @@ func TestTrackMissingUserId(t *testing.T) {
 		Name:  "UserId",
 		Value: "",
 	}) {
-		t.Errorf("invalid error value returned when validating track:", err)
+		t.Error("invalid error value returned when validating track:", err)
 	}
 }
 

@@ -34,7 +34,7 @@ func TestGroupMissingGroupId(t *testing.T) {
 		Name:  "GroupId",
 		Value: "",
 	}) {
-		t.Errorf("invalid error value returned when validating group:", err)
+		t.Error("invalid error value returned when validating group:", err)
 	}
 }
 
@@ -54,7 +54,7 @@ func TestGroupMissingUserId(t *testing.T) {
 		Name:  "UserId",
 		Value: "",
 	}) {
-		t.Errorf("invalid error value returned when validating group:", err)
+		t.Error("invalid error value returned when validating group:", err)
 	}
 }
 

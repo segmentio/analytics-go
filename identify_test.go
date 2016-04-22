@@ -31,7 +31,7 @@ func TestIdentifyMissingUserId(t *testing.T) {
 		Name:  "UserId",
 		Value: "",
 	}) {
-		t.Errorf("invalid error value returned when validating identify:", err)
+		t.Error("invalid error value returned when validating identify:", err)
 	}
 }
 
