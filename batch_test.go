@@ -40,3 +40,11 @@ func TestBatchSerializable(t *testing.T) {
 		t.Errorf("%s: %#v", err, v)
 	}
 }
+
+func TestBatchValidate(t *testing.T) {
+	batch := batch{}
+
+	if err := batch.validate(); err != nil {
+		t.Error("batch objects should always be valid because they are only used internally:", err)
+	}
+}
