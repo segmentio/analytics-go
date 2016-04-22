@@ -1,6 +1,10 @@
 package main
 
-import "github.com/segmentio/analytics-go"
+import (
+	"fmt"
+
+	"github.com/segmentio/analytics-go"
+)
 import "time"
 
 func main() {
@@ -8,18 +12,19 @@ func main() {
 	client.Interval = 30 * time.Second
 	client.Size = 100
 	client.Verbose = true
+	defer client.Close()
 
 	done := time.After(3 * time.Second)
 	tick := time.Tick(50 * time.Millisecond)
 
-out:
 	for {
 		select {
 		case <-done:
-			println("exiting")
-			break out
+			fmt.Println("exiting")
+			return
+
 		case <-tick:
-			client.Track(analytics.Track{
+			if err := client.Enqueue(analytics.Track{
 				Event:  "Download",
 				UserId: "123456",
 				Properties: map[string]interface{}{
@@ -27,10 +32,10 @@ out:
 					"version":     "1.1.0",
 					"platform":    "osx",
 				},
-			})
+			}); err != nil {
+				fmt.Println("error:", err)
+				return
+			}
 		}
 	}
-
-	println("flushing")
-	client.Close()
 }

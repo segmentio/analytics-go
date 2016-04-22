@@ -9,22 +9,40 @@ type Group struct {
 	AnonymousId  string
 	UserId       string
 	GroupId      string
-	SentAt       time.Time
 	Timestamp    time.Time
 	Traits       map[string]interface{}
 	Context      map[string]interface{}
 	Integrations map[string]interface{}
 }
 
-func (msg Group) serializable() interface{} {
+func (msg Group) validate() error {
+	if len(msg.GroupId) == 0 {
+		return FieldError{
+			Type:  "analytics.Group",
+			Name:  "GroupId",
+			Value: msg.GroupId,
+		}
+	}
+
+	if len(msg.UserId) == 0 && len(msg.AnonymousId) == 0 {
+		return FieldError{
+			Type:  "analytics.Group",
+			Name:  "UserId",
+			Value: msg.UserId,
+		}
+	}
+
+	return nil
+}
+
+func (msg Group) serializable(msgid string, time time.Time) interface{} {
 	return serializableGroup{
 		Type:         "group",
-		MessageId:    msg.MessageId,
+		MessageId:    makeMessageId(msg.MessageId, msgid),
 		AnonymousId:  msg.AnonymousId,
 		UserId:       msg.UserId,
 		GroupId:      msg.GroupId,
-		SentAt:       formatTime(msg.SentAt),
-		Timestamp:    formatTime(msg.Timestamp),
+		Timestamp:    formatTime(makeTime(msg.Timestamp, time)),
 		Traits:       msg.Traits,
 		Context:      msg.Context,
 		Integrations: msg.Integrations,
@@ -37,7 +55,6 @@ type serializableGroup struct {
 	AnonymousId  string                 `json:"anonymousId,omitempty"`
 	UserId       string                 `json:"userId,omitempty"`
 	GroupId      string                 `json:"groupId"`
-	SentAt       string                 `json:"sentAt,omitempty"`
 	Timestamp    string                 `json:"timestamp,omitempty"`
 	Traits       map[string]interface{} `json:"traits,omitempty"`
 	Context      map[string]interface{} `json:"context,omitempty"`

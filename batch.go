@@ -15,15 +15,18 @@ import "time"
 type batch struct {
 	MessageId string
 	SentAt    time.Time
-	Messages  []Message
+	Messages  []interface{}
 	Context   map[string]interface{}
 }
 
-func (msg batch) serializable() interface{} {
+func (msg batch) validate() error {
+	return nil
+}
+
+func (msg batch) serializable(msgid string, time time.Time) interface{} {
 	return serializableBatch{
-		Type:      "batch",
-		MessageId: msg.MessageId,
-		SentAt:    formatTime(msg.SentAt),
+		MessageId: makeMessageId(msg.MessageId, msgid),
+		SentAt:    formatTime(makeTime(msg.SentAt, time)),
 		Messages:  msg.Messages,
 		Context:   msg.Context,
 	}
@@ -33,6 +36,6 @@ type serializableBatch struct {
 	Type      string                 `json:"type,omitempty"`
 	MessageId string                 `json:"messageId,omitempty"`
 	SentAt    string                 `json:"sentAt,omitempty"`
-	Messages  []Message              `json:"batch"`
+	Messages  []interface{}          `json:"batch"`
 	Context   map[string]interface{} `json:"context,omitempty"`
 }

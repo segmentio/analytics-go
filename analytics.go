@@ -7,12 +7,10 @@ import (
 
 	"bytes"
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/jehiah/go-strftime"
 	"github.com/segmentio/backo-go"
 	"github.com/xtgo/uuid"
 )
@@ -47,7 +45,7 @@ type Client struct {
 	Verbose  bool
 	Client   http.Client
 	key      string
-	msgs     chan Mesage{}
+	msgs     chan interface{}
 	quit     chan struct{}
 	shutdown chan struct{}
 	uid      func() string
@@ -65,7 +63,7 @@ func New(key string) *Client {
 		Verbose:  false,
 		Client:   *http.DefaultClient,
 		key:      key,
-		msgs:     make(chan Message, 100),
+		msgs:     make(chan interface{}, 100),
 		quit:     make(chan struct{}),
 		shutdown: make(chan struct{}),
 		now:      time.Now,
@@ -79,76 +77,13 @@ func (c *Client) Enqueue(msg Message) (err error) {
 	if err = msg.validate(); err != nil {
 		return
 	}
-
+	c.once.Do(c.startLoop)
+	c.msgs <- msg.serializable(c.uid(), c.now())
 	return
-}
-
-// Page buffers an "page" message.
-func (c *Client) Page(msg Page) error {
-	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
-	}
-
-	msg.Type = "page"
-	c.queue(&msg)
-
-	return nil
-}
-
-// Group buffers an "group" message.
-func (c *Client) Group(msg Group) error {
-	if msg.GroupId == "" {
-		return errors.New("You must pass a 'groupId'.")
-	}
-
-	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
-	}
-
-	msg.Type = "group"
-	c.queue(&msg)
-
-	return nil
-}
-
-// Identify buffers an "identify" message.
-func (c *Client) Identify(msg Identify) error {
-	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
-	}
-
-	msg.Type = "identify"
-	c.queue(&msg)
-
-	return nil
-}
-
-// Track buffers an "track" message.
-func (c *Client) Track(msg Track) error {
-	if msg.Event == "" {
-		return errors.New("You must pass 'event'.")
-	}
-
-	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
-	}
-
-	msg.Type = "track"
-	c.queue(&msg)
-
-	return nil
 }
 
 func (c *Client) startLoop() {
 	go c.loop()
-}
-
-// Queue message.
-func (c *Client) queue(msg message) {
-	c.once.Do(c.startLoop)
-	msg.setMessageId(c.uid())
-	msg.setTimestamp(timestamp(c.now()))
-	c.msgs <- msg
 }
 
 // Close and flush metrics.
@@ -165,13 +100,11 @@ func (c *Client) send(msgs []interface{}) {
 		return
 	}
 
-	batch := new(Batch)
-	batch.Messages = msgs
-	batch.MessageId = c.uid()
-	batch.SentAt = timestamp(c.now())
-	batch.Context = DefaultContext
+	b, err := json.Marshal((batch{
+		Messages: msgs,
+		Context:  DefaultContext,
+	}).serializable(c.uid(), c.now()))
 
-	b, err := json.Marshal(batch)
 	if err != nil {
 		c.logf("error marshalling msgs: %s", err)
 		return
@@ -278,25 +211,6 @@ func (c *Client) verbose(msg string, args ...interface{}) {
 // Unconditional log.
 func (c *Client) logf(msg string, args ...interface{}) {
 	c.Logger.Printf(msg, args...)
-}
-
-// Set message timestamp if one is not already set.
-func (m *Message) setTimestamp(s string) {
-	if m.Timestamp == "" {
-		m.Timestamp = s
-	}
-}
-
-// Set message id.
-func (m *Message) setMessageId(s string) {
-	if m.MessageId == "" {
-		m.MessageId = s
-	}
-}
-
-// Return formatted timestamp.
-func timestamp(t time.Time) string {
-	return strftime.Format("%Y-%m-%dT%H:%M:%S%z", t)
 }
 
 // Return uuid string.

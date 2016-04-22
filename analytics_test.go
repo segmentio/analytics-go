@@ -52,7 +52,7 @@ func ExampleTrack() {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(Track{
+	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -99,7 +99,7 @@ func TestTrack(t *testing.T) {
 	client.now = mockTime
 	client.uid = mockId
 
-	client.Track(Track{
+	if err := client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -107,7 +107,10 @@ func TestTrack(t *testing.T) {
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
-	})
+	}); err != nil {
+		t.Error(err)
+		return
+	}
 
 	client.Close()
 
@@ -155,7 +158,7 @@ func TestTrackWithInterval(t *testing.T) {
 	client.now = mockTime
 	client.uid = mockId
 
-	client.Track(Track{
+	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -210,7 +213,7 @@ func TestTrackWithTimestamp(t *testing.T) {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(Track{
+	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -218,9 +221,7 @@ func TestTrackWithTimestamp(t *testing.T) {
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
-		Message: Message{
-			Timestamp: timestamp(time.Date(2015, time.July, 10, 23, 0, 0, 0, time.UTC)),
-		},
+		Timestamp: time.Date(2015, time.July, 10, 23, 0, 0, 0, time.UTC),
 	})
 
 	const ref = `{
@@ -263,7 +264,7 @@ func TestTrackWithMessageId(t *testing.T) {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(Track{
+	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -271,9 +272,7 @@ func TestTrackWithMessageId(t *testing.T) {
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
-		Message: Message{
-			MessageId: "abc",
-		},
+		MessageId: "abc",
 	})
 
 	const ref = `{
@@ -316,7 +315,7 @@ func TestTrackWithContext(t *testing.T) {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(Track{
+	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{
@@ -373,7 +372,7 @@ func TestTrackMany(t *testing.T) {
 	client.Size = 3
 
 	for i := 0; i < 5; i++ {
-		client.Track(Track{
+		client.Enqueue(Track{
 			Event:  "Download",
 			UserId: "123456",
 			Properties: map[string]interface{}{
@@ -444,7 +443,7 @@ func TestTrackWithIntegrations(t *testing.T) {
 	client.uid = mockId
 	client.Size = 1
 
-	client.Track(Track{
+	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: map[string]interface{}{

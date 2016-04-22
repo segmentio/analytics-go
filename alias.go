@@ -8,33 +8,35 @@ type Alias struct {
 	MessageId  string
 	PreviousId string
 	UserId     string
-	SentAt     time.Time
 	Timestamp  time.Time
 }
 
-const (
-	alias = "alias"
-)
-
 func (msg Alias) validate() error {
 	if len(msg.UserId) == 0 {
-		return MissingFieldError{Type: alias, Name: "UserId"}
+		return FieldError{
+			Type:  "analytics.Alias",
+			Name:  "UserId",
+			Value: msg.UserId,
+		}
 	}
 
 	if len(msg.PreviousId) == 0 {
-		return MissingFieldError{Type: alias, Name: "PreviousId"}
+		return FieldError{
+			Type:  "analytics.Alias",
+			Name:  "PreviousId",
+			Value: msg.PreviousId,
+		}
 	}
 
 	return nil
 }
 
-func (msg Alias) serializable() interface{} {
+func (msg Alias) serializable(msgid string, time time.Time) interface{} {
 	return serializableAlias{
-		Type:       alias,
-		MessageId:  msg.MessageId,
+		Type:       "alias",
+		MessageId:  makeMessageId(msg.MessageId, msgid),
 		PreviousId: msg.PreviousId,
 		UserId:     msg.UserId,
-		SentAt:     formatTime(msg.SentAt),
 		Timestamp:  formatTime(msg.Timestamp),
 	}
 }
@@ -44,6 +46,5 @@ type serializableAlias struct {
 	MessageId  string `json:"messageId,omitempty"`
 	PreviousId string `json:"previousId"`
 	UserId     string `json:"userId"`
-	SentAt     string `json:"sentAt,omitempty"`
 	Timestamp  string `json:"timestamp,omitempty"`
 }
