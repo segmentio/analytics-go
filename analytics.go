@@ -3,13 +3,11 @@ package analytics
 import (
 	"io"
 	"io/ioutil"
-	"os"
 	"sync"
 
 	"bytes"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"time"
 
@@ -116,7 +114,7 @@ type Client struct {
 	// configured only before any messages are enqueued.
 	Interval time.Duration
 	Size     int
-	Logger   *log.Logger
+	Logger   Logger
 	Verbose  bool
 	Client   http.Client
 	key      string
@@ -134,7 +132,7 @@ func New(key string) *Client {
 		Endpoint: Endpoint,
 		Interval: 5 * time.Second,
 		Size:     250,
-		Logger:   log.New(os.Stderr, "segment ", log.LstdFlags),
+		Logger:   newDefaultLogger(),
 		Verbose:  false,
 		Client:   *http.DefaultClient,
 		key:      key,
@@ -255,7 +253,7 @@ func (c *Client) send(msgs []interface{}) {
 
 	b, err := json.Marshal(batch)
 	if err != nil {
-		c.logf("error marshalling msgs: %s", err)
+		c.errorf("marshalling mesages - %s", err)
 		return
 	}
 
@@ -272,7 +270,7 @@ func (c *Client) upload(b []byte) error {
 	url := c.Endpoint + "/v1/batch"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
-		c.logf("error creating request: %s", err)
+		c.errorf("creating request - %s", err)
 		return err
 	}
 
@@ -283,7 +281,7 @@ func (c *Client) upload(b []byte) error {
 
 	res, err := c.Client.Do(req)
 	if err != nil {
-		c.logf("error sending request: %s", err)
+		c.errorf("sending request - %s", err)
 		return err
 	}
 	defer res.Body.Close()
@@ -296,14 +294,14 @@ func (c *Client) upload(b []byte) error {
 // Report on response body.
 func (c *Client) report(res *http.Response) {
 	if res.StatusCode < 400 {
-		c.verbose("response %s", res.Status)
+		c.debugf("response %s", res.Status)
 		return
 	}
 
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		c.logf("error reading response body: %s", err)
+		c.errorf("reading response body - %s", err)
 		return
 	}
 
@@ -321,23 +319,23 @@ func (c *Client) loop() {
 	for {
 		select {
 		case msg := <-c.msgs:
-			c.verbose("buffer (%d/%d) %v", len(msgs), c.Size, msg)
+			c.debugf("buffer (%d/%d) %v", len(msgs), c.Size, msg)
 			msgs = append(msgs, msg)
 			if len(msgs) == c.Size {
-				c.verbose("exceeded %d messages – flushing", c.Size)
+				c.debugf("exceeded %d messages – flushing", c.Size)
 				c.send(msgs)
 				msgs = nil
 			}
 		case <-tick.C:
 			if len(msgs) > 0 {
-				c.verbose("interval reached - flushing %d", len(msgs))
+				c.debugf("interval reached - flushing %d", len(msgs))
 				c.send(msgs)
 				msgs = nil
 			} else {
-				c.verbose("interval reached – nothing to send")
+				c.debugf("interval reached – nothing to send")
 			}
 		case <-c.quit:
-			c.verbose("exit requested – draining msgs")
+			c.debugf("exit requested – draining messages")
 
 			// Drain the msg channel, we have to close it first so no more
 			// messages can be pushed and otherwise the loop would never end.
@@ -349,28 +347,32 @@ func (c *Client) loop() {
 			// a problem and I'll fix it later.
 			close(c.msgs)
 			for msg := range c.msgs {
-				c.verbose("buffer (%d/%d) %v", len(msgs), c.Size, msg)
+				c.debugf("buffer (%d/%d) %v", len(msgs), c.Size, msg)
 				msgs = append(msgs, msg)
 			}
 
-			c.verbose("exit requested – flushing %d", len(msgs))
+			c.debugf("exit requested – flushing %d", len(msgs))
 			c.send(msgs)
-			c.verbose("exit")
+			c.debugf("exit")
 			return
 		}
 	}
 }
 
 // Verbose log.
-func (c *Client) verbose(msg string, args ...interface{}) {
+func (c *Client) debugf(format string, args ...interface{}) {
 	if c.Verbose {
-		c.Logger.Printf(msg, args...)
+		c.logf(format, args...)
 	}
 }
 
 // Unconditional log.
-func (c *Client) logf(msg string, args ...interface{}) {
-	c.Logger.Printf(msg, args...)
+func (c *Client) logf(format string, args ...interface{}) {
+	c.Logger.Logf(format, args...)
+}
+
+func (c *Client) errorf(format string, args ...interface{}) {
+	c.Logger.Errorf(format, args...)
 }
 
 // Set message timestamp if one is not already set.

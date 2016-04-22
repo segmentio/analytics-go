@@ -96,6 +96,8 @@ func TestTrack(t *testing.T) {
 
 	client := New("h97jamjwbh")
 	client.Endpoint = server.URL
+	client.Verbose = true
+	client.Logger = t
 	client.now = mockTime
 	client.uid = mockId
 
@@ -152,6 +154,8 @@ func TestTrackWithInterval(t *testing.T) {
 	client := New("h97jamjwbh")
 	client.Endpoint = server.URL
 	client.Interval = interval
+	client.Verbose = true
+	client.Logger = t
 	client.now = mockTime
 	client.uid = mockId
 
@@ -206,6 +210,8 @@ func TestTrackWithTimestamp(t *testing.T) {
 
 	client := New("h97jamjwbh")
 	client.Endpoint = server.URL
+	client.Verbose = true
+	client.Logger = t
 	client.now = mockTime
 	client.uid = mockId
 	client.Size = 1
@@ -259,6 +265,8 @@ func TestTrackWithMessageId(t *testing.T) {
 
 	client := New("h97jamjwbh")
 	client.Endpoint = server.URL
+	client.Verbose = true
+	client.Logger = t
 	client.now = mockTime
 	client.uid = mockId
 	client.Size = 1
@@ -312,6 +320,8 @@ func TestTrackWithContext(t *testing.T) {
 
 	client := New("h97jamjwbh")
 	client.Endpoint = server.URL
+	client.Verbose = true
+	client.Logger = t
 	client.now = mockTime
 	client.uid = mockId
 	client.Size = 1
@@ -368,6 +378,8 @@ func TestTrackMany(t *testing.T) {
 
 	client := New("h97jamjwbh")
 	client.Endpoint = server.URL
+	client.Verbose = true
+	client.Logger = t
 	client.now = mockTime
 	client.uid = mockId
 	client.Size = 3
@@ -440,6 +452,8 @@ func TestTrackWithIntegrations(t *testing.T) {
 
 	client := New("h97jamjwbh")
 	client.Endpoint = server.URL
+	client.Verbose = true
+	client.Logger = t
 	client.now = mockTime
 	client.uid = mockId
 	client.Size = 1
