@@ -38,35 +38,35 @@ type Client struct {
 	Endpoint string
 	// Interval represents the duration at which messages are flushed. It may be
 	// configured only before any messages are enqueued.
-	Interval time.Duration
-	Size     int
-	Logger   Logger
-	Verbose  bool
-	Client   http.Client
-	key      string
-	msgs     chan interface{}
-	quit     chan struct{}
-	shutdown chan struct{}
-	uid      func() string
-	now      func() time.Time
-	once     sync.Once
+	Interval  time.Duration
+	Size      int
+	Logger    Logger
+	Verbose   bool
+	Transport http.RoundTripper
+	key       string
+	msgs      chan interface{}
+	quit      chan struct{}
+	shutdown  chan struct{}
+	uid       func() string
+	now       func() time.Time
+	once      sync.Once
 }
 
 // New client with write key.
 func New(key string) *Client {
 	c := &Client{
-		Endpoint: Endpoint,
-		Interval: 5 * time.Second,
-		Size:     250,
-		Logger:   newDefaultLogger(),
-		Verbose:  false,
-		Client:   *http.DefaultClient,
-		key:      key,
-		msgs:     make(chan interface{}, 100),
-		quit:     make(chan struct{}),
-		shutdown: make(chan struct{}),
-		now:      time.Now,
-		uid:      uid,
+		Endpoint:  Endpoint,
+		Interval:  5 * time.Second,
+		Size:      250,
+		Logger:    newDefaultLogger(),
+		Verbose:   false,
+		Transport: http.DefaultTransport,
+		key:       key,
+		msgs:      make(chan interface{}, 100),
+		quit:      make(chan struct{}),
+		shutdown:  make(chan struct{}),
+		now:       time.Now,
+		uid:       uid,
 	}
 
 	return c
@@ -137,13 +137,14 @@ func (c *Client) upload(b []byte) error {
 	req.Header.Add("Content-Length", string(len(b)))
 	req.SetBasicAuth(c.key, "")
 
-	res, err := c.Client.Do(req)
+	res, err := (&http.Client{Transport: c.Transport}).Do(req)
+
 	if err != nil {
 		c.errorf("sending request - %s", err)
 		return err
 	}
-	defer res.Body.Close()
 
+	defer res.Body.Close()
 	c.report(res)
 
 	return nil
@@ -156,7 +157,6 @@ func (c *Client) report(res *http.Response) {
 		return
 	}
 
-	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		c.errorf("reading response body - %s", err)
