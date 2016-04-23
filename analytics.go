@@ -7,11 +7,9 @@ import (
 
 	"bytes"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"time"
 
-	"github.com/jehiah/go-strftime"
 	"github.com/segmentio/backo-go"
 	"github.com/xtgo/uuid"
 )
@@ -32,78 +30,6 @@ var DefaultContext = map[string]interface{}{
 
 // Backoff policy.
 var Backo = backo.DefaultBacko()
-
-// Message interface.
-type message interface {
-	setMessageId(string)
-	setTimestamp(string)
-}
-
-// Message fields common to all.
-type Message struct {
-	Type      string `json:"type,omitempty"`
-	MessageId string `json:"messageId,omitempty"`
-	Timestamp string `json:"timestamp,omitempty"`
-	SentAt    string `json:"sentAt,omitempty"`
-}
-
-// Batch message.
-type Batch struct {
-	Context  map[string]interface{} `json:"context,omitempty"`
-	Messages []interface{}          `json:"batch"`
-	Message
-}
-
-// Identify message.
-type Identify struct {
-	Context      map[string]interface{} `json:"context,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
-	Traits       map[string]interface{} `json:"traits,omitempty"`
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	Message
-}
-
-// Group message.
-type Group struct {
-	Context      map[string]interface{} `json:"context,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
-	Traits       map[string]interface{} `json:"traits,omitempty"`
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	GroupId      string                 `json:"groupId"`
-	Message
-}
-
-// Track message.
-type Track struct {
-	Context      map[string]interface{} `json:"context,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
-	Properties   map[string]interface{} `json:"properties,omitempty"`
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	Event        string                 `json:"event"`
-	Message
-}
-
-// Page message.
-type Page struct {
-	Context      map[string]interface{} `json:"context,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
-	Traits       map[string]interface{} `json:"properties,omitempty"`
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	Category     string                 `json:"category,omitempty"`
-	Name         string                 `json:"name,omitempty"`
-	Message
-}
-
-// Alias message.
-type Alias struct {
-	PreviousId string `json:"previousId"`
-	UserId     string `json:"userId"`
-	Message
-}
 
 // Client which batches messages and flushes at the given Interval or
 // when the Size limit is exceeded. Set Verbose to true to enable
@@ -146,83 +72,17 @@ func New(key string) *Client {
 	return c
 }
 
-// Alias buffers an "alias" message.
-func (c *Client) Alias(msg Alias) error {
-	if msg.UserId == "" {
-		return errors.New("You must pass a 'userId'.")
+func (c *Client) Enqueue(msg Message) (err error) {
+	if err = msg.validate(); err != nil {
+		return
 	}
-
-	if msg.PreviousId == "" {
-		return errors.New("You must pass a 'previousId'.")
-	}
-
-	msg.Type = "alias"
-	c.queue(&msg)
-	return nil
-}
-
-// Page buffers an "page" message.
-func (c *Client) Page(msg Page) error {
-	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
-	}
-
-	msg.Type = "page"
-	c.queue(&msg)
-	return nil
-}
-
-// Group buffers an "group" message.
-func (c *Client) Group(msg Group) error {
-	if msg.GroupId == "" {
-		return errors.New("You must pass a 'groupId'.")
-	}
-
-	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
-	}
-
-	msg.Type = "group"
-	c.queue(&msg)
-	return nil
-}
-
-// Identify buffers an "identify" message.
-func (c *Client) Identify(msg Identify) error {
-	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
-	}
-
-	msg.Type = "identify"
-	c.queue(&msg)
-	return nil
-}
-
-// Track buffers an "track" message.
-func (c *Client) Track(msg Track) error {
-	if msg.Event == "" {
-		return errors.New("You must pass 'event'.")
-	}
-
-	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
-	}
-
-	msg.Type = "track"
-	c.queue(&msg)
-	return nil
+	c.once.Do(c.startLoop)
+	c.msgs <- msg.serializable(c.uid(), c.now())
+	return
 }
 
 func (c *Client) startLoop() {
 	go c.loop()
-}
-
-// Queue message.
-func (c *Client) queue(msg message) {
-	c.once.Do(c.startLoop)
-	msg.setMessageId(c.uid())
-	msg.setTimestamp(timestamp(c.now()))
-	c.msgs <- msg
 }
 
 // Close and flush metrics.
@@ -245,13 +105,11 @@ func (c *Client) send(msgs []interface{}) {
 		return
 	}
 
-	batch := new(Batch)
-	batch.Messages = msgs
-	batch.MessageId = c.uid()
-	batch.SentAt = timestamp(c.now())
-	batch.Context = DefaultContext
+	b, err := json.Marshal((batch{
+		Messages: msgs,
+		Context:  DefaultContext,
+	}).serializable(c.uid(), c.now()))
 
-	b, err := json.Marshal(batch)
 	if err != nil {
 		c.errorf("marshalling mesages - %s", err)
 		return
@@ -373,25 +231,6 @@ func (c *Client) logf(format string, args ...interface{}) {
 
 func (c *Client) errorf(format string, args ...interface{}) {
 	c.Logger.Errorf(format, args...)
-}
-
-// Set message timestamp if one is not already set.
-func (m *Message) setTimestamp(s string) {
-	if m.Timestamp == "" {
-		m.Timestamp = s
-	}
-}
-
-// Set message id.
-func (m *Message) setMessageId(s string) {
-	if m.MessageId == "" {
-		m.MessageId = s
-	}
-}
-
-// Return formatted timestamp.
-func timestamp(t time.Time) string {
-	return strftime.Format("%Y-%m-%dT%H:%M:%S%z", t)
 }
 
 // Return uuid string.
