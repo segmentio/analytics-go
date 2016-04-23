@@ -1,10 +1,10 @@
 vet:
-	@godep go vet ./...
+	@go vet ./...
 
 build:
-	@godep go build
+	@go build
 
 test:
-	@godep go test -race -cover ./...
+	@go test -race -cover ./...
 
 .PHONY: vet build test
