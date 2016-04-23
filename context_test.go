@@ -3,9 +3,9 @@ package analytics
 import "testing"
 
 func TestParseJsonTagEmpty(t *testing.T) {
-	name, omitempty := parseJsonTag("")
+	name, omitempty := parseJsonTag("", "default")
 
-	if name != "" {
+	if name != "default" {
 		t.Error("invalid field name found in empty tag:", name)
 	}
 
@@ -15,7 +15,7 @@ func TestParseJsonTagEmpty(t *testing.T) {
 }
 
 func TestParseJsonTagName(t *testing.T) {
-	name, omitempty := parseJsonTag("name")
+	name, omitempty := parseJsonTag("name", "default")
 
 	if name != "name" {
 		t.Error("invalid field name found in json tag:", name)
@@ -27,9 +27,9 @@ func TestParseJsonTagName(t *testing.T) {
 }
 
 func TestParseJsonTagOmitempty(t *testing.T) {
-	name, omitempty := parseJsonTag(",omitempty")
+	name, omitempty := parseJsonTag(",omitempty", "default")
 
-	if name != "" {
+	if name != "default" {
 		t.Error("invalid field name found in omitempty tag:", name)
 	}
 
@@ -39,7 +39,7 @@ func TestParseJsonTagOmitempty(t *testing.T) {
 }
 
 func TestParseJsonTagNameOmitempty(t *testing.T) {
-	name, omitempty := parseJsonTag("name,omitempty")
+	name, omitempty := parseJsonTag("name,omitempty", "default")
 
 	if name != "name" {
 		t.Error("invalid field name found in json tag:", name)

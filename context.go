@@ -147,8 +147,9 @@ func (ctx Context) MarshalJSON() ([]byte, error) {
 	// Imitate what what the JSON package would do when serializing a struct
 	// value.
 	for i := 0; i != n; i++ {
-		name, omitempty := parseJsonTag(t.Field(i).Tag.Get("json"))
+		field := t.Field(i)
 		value := v.Field(i)
+		name, omitempty := parseJsonTag(field.Tag.Get("json"), field.Name)
 
 		if name != "-" && !(omitempty && isEmptyValue(value)) {
 			m[name] = value.Interface()
@@ -160,11 +161,11 @@ func (ctx Context) MarshalJSON() ([]byte, error) {
 
 // Parses a JSON tag the way the json package would do it, returing the expected
 // name of the field once serialized and if empty values should be omitted.
-func parseJsonTag(tag string) (name string, omitempty bool) {
+func parseJsonTag(tag string, defName string) (name string, omitempty bool) {
 	args := strings.Split(tag, ",")
 
-	if len(args) == 0 {
-		name = f.Name
+	if len(args) == 0 || len(args[0]) == 0 {
+		name = defName
 	} else {
 		name = args[0]
 	}
