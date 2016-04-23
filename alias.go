@@ -39,7 +39,7 @@ func (msg Alias) serializable(msgid string, time time.Time) interface{} {
 		MessageId:    makeMessageId(msg.MessageId, msgid),
 		PreviousId:   msg.PreviousId,
 		UserId:       msg.UserId,
-		Timestamp:    formatTime(msg.Timestamp),
+		Timestamp:    formatTime(makeTime(msg.Timestamp, time)),
 		Context:      msg.Context,
 		Integrations: msg.Integrations,
 	}
