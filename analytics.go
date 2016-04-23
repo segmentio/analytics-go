@@ -126,8 +126,7 @@ type Client struct {
 	uid      func() string
 	now      func() time.Time
 	once     sync.Once
-	inflight uint64
-	sendDone chan error
+	wg       sync.WaitGroup
 }
 
 // New client with write key.
@@ -143,7 +142,6 @@ func New(key string) *Client {
 		msgs:     make(chan interface{}, 100),
 		quit:     make(chan struct{}),
 		shutdown: make(chan struct{}),
-		sendDone: make(chan error),
 		now:      time.Now,
 		uid:      uid,
 	}
@@ -244,21 +242,14 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) sendAsync(msgs []interface{}) {
-	c.inflight++
+	c.wg.Add(1)
 	go func() {
-		c.sendDone <- c.send(msgs)
-	}()
-}
-
-func (c *Client) awaitInflight() {
-	for c.inflight > 0 {
-		c.verbose("waiting for %d requests to finish..", c.inflight)
-		err := <-c.sendDone
+		err := c.send(msgs)
 		if err != nil {
 			c.logf(err.Error())
 		}
-		c.inflight--
-	}
+		c.wg.Done()
+	}()
 }
 
 // Send batch request.
@@ -335,11 +326,6 @@ func (c *Client) loop() {
 				c.sendAsync(msgs)
 				msgs = make([]interface{}, 0, c.Size)
 			}
-		case err := <-c.sendDone:
-			if err != nil {
-				c.logf(err.Error())
-			}
-			c.inflight--
 		case <-tick.C:
 			if len(msgs) > 0 {
 				c.verbose("interval reached - flushing %d", len(msgs))
@@ -358,8 +344,7 @@ func (c *Client) loop() {
 			}
 			c.verbose("exit requested – flushing %d", len(msgs))
 			c.sendAsync(msgs)
-			// wait for all inflight sends to complete or fail
-			c.awaitInflight()
+			c.wg.Wait()
 			c.verbose("exit")
 			c.shutdown <- struct{}{}
 			return
