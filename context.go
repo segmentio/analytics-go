@@ -142,8 +142,7 @@ func (ctx Context) MarshalJSON() ([]byte, error) {
 		m[name] = value
 	}
 
-	structToMap(v, m)
-	return json.Marshal(m)
+	return json.Marshal(structToMap(v, m))
 }
 
 // In order to use the `omitempty` tag on serialized context fields we use a

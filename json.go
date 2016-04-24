@@ -9,9 +9,13 @@ import (
 // the only difference is we we don't serialize zero-value struct fields as well.
 // Note that this function doesn't recursively convert structures to maps, only
 // the value passed as argument is transformed.
-func structToMap(v reflect.Value, m map[string]interface{}) {
+func structToMap(v reflect.Value, m map[string]interface{}) map[string]interface{} {
 	t := v.Type()
 	n := t.NumField()
+
+	if m == nil {
+		m = make(map[string]interface{}, n)
+	}
 
 	for i := 0; i != n; i++ {
 		field := t.Field(i)
@@ -22,6 +26,8 @@ func structToMap(v reflect.Value, m map[string]interface{}) {
 			m[name] = value.Interface()
 		}
 	}
+
+	return m
 }
 
 // Parses a JSON tag the way the json package would do it, returing the expected
@@ -71,6 +77,9 @@ func isZeroValue(v reflect.Value) bool {
 				return false
 			}
 		}
+		return true
+
+	case reflect.Invalid:
 		return true
 	}
 
