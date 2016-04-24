@@ -63,7 +63,7 @@ type Config struct {
 	RetryAfter func(int) time.Duration
 
 	// The default context set on each message sent by the client.
-	Context Context
+	DefaultContext Context
 }
 
 // This constant sets the default endpoint to which client instances send
@@ -137,7 +137,7 @@ func makeConfig(c Config) Config {
 
 	// We always overwrite the 'library' field of the default context set on the
 	// client because we want this information to be accurate.
-	c.Context.Library = LibraryInfo{
+	c.DefaultContext.Library = LibraryInfo{
 		Name:    "analytics-go",
 		Version: Version,
 	}

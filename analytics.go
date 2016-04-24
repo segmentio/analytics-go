@@ -52,6 +52,10 @@ type client struct {
 	// that it has finished flushing all queued messages.
 	quit     chan struct{}
 	shutdown chan struct{}
+
+	// This HTTP client is used to send requests to the backend, it uses the
+	// HTTP transport provided in the configuration.
+	http http.Client
 }
 
 // Instantiate a new client that uses the write key passed as first argument to
@@ -79,6 +83,9 @@ func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 		msgs:     make(chan interface{}, 100),
 		quit:     make(chan struct{}),
 		shutdown: make(chan struct{}),
+		http: http.Client{
+			Transport: config.Transport,
+		},
 	}
 
 	go c.loop()
@@ -134,7 +141,7 @@ func (c *client) send(msgs []interface{}) {
 		MessageId: c.UID(),
 		SentAt:    formatTime(c.Now()),
 		Messages:  msgs,
-		Context:   c.Context,
+		Context:   c.DefaultContext,
 	})
 
 	if err != nil {
@@ -173,7 +180,7 @@ func (c *client) upload(b []byte) error {
 	req.Header.Add("Content-Length", string(len(b)))
 	req.SetBasicAuth(c.key, "")
 
-	res, err := (&http.Client{Transport: c.Transport}).Do(req)
+	res, err := c.http.Do(req)
 
 	if err != nil {
 		c.errorf("sending request - %s", err)
