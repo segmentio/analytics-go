@@ -10,8 +10,8 @@ type Track struct {
 	UserId       string
 	Event        string
 	Timestamp    time.Time
+	Context      Context
 	Properties   map[string]interface{}
-	Context      map[string]interface{}
 	Integrations map[string]interface{}
 }
 
@@ -42,10 +42,10 @@ func (msg Track) serializable(msgid string, time time.Time) interface{} {
 		AnonymousId:  msg.AnonymousId,
 		UserId:       msg.UserId,
 		Event:        msg.Event,
-		Timestamp:    formatTime(makeTime(msg.Timestamp, time)),
-		Context:      msg.Context,
-		Integrations: msg.Integrations,
+		Timestamp:    makeTimestamp(msg.Timestamp, time),
+		Context:      makeJsonContext(msg.Context),
 		Properties:   msg.Properties,
+		Integrations: msg.Integrations,
 	}
 }
 
@@ -56,7 +56,7 @@ type serializableTrack struct {
 	UserId       string                 `json:"userId,omitempty"`
 	Event        string                 `json:"event"`
 	Timestamp    string                 `json:"timestamp,omitempty"`
+	Context      *Context               `json:"context,omitempty"`
 	Properties   map[string]interface{} `json:"properties,omitempty"`
-	Context      map[string]interface{} `json:"context,omitempty"`
 	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }

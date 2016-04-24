@@ -30,3 +30,10 @@ func makeTime(t time.Time, def time.Time) time.Time {
 	}
 	return t
 }
+
+// Returns a string representation of the time value passed as first argument,
+// unless it's a zero-value, in that case the default value passed as second
+// argument is used instead.
+func makeTimestamp(t time.Time, def time.Time) string {
+	return formatTime(makeTime(t, def))
+}

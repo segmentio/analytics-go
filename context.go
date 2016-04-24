@@ -4,27 +4,26 @@ import (
 	"encoding/json"
 	"net"
 	"reflect"
-	"strings"
 )
 
 // This type provides the representation of the `context` object as defined in
 // https://segment.com/docs/spec/common/#context
 type Context struct {
-	App       AppInfo                `json:"app"`
-	Campaign  CampaignInfo           `json:"campaign"`
-	Device    DeviceInfo             `json:"device"`
+	App       AppInfo                `json:"app,omitempty"`
+	Campaign  CampaignInfo           `json:"campaign,omitempty"`
+	Device    DeviceInfo             `json:"device,omitempty"`
+	Library   LibraryInfo            `json:"library,omitempty"`
+	Location  LocationInfo           `json:"location,omitempty"`
+	Network   NetworkInfo            `json:"network,omitempty"`
+	OS        OSInfo                 `json:"os,omitempty"`
+	Page      PageInfo               `json:"page,omitempty"`
+	Referrer  ReferrerInfo           `json:"referrer,omitempty"`
+	Screen    ScreenInfo             `json:"screen,omitempty"`
 	IP        net.IP                 `json:"ip,omitempty"`
-	Library   LibraryInfo            `json:"library"`
-	Location  LocationInfo           `json:"location"`
-	Network   NetworkInfo            `json:"network"`
-	OS        OSInfo                 `json:"os"`
-	Page      PageInfo               `json:"page"`
-	Referrer  ReferrerInfo           `json:"referrer"`
-	Screen    ScreenInfo             `json:"screen"`
 	Locale    string                 `json:"locale,omitempty"`
 	Timezone  string                 `json:"timezone,omitempty"`
 	UserAgent string                 `json:"userAgent,omitempty"`
-	Traits    map[string]interface{} `json:"traits"`
+	Traits    map[string]interface{} `json:"traits,omitempty"`
 
 	// This map is used to allow extensions to the context specifications that
 	// may not be documented or could be introduced in the future.
@@ -131,7 +130,6 @@ type ScreenInfo struct {
 //
 // Related discussion: https://github.com/golang/go/issues/6213
 func (ctx Context) MarshalJSON() ([]byte, error) {
-	t := reflect.TypeOf(ctx)
 	v := reflect.ValueOf(ctx)
 	n := v.NumField()
 	m := make(map[string]interface{}, n+len(ctx.Extra))
@@ -144,54 +142,22 @@ func (ctx Context) MarshalJSON() ([]byte, error) {
 		m[name] = value
 	}
 
-	// Imitate what what the JSON package would do when serializing a struct
-	// value.
-	for i := 0; i != n; i++ {
-		field := t.Field(i)
-		value := v.Field(i)
-		name, omitempty := parseJsonTag(field.Tag.Get("json"), field.Name)
-
-		if name != "-" && !(omitempty && isEmptyValue(value)) {
-			m[name] = value.Interface()
-		}
-	}
-
+	structToMap(v, m)
 	return json.Marshal(m)
 }
 
-// Parses a JSON tag the way the json package would do it, returing the expected
-// name of the field once serialized and if empty values should be omitted.
-func parseJsonTag(tag string, defName string) (name string, omitempty bool) {
-	args := strings.Split(tag, ",")
-
-	if len(args) == 0 || len(args[0]) == 0 {
-		name = defName
-	} else {
-		name = args[0]
+// In order to use the `omitempty` tag on serialized context fields we use a
+// pointer type so the nil value can be used to not serialize the field.
+func makeJsonContext(ctx Context) *Context {
+	if isZeroValue(reflect.ValueOf(ctx)) {
+		return nil
 	}
-
-	if len(args) > 1 && args[1] == "omitempty" {
-		omitempty = true
-	}
-
-	return
+	return &ctx
 }
 
-// This function was copied from https://golang.org/src/encoding/json/encode.go#L282
-func isEmptyValue(v reflect.Value) bool {
-	switch v.Kind() {
-	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
-		return v.Len() == 0
-	case reflect.Bool:
-		return !v.Bool()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int() == 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return v.Uint() == 0
-	case reflect.Float32, reflect.Float64:
-		return v.Float() == 0
-	case reflect.Interface, reflect.Ptr:
-		return v.IsNil()
-	}
-	return false
+var defaultContext = Context{
+	Library: LibraryInfo{
+		Name:    "analytics-go",
+		Version: Version,
+	},
 }

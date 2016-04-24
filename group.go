@@ -10,8 +10,8 @@ type Group struct {
 	UserId       string
 	GroupId      string
 	Timestamp    time.Time
+	Context      Context
 	Traits       map[string]interface{}
-	Context      map[string]interface{}
 	Integrations map[string]interface{}
 }
 
@@ -42,9 +42,9 @@ func (msg Group) serializable(msgid string, time time.Time) interface{} {
 		AnonymousId:  msg.AnonymousId,
 		UserId:       msg.UserId,
 		GroupId:      msg.GroupId,
-		Timestamp:    formatTime(makeTime(msg.Timestamp, time)),
+		Timestamp:    makeTimestamp(msg.Timestamp, time),
+		Context:      makeJsonContext(msg.Context),
 		Traits:       msg.Traits,
-		Context:      msg.Context,
 		Integrations: msg.Integrations,
 	}
 }
@@ -56,7 +56,7 @@ type serializableGroup struct {
 	UserId       string                 `json:"userId,omitempty"`
 	GroupId      string                 `json:"groupId"`
 	Timestamp    string                 `json:"timestamp,omitempty"`
+	Context      *Context               `json:"context,omitempty"`
 	Traits       map[string]interface{} `json:"traits,omitempty"`
-	Context      map[string]interface{} `json:"context,omitempty"`
 	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }
