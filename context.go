@@ -153,10 +153,3 @@ func makeJsonContext(ctx Context) *Context {
 	}
 	return &ctx
 }
-
-var defaultContext = Context{
-	Library: LibraryInfo{
-		Name:    "analytics-go",
-		Version: Version,
-	},
-}

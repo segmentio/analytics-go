@@ -13,9 +13,26 @@ import (
 // Version of the client.
 const Version = "3.0.0"
 
+// This interface is the main API exposed by the analytics package.
+// Values that satsify this interface are returned by the client constructors
+// provided by the package and provide a way to send messages via the HTTP API.
 type Client interface {
 	io.Closer
 
+	// Queues a message to be sent by the client when the conditions for a batch
+	// upload are met.
+	// This is the main method you'll be using, a typical flow would look like
+	// this:
+	//
+	//	client := analytics.New(writeKey)
+	//	...
+	//	client.Enqueue(analytics.Track{ ... })
+	//	...
+	//	client.Close()
+	//
+	// The method returns an error if the message queue not be queued, which
+	// happens if the client was already closed at the time the method was
+	// called or if the message was malformed.
 	Enqueue(Message) error
 }
 
@@ -37,11 +54,20 @@ type client struct {
 	shutdown chan struct{}
 }
 
+// Instantiate a new client that uses the write key passed as first argument to
+// send messages to the backend.
+// The client is created with the default configuration.
 func New(writeKey string) Client {
+	// Here we can ignore the error because the default config is always valid.
 	c, _ := NewWithConfig(writeKey, Config{})
 	return c
 }
 
+// Instantiate a new client that uses the write key and configuration passed as
+// arguments to send messages to the backend.
+// The function will return an error if the configuration contained impossible
+// values (like a negative flush interval for example).
+// When the function returns an error the returned client will always be nil.
 func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 	if err = config.validate(); err != nil {
 		return
@@ -66,6 +92,8 @@ func (c *client) Enqueue(msg Message) (err error) {
 		return
 	}
 
+	m := msg.serializable(c.UID(), c.Now())
+
 	defer func() {
 		// When the `msgs` channel is closed writing to it will trigger a panic.
 		// To avoid letting the panic propagate to the caller we recover from it
@@ -76,15 +104,15 @@ func (c *client) Enqueue(msg Message) (err error) {
 		}
 	}()
 
-	c.msgs <- msg.serializable(c.UID(), c.Now())
+	c.msgs <- m
 	return
 }
 
 // Close and flush metrics.
 func (c *client) Close() (err error) {
 	defer func() {
-		// Always recover, a panic could be raised if c.quit was closed which
-		// means the Close method was called more than once.
+		// Always recover, a panic could be raised if `c`.quit was closed which
+		// means the method was called more than once.
 		if recover() != nil {
 			err = io.EOF
 		}
@@ -96,15 +124,17 @@ func (c *client) Close() (err error) {
 
 // Send batch request.
 func (c *client) send(msgs []interface{}) {
+	const attempts = 10
+
 	if len(msgs) == 0 {
 		return
 	}
 
 	b, err := json.Marshal(batch{
-		MessageId: c.uid(),
-		SentAt:    formatTime(c.now()),
+		MessageId: c.UID(),
+		SentAt:    formatTime(c.Now()),
 		Messages:  msgs,
-		Context:   defaultContext,
+		Context:   c.Context,
 	})
 
 	if err != nil {
@@ -112,12 +142,21 @@ func (c *client) send(msgs []interface{}) {
 		return
 	}
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i != attempts; i++ {
 		if err := c.upload(b); err == nil {
-			break
+			return
 		}
-		time.Sleep(c.RetryAfter(i))
+
+		// Wait for either a retry timeout or the client to be closed.
+		select {
+		case <-time.After(c.RetryAfter(i)):
+		case <-c.quit:
+			c.errorf("%d messages dropped because they failed to be sent and the client was closed", len(msgs))
+			return
+		}
 	}
+
+	c.errorf("%d messages dropped because they failed to be sent after %d attempts", len(msgs), attempts)
 }
 
 // Upload serialized batch message.
@@ -134,7 +173,7 @@ func (c *client) upload(b []byte) error {
 	req.Header.Add("Content-Length", string(len(b)))
 	req.SetBasicAuth(c.key, "")
 
-	res, err := (&http.client{Transport: c.Transport}).Do(req)
+	res, err := (&http.Client{Transport: c.Transport}).Do(req)
 
 	if err != nil {
 		c.errorf("sending request - %s", err)
