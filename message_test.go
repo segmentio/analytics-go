@@ -48,9 +48,14 @@ func validateSerizable(t string, m Message) (v interface{}, err error) {
 		x0 := fv0.Interface()
 		x1 := fv1.Interface()
 
-		if ts, ok := x0.(time.Time); ok {
+		switch x := x0.(type) {
+		case time.Time:
 			// Special case for timestamps because they get converted to strings.
-			x0 = formatTime(ts)
+			x0 = formatTime(x)
+		case Context:
+			// Special case for contexts as they are converted to pointers when
+			// being serialized.
+			x0 = makeJsonContext(x)
 		}
 
 		if !reflect.DeepEqual(x0, x1) {

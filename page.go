@@ -10,8 +10,8 @@ type Page struct {
 	UserId       string
 	Name         string
 	Timestamp    time.Time
-	Traits       map[string]interface{}
-	Context      map[string]interface{}
+	Context      Context
+	Properties   map[string]interface{}
 	Integrations map[string]interface{}
 }
 
@@ -34,9 +34,9 @@ func (msg Page) serializable(msgid string, time time.Time) interface{} {
 		AnonymousId:  msg.AnonymousId,
 		UserId:       msg.UserId,
 		Name:         msg.Name,
-		Timestamp:    formatTime(makeTime(msg.Timestamp, time)),
-		Traits:       msg.Traits,
-		Context:      msg.Context,
+		Timestamp:    makeTimestamp(msg.Timestamp, time),
+		Context:      makeJsonContext(msg.Context),
+		Properties:   msg.Properties,
 		Integrations: msg.Integrations,
 	}
 }
@@ -48,7 +48,7 @@ type serializablePage struct {
 	UserId       string                 `json:"userId,omitempty"`
 	Name         string                 `json:"name,omitempty"`
 	Timestamp    string                 `json:"timestamp,omitempty"`
-	Traits       map[string]interface{} `json:"properties,omitempty"`
-	Context      map[string]interface{} `json:"context,omitempty"`
+	Context      *Context               `json:"context,omitempty"`
+	Properties   map[string]interface{} `json:"properties,omitempty"`
 	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }

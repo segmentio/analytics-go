@@ -9,8 +9,8 @@ type Identify struct {
 	AnonymousId  string
 	UserId       string
 	Timestamp    time.Time
+	Context      Context
 	Traits       map[string]interface{}
-	Context      map[string]interface{}
 	Integrations map[string]interface{}
 }
 
@@ -32,9 +32,9 @@ func (msg Identify) serializable(msgid string, time time.Time) interface{} {
 		MessageId:    makeMessageId(msg.MessageId, msgid),
 		AnonymousId:  msg.AnonymousId,
 		UserId:       msg.UserId,
-		Timestamp:    formatTime(makeTime(msg.Timestamp, time)),
+		Timestamp:    makeTimestamp(msg.Timestamp, time),
+		Context:      makeJsonContext(msg.Context),
 		Traits:       msg.Traits,
-		Context:      msg.Context,
 		Integrations: msg.Integrations,
 	}
 }
@@ -45,7 +45,7 @@ type serializableIdentify struct {
 	AnonymousId  string                 `json:"anonymousId,omitempty"`
 	UserId       string                 `json:"userId,omitempty"`
 	Timestamp    string                 `json:"timestamp,omitempty"`
+	Context      *Context               `json:"context,omitempty"`
 	Traits       map[string]interface{} `json:"traits,omitempty"`
-	Context      map[string]interface{} `json:"context,omitempty"`
 	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }
