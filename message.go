@@ -27,3 +27,13 @@ func makeMessageId(id string, def string) string {
 	}
 	return id
 }
+
+// This structure represents objects sent to the /v1/batch endpoint. We don't
+// export this type because it's only meant to be used internally to send groups
+// of messages in one API call.
+type batch struct {
+	MessageId string        `json:"messageId"`
+	SentAt    string        `json:"sentAt"`
+	Messages  []interface{} `json:"batch"`
+	Context   Context       `json:"context"`
+}

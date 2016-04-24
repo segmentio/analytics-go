@@ -13,14 +13,6 @@ import (
 // Version of the client.
 const Version = "3.0.0"
 
-// DefaultContext of message batches.
-var DefaultContext = map[string]interface{}{
-	"library": map[string]interface{}{
-		"name":    "analytics-go",
-		"version": Version,
-	},
-}
-
 type Client interface {
 	io.Closer
 
@@ -108,10 +100,12 @@ func (c *client) send(msgs []interface{}) {
 		return
 	}
 
-	b, err := json.Marshal((batch{
-		Messages: msgs,
-		Context:  DefaultContext,
-	}).serializable(c.uid(), c.now()))
+	b, err := json.Marshal(batch{
+		MessageId: c.uid(),
+		SentAt:    formatTime(c.now()),
+		Messages:  msgs,
+		Context:   defaultContext,
+	})
 
 	if err != nil {
 		c.errorf("marshalling mesages - %s", err)

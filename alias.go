@@ -9,7 +9,7 @@ type Alias struct {
 	PreviousId   string
 	UserId       string
 	Timestamp    time.Time
-	Context      map[string]interface{}
+	Context      Context
 	Integrations map[string]interface{}
 }
 
@@ -39,8 +39,8 @@ func (msg Alias) serializable(msgid string, time time.Time) interface{} {
 		MessageId:    makeMessageId(msg.MessageId, msgid),
 		PreviousId:   msg.PreviousId,
 		UserId:       msg.UserId,
-		Timestamp:    formatTime(makeTime(msg.Timestamp, time)),
-		Context:      msg.Context,
+		Timestamp:    makeTimestamp(msg.Timestamp, time),
+		Context:      makeJsonContext(msg.Context),
 		Integrations: msg.Integrations,
 	}
 }
@@ -51,6 +51,6 @@ type serializableAlias struct {
 	PreviousId   string                 `json:"previousId"`
 	UserId       string                 `json:"userId"`
 	Timestamp    string                 `json:"timestamp,omitempty"`
-	Context      map[string]interface{} `json:"context,omitempty"`
+	Context      *Context               `json:"context,omitempty"`
 	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }

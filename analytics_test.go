@@ -333,8 +333,10 @@ func TestTrackWithContext(t *testing.T) {
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
-		Context: map[string]interface{}{
-			"whatever": "here",
+		Context: Context{
+			Extra: map[string]interface{}{
+				"whatever": "here",
+			},
 		},
 	})
 
