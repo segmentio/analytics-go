@@ -109,7 +109,7 @@ type PageInfo struct {
 // This type provides the representation of the `context.referrer` object as
 // defined in https://segment.com/docs/spec/common/#context
 type ReferrerInfo struct {
-	Type string `json:"json,omitempty"`
+	Type string `json:"type,omitempty"`
 	Name string `json:"name,omitempty"`
 	URL  string `json:"url,omitempty"`
 	Link string `json:"link,omitempty"`
