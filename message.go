@@ -81,6 +81,11 @@ func (m message) MarshalJSON() ([]byte, error) {
 	return m.json, nil
 }
 
+func (m message) size() int {
+	// The `+ 1` is for the comma that sits between each items of a JSON array.
+	return len(m.json) + 1
+}
+
 type messageQueue struct {
 	pending       []message
 	bytes         int
@@ -89,7 +94,7 @@ type messageQueue struct {
 }
 
 func (q *messageQueue) push(m message) (b []message) {
-	if (q.bytes + len(m.json)) > q.maxBatchBytes {
+	if (q.bytes + m.size()) > q.maxBatchBytes {
 		b = q.flush()
 	}
 
