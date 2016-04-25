@@ -5,19 +5,6 @@ import (
 	"time"
 )
 
-// Values implementing this interface are used by analytics clients to notify
-// the application when a message send succeeded or failed.
-type Callback interface {
-
-	// This method is called for every message that was successfully sent to
-	// the API.
-	Success(Message)
-
-	// This method is called for every message that failed to be sent to the
-	// API and will be discarded by the client.
-	Failure(Message, error)
-}
-
 // This interface is used to represent analytics objects that can be sent via
 // a client.
 //
