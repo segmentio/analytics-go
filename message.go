@@ -55,7 +55,7 @@ type batch struct {
 	MessageId string    `json:"messageId"`
 	SentAt    time.Time `json:"sentAt"`
 	Messages  []message `json:"batch"`
-	Context   *Context  `json:"context,omitempty"`
+	Context   *Context  `json:"context"`
 }
 
 type message struct {
