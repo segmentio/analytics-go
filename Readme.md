@@ -9,7 +9,7 @@ package version management system like the Go vendor directory or a tool like
 Godep to avoid issues related to API breaking changes introduced between major
 versions of the library.
 
-To install it globally:
+To install it in the GOPATH:
 ```
 go get https://github.com/segmentio/analytics-go
 ```
