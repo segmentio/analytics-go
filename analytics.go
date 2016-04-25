@@ -172,6 +172,10 @@ func (c *client) Close() (err error) {
 func (c *client) send(msgs []message) {
 	const attempts = 10
 
+	if len(msgs) == 0 {
+		return
+	}
+
 	b, err := json.Marshal(batch{
 		MessageId: c.uid(),
 		SentAt:    c.now(),
