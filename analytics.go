@@ -107,7 +107,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		// and instead report that the client has been closed and shouldn't be
 		// used anymore.
 		if recover() != nil {
-			err = io.EOF
+			err = ErrClosed
 		}
 	}()
 
@@ -121,7 +121,7 @@ func (c *client) Close() (err error) {
 		// Always recover, a panic could be raised if `c`.quit was closed which
 		// means the method was called more than once.
 		if recover() != nil {
-			err = io.EOF
+			err = ErrClosed
 		}
 	}()
 	close(c.quit)

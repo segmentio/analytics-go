@@ -531,11 +531,11 @@ func TestCloseTwice(t *testing.T) {
 		t.Error("closing a client should not a return an error")
 	}
 
-	if err := client.Close(); err != io.EOF {
-		t.Error("closing a client a second time should return io.EOF:", err)
+	if err := client.Close(); err != ErrClosed {
+		t.Error("closing a client a second time should return ErrClosed:", err)
 	}
 
-	if err := client.Enqueue(Track{UserId: "1", Event: "A"}); err != io.EOF {
-		t.Error("using a client after it was closed should return io.EOF:", err)
+	if err := client.Enqueue(Track{UserId: "1", Event: "A"}); err != ErrClosed {
+		t.Error("using a client after it was closed should return ErrClosed:", err)
 	}
 }

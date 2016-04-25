@@ -1,6 +1,9 @@
 package analytics
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // Returned by the `NewWithConfig` function when the one of the configuration
 // fields was set to an impossible value (like a negative duration).
@@ -40,3 +43,9 @@ type FieldError struct {
 func (e FieldError) Error() string {
 	return fmt.Sprintf("%s.%s: invalid field value: %#v", e.Type, e.Name, e.Value)
 }
+
+var (
+	// This error is returned by methods of the `Client` interface when they are
+	// called after the client was already closed.
+	ErrClosed = errors.New("the client was already closed")
+)
