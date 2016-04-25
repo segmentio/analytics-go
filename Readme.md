@@ -17,8 +17,6 @@ go get https://github.com/segmentio/analytics-go
 Or via the Go vendoring mechanism:
 ```
 git submodule add https://github.com/segmentio/analytics-go vendor/github.com/segmentio/analytics-go
-git commit -a -m "add segmentio/analytics-go dependency"
-git push
 ```
 
 ## Documentation
