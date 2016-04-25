@@ -41,10 +41,10 @@ import (
 )
 
 func main() {
-    // Instantiate a client to use send messages to the segment API.
+    // Instantiates a client to use send messages to the segment API.
     client := analytics.New(os.Getenv("SEGMENT_WRITE_KEY"))
 
-    // Queues a track event that will be sent asynchronously.
+    // Enqueues a track event that will be sent asynchronously.
     client.Enqueue(analytics.Track{
         UserId: "test-user",
         Event:  "test-snippet",
