@@ -5,13 +5,17 @@ import "time"
 // This type represents object sent in an identify call as described in
 // https://segment.com/docs/libraries/http/#identify
 type Identify struct {
-	MessageId    string
-	AnonymousId  string
-	UserId       string
-	Timestamp    time.Time
-	Context      Context
-	Traits       map[string]interface{}
-	Integrations map[string]interface{}
+	// This field is exported for serialization purposes and shouldn't be set by
+	// the application, its value is always overwritten by the library.
+	Type string `json:"type,omitempty"`
+
+	MessageId    string                 `json:"messageId,omitempty"`
+	AnonymousId  string                 `json:"anonymousId,omitempty"`
+	UserId       string                 `json:"userId,omitempty"`
+	Timestamp    time.Time              `json:"timestamp,omitempty"`
+	Context      *Context               `json:"context,omitempty"`
+	Traits       map[string]interface{} `json:"traits,omitempty"`
+	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }
 
 func (msg Identify) validate() error {
@@ -24,28 +28,4 @@ func (msg Identify) validate() error {
 	}
 
 	return nil
-}
-
-func (msg Identify) serializable(msgid string, time time.Time) interface{} {
-	return serializableIdentify{
-		Type:         "identify",
-		MessageId:    makeMessageId(msg.MessageId, msgid),
-		AnonymousId:  msg.AnonymousId,
-		UserId:       msg.UserId,
-		Timestamp:    makeTimestamp(msg.Timestamp, time),
-		Context:      makeJsonContext(msg.Context),
-		Traits:       msg.Traits,
-		Integrations: msg.Integrations,
-	}
-}
-
-type serializableIdentify struct {
-	Type         string                 `json:"type,omitempty"`
-	MessageId    string                 `json:"messageId,omitempty"`
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	Timestamp    string                 `json:"timestamp,omitempty"`
-	Context      *Context               `json:"context,omitempty"`
-	Traits       map[string]interface{} `json:"traits,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }

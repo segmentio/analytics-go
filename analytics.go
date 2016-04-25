@@ -3,6 +3,7 @@ package analytics
 import (
 	"io"
 	"io/ioutil"
+	"sync"
 
 	"bytes"
 	"encoding/json"
@@ -43,7 +44,7 @@ type client struct {
 	// This channel is where the `Enqueue` method writes messages so they can be
 	// picked up and pushed by the backend goroutine taking care of applying the
 	// batching rules.
-	msgs chan interface{}
+	msgs chan Message
 
 	// These two channels are used to synchronize the client shutting down when
 	// `Close` is called.
@@ -80,7 +81,7 @@ func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 	c := &client{
 		Config:   makeConfig(config),
 		key:      writeKey,
-		msgs:     make(chan interface{}, 100),
+		msgs:     make(chan Message, 100),
 		quit:     make(chan struct{}),
 		shutdown: make(chan struct{}),
 		http: http.Client{
@@ -99,7 +100,46 @@ func (c *client) Enqueue(msg Message) (err error) {
 		return
 	}
 
-	m := msg.serializable(c.uid(), c.now())
+	var id = c.uid()
+	var ts = c.now()
+
+	switch m := msg.(type) {
+	case Alias:
+		m.Type = "alias"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+
+	case Group:
+		m.Type = "group"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+
+	case Identify:
+		m.Type = "identify"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+
+	case Page:
+		m.Type = "page"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+
+	case Screen:
+		m.Type = "screen"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+
+	case Track:
+		m.Type = "track"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+	}
 
 	defer func() {
 		// When the `msgs` channel is closed writing to it will trigger a panic.
@@ -111,7 +151,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		}
 	}()
 
-	c.msgs <- m
+	c.msgs <- msg
 	return
 }
 
@@ -129,8 +169,17 @@ func (c *client) Close() (err error) {
 	return
 }
 
+// Asynchronously send a batched requests.
+func (c *client) sendAsync(msgs []message, wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c.send(msgs)
+	}()
+}
+
 // Send batch request.
-func (c *client) send(msgs []interface{}) {
+func (c *client) send(msgs []message) {
 	const attempts = 10
 
 	if len(msgs) == 0 {
@@ -139,18 +188,20 @@ func (c *client) send(msgs []interface{}) {
 
 	b, err := json.Marshal(batch{
 		MessageId: c.uid(),
-		SentAt:    formatTime(c.now()),
+		SentAt:    c.now(),
 		Messages:  msgs,
 		Context:   c.DefaultContext,
 	})
 
 	if err != nil {
 		c.errorf("marshalling mesages - %s", err)
+		c.notifyFailure(msgs, err)
 		return
 	}
 
 	for i := 0; i != attempts; i++ {
-		if err := c.upload(b); err == nil {
+		if err = c.upload(b); err == nil {
+			c.notifySucess(msgs)
 			return
 		}
 
@@ -164,6 +215,7 @@ func (c *client) send(msgs []interface{}) {
 	}
 
 	c.errorf("%d messages dropped because they failed to be sent after %d attempts", len(msgs), attempts)
+	c.notifyFailure(msgs, err)
 }
 
 // Upload serialized batch message.
@@ -206,37 +258,31 @@ func (c *client) report(res *http.Response) {
 		return
 	}
 
-	c.logf("response %s: %d – %s", res.Status, res.StatusCode, body)
+	c.logf("response %s: %d – %s", res.Status, res.StatusCode, string(body))
 }
 
 // Batch loop.
 func (c *client) loop() {
 	defer close(c.shutdown)
 
-	var msgs []interface{}
-	var tick = time.NewTicker(c.Interval)
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+
+	tick := time.NewTicker(c.Interval)
 	defer tick.Stop()
+
+	mq := messageQueue{
+		maxBatchSize:  c.BatchSize,
+		maxBatchBytes: c.maxBatchBytes(),
+	}
 
 	for {
 		select {
 		case msg := <-c.msgs:
-			c.debugf("buffer (%d/%d) %v", len(msgs), c.BatchSize, msg)
-			msgs = append(msgs, msg)
-
-			if len(msgs) == c.BatchSize {
-				c.debugf("exceeded %d messages – flushing", c.BatchSize)
-				c.send(msgs)
-				msgs = nil
-			}
+			c.push(&mq, msg, wg)
 
 		case <-tick.C:
-			if len(msgs) > 0 {
-				c.debugf("interval reached - flushing %d", len(msgs))
-				c.send(msgs)
-				msgs = nil
-			} else {
-				c.debugf("interval reached – nothing to send")
-			}
+			c.flush(&mq, wg)
 
 		case <-c.quit:
 			c.debugf("exit requested – draining messages")
@@ -245,15 +291,39 @@ func (c *client) loop() {
 			// messages can be pushed and otherwise the loop would never end.
 			close(c.msgs)
 			for msg := range c.msgs {
-				c.debugf("buffer (%d/%d) %v", len(msgs), c.BatchSize, msg)
-				msgs = append(msgs, msg)
+				c.push(&mq, msg, wg)
 			}
 
-			c.debugf("exit requested – flushing %d", len(msgs))
-			c.send(msgs)
+			c.flush(&mq, wg)
 			c.debugf("exit")
 			return
 		}
+	}
+}
+
+func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup) {
+	var msg message
+	var err error
+
+	if msg, err = makeMessage(m); err != nil {
+		if c.Callback != nil {
+			c.Callback.Failure(m, err)
+		}
+		return
+	}
+
+	c.debugf("buffer (%d/%d) %v", len(q.pending), c.BatchSize, m)
+
+	if msgs := q.push(msg); msgs != nil {
+		c.debugf("exceeded messages batch limit with batch of %d messages – flushing", len(msgs))
+		c.sendAsync(msgs, wg)
+	}
+}
+
+func (c *client) flush(q *messageQueue, wg *sync.WaitGroup) {
+	if msgs := q.flush(); msgs != nil {
+		c.debugf("flushing %d messages", len(msgs))
+		c.sendAsync(msgs, wg)
 	}
 }
 
@@ -269,4 +339,29 @@ func (c *client) logf(format string, args ...interface{}) {
 
 func (c *client) errorf(format string, args ...interface{}) {
 	c.Logger.Errorf(format, args...)
+}
+
+func (c *client) notifySucess(msgs []message) {
+	if c.Callback != nil {
+		for _, m := range msgs {
+			c.Callback.Success(m.msg)
+		}
+	}
+}
+
+func (c *client) notifyFailure(msgs []message, err error) {
+	if c.Callback != nil {
+		for _, m := range msgs {
+			c.Callback.Failure(m.msg, err)
+		}
+	}
+}
+
+func (c *client) maxBatchBytes() int {
+	b, _ := json.Marshal(batch{
+		MessageId: c.uid(),
+		SentAt:    c.now(),
+		Context:   c.DefaultContext,
+	})
+	return maxBatchBytes - len(b)
 }

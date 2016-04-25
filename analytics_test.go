@@ -76,7 +76,7 @@ func ExampleTrack() {
 	//         "platform": "osx",
 	//         "version": "1.1.0"
 	//       },
-	//       "timestamp": "2009-11-10T23:00:00+0000",
+	//       "timestamp": "2009-11-10T23:00:00Z",
 	//       "type": "track",
 	//       "userId": "123456"
 	//     }
@@ -88,7 +88,7 @@ func ExampleTrack() {
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
-	//   "sentAt": "2009-11-10T23:00:00+0000"
+	//   "sentAt": "2009-11-10T23:00:00Z"
 	// }
 }
 
@@ -129,7 +129,7 @@ func TestTrack(t *testing.T) {
         "platform": "osx",
         "version": "1.1.0"
       },
-      "timestamp": "2009-11-10T23:00:00+0000",
+      "timestamp": "2009-11-10T23:00:00Z",
       "type": "track",
       "userId": "123456"
     }
@@ -141,7 +141,7 @@ func TestTrack(t *testing.T) {
     }
   },
   "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00+0000"
+  "sentAt": "2009-11-10T23:00:00Z"
 }`
 
 	if res := string(<-body); ref != res {
@@ -187,7 +187,7 @@ func TestTrackWithInterval(t *testing.T) {
         "platform": "osx",
         "version": "1.1.0"
       },
-      "timestamp": "2009-11-10T23:00:00+0000",
+      "timestamp": "2009-11-10T23:00:00Z",
       "type": "track",
       "userId": "123456"
     }
@@ -199,7 +199,7 @@ func TestTrackWithInterval(t *testing.T) {
     }
   },
   "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00+0000"
+  "sentAt": "2009-11-10T23:00:00Z"
 }`
 
 	// Will flush in 100 milliseconds
@@ -247,7 +247,7 @@ func TestTrackWithTimestamp(t *testing.T) {
         "platform": "osx",
         "version": "1.1.0"
       },
-      "timestamp": "2015-07-10T23:00:00+0000",
+      "timestamp": "2015-07-10T23:00:00Z",
       "type": "track",
       "userId": "123456"
     }
@@ -259,7 +259,7 @@ func TestTrackWithTimestamp(t *testing.T) {
     }
   },
   "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00+0000"
+  "sentAt": "2009-11-10T23:00:00Z"
 }`
 
 	if res := string(<-body); ref != res {
@@ -302,7 +302,7 @@ func TestTrackWithMessageId(t *testing.T) {
         "platform": "osx",
         "version": "1.1.0"
       },
-      "timestamp": "2009-11-10T23:00:00+0000",
+      "timestamp": "2009-11-10T23:00:00Z",
       "type": "track",
       "userId": "123456"
     }
@@ -314,7 +314,7 @@ func TestTrackWithMessageId(t *testing.T) {
     }
   },
   "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00+0000"
+  "sentAt": "2009-11-10T23:00:00Z"
 }`
 
 	if res := string(<-body); ref != res {
@@ -344,7 +344,7 @@ func TestTrackWithContext(t *testing.T) {
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
-		Context: Context{
+		Context: &Context{
 			Extra: map[string]interface{}{
 				"whatever": "here",
 			},
@@ -364,7 +364,7 @@ func TestTrackWithContext(t *testing.T) {
         "platform": "osx",
         "version": "1.1.0"
       },
-      "timestamp": "2009-11-10T23:00:00+0000",
+      "timestamp": "2009-11-10T23:00:00Z",
       "type": "track",
       "userId": "123456"
     }
@@ -376,7 +376,7 @@ func TestTrackWithContext(t *testing.T) {
     }
   },
   "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00+0000"
+  "sentAt": "2009-11-10T23:00:00Z"
 }`
 
 	if res := string(<-body); ref != res {
@@ -418,7 +418,7 @@ func TestTrackMany(t *testing.T) {
         "application": "Segment Desktop",
         "version": 0
       },
-      "timestamp": "2009-11-10T23:00:00+0000",
+      "timestamp": "2009-11-10T23:00:00Z",
       "type": "track",
       "userId": "123456"
     },
@@ -429,7 +429,7 @@ func TestTrackMany(t *testing.T) {
         "application": "Segment Desktop",
         "version": 1
       },
-      "timestamp": "2009-11-10T23:00:00+0000",
+      "timestamp": "2009-11-10T23:00:00Z",
       "type": "track",
       "userId": "123456"
     },
@@ -440,7 +440,7 @@ func TestTrackMany(t *testing.T) {
         "application": "Segment Desktop",
         "version": 2
       },
-      "timestamp": "2009-11-10T23:00:00+0000",
+      "timestamp": "2009-11-10T23:00:00Z",
       "type": "track",
       "userId": "123456"
     }
@@ -452,7 +452,7 @@ func TestTrackMany(t *testing.T) {
     }
   },
   "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00+0000"
+  "sentAt": "2009-11-10T23:00:00Z"
 }`
 
 	if res := string(<-body); ref != res {
@@ -504,7 +504,7 @@ func TestTrackWithIntegrations(t *testing.T) {
         "platform": "osx",
         "version": "1.1.0"
       },
-      "timestamp": "2009-11-10T23:00:00+0000",
+      "timestamp": "2009-11-10T23:00:00Z",
       "type": "track",
       "userId": "123456"
     }
@@ -516,7 +516,7 @@ func TestTrackWithIntegrations(t *testing.T) {
     }
   },
   "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00+0000"
+  "sentAt": "2009-11-10T23:00:00Z"
 }`
 
 	if res := string(<-body); ref != res {
