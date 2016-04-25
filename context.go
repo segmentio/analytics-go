@@ -9,21 +9,21 @@ import (
 // This type provides the representation of the `context` object as defined in
 // https://segment.com/docs/spec/common/#context
 type Context struct {
-	App       AppInfo                `json:"app,omitempty"`
-	Campaign  CampaignInfo           `json:"campaign,omitempty"`
-	Device    DeviceInfo             `json:"device,omitempty"`
-	Library   LibraryInfo            `json:"library,omitempty"`
-	Location  LocationInfo           `json:"location,omitempty"`
-	Network   NetworkInfo            `json:"network,omitempty"`
-	OS        OSInfo                 `json:"os,omitempty"`
-	Page      PageInfo               `json:"page,omitempty"`
-	Referrer  ReferrerInfo           `json:"referrer,omitempty"`
-	Screen    ScreenInfo             `json:"screen,omitempty"`
-	IP        net.IP                 `json:"ip,omitempty"`
-	Locale    string                 `json:"locale,omitempty"`
-	Timezone  string                 `json:"timezone,omitempty"`
-	UserAgent string                 `json:"userAgent,omitempty"`
-	Traits    map[string]interface{} `json:"traits,omitempty"`
+	App       AppInfo      `json:"app,omitempty"`
+	Campaign  CampaignInfo `json:"campaign,omitempty"`
+	Device    DeviceInfo   `json:"device,omitempty"`
+	Library   LibraryInfo  `json:"library,omitempty"`
+	Location  LocationInfo `json:"location,omitempty"`
+	Network   NetworkInfo  `json:"network,omitempty"`
+	OS        OSInfo       `json:"os,omitempty"`
+	Page      PageInfo     `json:"page,omitempty"`
+	Referrer  ReferrerInfo `json:"referrer,omitempty"`
+	Screen    ScreenInfo   `json:"screen,omitempty"`
+	IP        net.IP       `json:"ip,omitempty"`
+	Locale    string       `json:"locale,omitempty"`
+	Timezone  string       `json:"timezone,omitempty"`
+	UserAgent string       `json:"userAgent,omitempty"`
+	Traits    Traits       `json:"traits,omitempty"`
 
 	// This map is used to allow extensions to the context specifications that
 	// may not be documented or could be introduced in the future.
