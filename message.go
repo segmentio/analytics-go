@@ -1,6 +1,22 @@
 package analytics
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
+
+// Values implementing this interface are used by analytics clients to notify
+// the application when a message send succeeded or failed.
+type Callback interface {
+
+	// This method is called for every message that was successfully sent to
+	// the API.
+	Success(Message)
+
+	// This method is called for every message that failed to be sent to the
+	// API and will be discarded by the client.
+	Failure(Message, error)
+}
 
 // This interface is used to represent analytics objects that can be sent via
 // a client.
@@ -12,11 +28,6 @@ type Message interface {
 	// Validates the internal structure of the message, the method must return
 	// nil if the message is valid, or an error describing what went wrong.
 	validate() error
-
-	// Returns a serializable representation of the message, using the given
-	// message id and timestamp pass as argument if none were already set on
-	// the message.
-	serializable(msgid string, time time.Time) interface{}
 }
 
 // Takes a message id as first argument and returns it, unless it's the zero-
@@ -28,12 +39,80 @@ func makeMessageId(id string, def string) string {
 	return id
 }
 
+// Returns the time value passed as first argument, unless it's the zero-value,
+// in that case the default value passed as second argument is returned.
+func makeTimestamp(t time.Time, def time.Time) time.Time {
+	if t == (time.Time{}) {
+		return def
+	}
+	return t
+}
+
 // This structure represents objects sent to the /v1/batch endpoint. We don't
 // export this type because it's only meant to be used internally to send groups
 // of messages in one API call.
 type batch struct {
-	MessageId string        `json:"messageId"`
-	SentAt    string        `json:"sentAt"`
-	Messages  []interface{} `json:"batch"`
-	Context   Context       `json:"context"`
+	MessageId string    `json:"messageId"`
+	SentAt    time.Time `json:"sentAt"`
+	Messages  []message `json:"batch"`
+	Context   *Context  `json:"context,omitempty"`
 }
+
+type message struct {
+	msg  Message
+	json []byte
+}
+
+func makeMessage(m Message) (msg message, err error) {
+	if msg.json, err = json.Marshal(m); err != nil {
+		return
+	}
+
+	if len(msg.json) > maxMessageBytes {
+		err = ErrMessageTooBig
+		return
+	}
+
+	msg.msg = m
+	return
+}
+
+func (m message) MarshalJSON() ([]byte, error) {
+	return m.json, nil
+}
+
+type messageQueue struct {
+	pending       []message
+	bytes         int
+	maxBatchSize  int
+	maxBatchBytes int
+}
+
+func (q *messageQueue) push(m message) (b []message) {
+	if (q.bytes + len(m.json)) > q.maxBatchBytes {
+		b = q.flush()
+	}
+
+	if q.pending == nil {
+		q.pending = make([]message, 0, q.maxBatchSize)
+	}
+
+	q.pending = append(q.pending, m)
+	q.bytes += len(m.json)
+
+	if b == nil && len(q.pending) == q.maxBatchSize {
+		b = q.flush()
+	}
+
+	return
+}
+
+func (q *messageQueue) flush() (msgs []message) {
+	msgs, q.pending, q.bytes = q.pending, nil, 0
+	return
+}
+
+const (
+	maxBatchBytes   = 500000
+	maxMessageBytes = 15000
+)

@@ -5,12 +5,16 @@ import "time"
 // This type represents object sent in a alias call as described in
 // https://segment.com/docs/libraries/http/#alias
 type Alias struct {
-	MessageId    string
-	PreviousId   string
-	UserId       string
-	Timestamp    time.Time
-	Context      Context
-	Integrations map[string]interface{}
+	// This field is exported for serialization purposes and shouldn't be set by
+	// the application, its value is always overwritten by the library.
+	Type string `json:"type,omitempty"`
+
+	MessageId    string                 `json:"messageId,omitempty"`
+	PreviousId   string                 `json:"previousId"`
+	UserId       string                 `json:"userId"`
+	Timestamp    time.Time              `json:"timestamp,omitempty"`
+	Context      *Context               `json:"context,omitempty"`
+	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }
 
 func (msg Alias) validate() error {
@@ -31,26 +35,4 @@ func (msg Alias) validate() error {
 	}
 
 	return nil
-}
-
-func (msg Alias) serializable(msgid string, time time.Time) interface{} {
-	return serializableAlias{
-		Type:         "alias",
-		MessageId:    makeMessageId(msg.MessageId, msgid),
-		PreviousId:   msg.PreviousId,
-		UserId:       msg.UserId,
-		Timestamp:    makeTimestamp(msg.Timestamp, time),
-		Context:      makeJsonContext(msg.Context),
-		Integrations: msg.Integrations,
-	}
-}
-
-type serializableAlias struct {
-	Type         string                 `json:"type,omitempty"`
-	MessageId    string                 `json:"messageId,omitempty"`
-	PreviousId   string                 `json:"previousId"`
-	UserId       string                 `json:"userId"`
-	Timestamp    string                 `json:"timestamp,omitempty"`
-	Context      *Context               `json:"context,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }

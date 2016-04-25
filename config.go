@@ -36,6 +36,10 @@ type Config struct {
 	// `os.Stderr`.
 	Logger Logger
 
+	// The callback object that will be used by the client to notify the
+	// application when messages sends to the backend API succeeded or failed.
+	Callback Callback
+
 	// The maximum number of messages that will be sent in one API call.
 	// Messages will be sent when they've been queued up to the maximum batch
 	// size or when the flushing interval timer triggers.
@@ -48,7 +52,7 @@ type Config struct {
 	Verbose bool
 
 	// The default context set on each message sent by the client.
-	DefaultContext Context
+	DefaultContext *Context
 
 	// The retry policy used by the client to resend requests that have failed.
 	// The function is called with how many times the operation has been retried
@@ -125,6 +129,10 @@ func makeConfig(c Config) Config {
 
 	if c.BatchSize == 0 {
 		c.BatchSize = DefaultBatchSize
+	}
+
+	if c.DefaultContext == nil {
+		c.DefaultContext = &Context{}
 	}
 
 	if c.RetryAfter == nil {

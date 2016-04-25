@@ -5,14 +5,18 @@ import "time"
 // This type represents object sent in a page call as described in
 // https://segment.com/docs/libraries/http/#page
 type Page struct {
-	MessageId    string
-	AnonymousId  string
-	UserId       string
-	Name         string
-	Timestamp    time.Time
-	Context      Context
-	Properties   map[string]interface{}
-	Integrations map[string]interface{}
+	// This field is exported for serialization purposes and shouldn't be set by
+	// the application, its value is always overwritten by the library.
+	Type string `json:"type,omitempty"`
+
+	MessageId    string                 `json:"messageId,omitempty"`
+	AnonymousId  string                 `json:"anonymousId,omitempty"`
+	UserId       string                 `json:"userId,omitempty"`
+	Name         string                 `json:"name,omitempty"`
+	Timestamp    time.Time              `json:"timestamp,omitempty"`
+	Context      *Context               `json:"context,omitempty"`
+	Properties   map[string]interface{} `json:"properties,omitempty"`
+	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }
 
 func (msg Page) validate() error {
@@ -25,30 +29,4 @@ func (msg Page) validate() error {
 	}
 
 	return nil
-}
-
-func (msg Page) serializable(msgid string, time time.Time) interface{} {
-	return serializablePage{
-		Type:         "page",
-		MessageId:    makeMessageId(msg.MessageId, msgid),
-		AnonymousId:  msg.AnonymousId,
-		UserId:       msg.UserId,
-		Name:         msg.Name,
-		Timestamp:    makeTimestamp(msg.Timestamp, time),
-		Context:      makeJsonContext(msg.Context),
-		Properties:   msg.Properties,
-		Integrations: msg.Integrations,
-	}
-}
-
-type serializablePage struct {
-	Type         string                 `json:"type,omitempty"`
-	MessageId    string                 `json:"messageId,omitempty"`
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	Name         string                 `json:"name,omitempty"`
-	Timestamp    string                 `json:"timestamp,omitempty"`
-	Context      *Context               `json:"context,omitempty"`
-	Properties   map[string]interface{} `json:"properties,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }
