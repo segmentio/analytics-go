@@ -26,7 +26,7 @@ use of the library and the Segment API:
 
 - [Documentation](https://segment.com/docs/libraries/go/)
 - [godoc](https://godoc.org/github.com/segmentio/analytics-go)
-- [HTTP API](https://segment.com/docs/libraries/http/)
+- [API](https://segment.com/docs/libraries/http/)
 - [Specs](https://segment.com/docs/spec/)
 
 ## Usage
