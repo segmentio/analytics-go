@@ -12,11 +12,6 @@ type Message interface {
 	// Validates the internal structure of the message, the method must return
 	// nil if the message is valid, or an error describing what went wrong.
 	validate() error
-
-	// Returns a serializable representation of the message, using the given
-	// message id and timestamp pass as argument if none were already set on
-	// the message.
-	serializable(msgid string, time time.Time) interface{}
 }
 
 // Takes a message id as first argument and returns it, unless it's the zero-
@@ -28,12 +23,22 @@ func makeMessageId(id string, def string) string {
 	return id
 }
 
+// Returns a string representation of the time value passed as first argument,
+// unless it's a zero-value, in that case the default value passed as second
+// argument is used instead.
+func makeTimestamp(t time.Time, def time.Time) time.Time {
+	if t == (time.Time{}) {
+		return def
+	}
+	return t
+}
+
 // This structure represents objects sent to the /v1/batch endpoint. We don't
 // export this type because it's only meant to be used internally to send groups
 // of messages in one API call.
 type batch struct {
-	MessageId string        `json:"messageId"`
-	SentAt    string        `json:"sentAt"`
-	Messages  []interface{} `json:"batch"`
-	Context   Context       `json:"context"`
+	MessageId string    `json:"messageId"`
+	SentAt    time.Time `json:"sentAt"`
+	Messages  []Message `json:"batch"`
+	Context   *Context  `json:"context"`
 }

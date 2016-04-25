@@ -2,22 +2,6 @@ package analytics
 
 import "testing"
 
-func TestScreenSerializable(t *testing.T) {
-	id := mockId()
-	ts := mockTime()
-
-	screen := Screen{
-		UserId:    "1",
-		Name:      "home",
-		MessageId: id,
-		Timestamp: ts,
-	}
-
-	if v, err := validateSerizable("screen", screen); err != nil {
-		t.Errorf("%s: %#v", err, v)
-	}
-}
-
 func TestScreenMissingUserId(t *testing.T) {
 	screen := Screen{}
 

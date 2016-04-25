@@ -43,7 +43,7 @@ type client struct {
 	// This channel is where the `Enqueue` method writes messages so they can be
 	// picked up and pushed by the backend goroutine taking care of applying the
 	// batching rules.
-	msgs chan interface{}
+	msgs chan Message
 
 	// These two channels are used to synchronize the client shutting down when
 	// `Close` is called.
@@ -80,7 +80,7 @@ func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 	c := &client{
 		Config:   makeConfig(config),
 		key:      writeKey,
-		msgs:     make(chan interface{}, 100),
+		msgs:     make(chan Message, 100),
 		quit:     make(chan struct{}),
 		shutdown: make(chan struct{}),
 		http: http.Client{
@@ -99,7 +99,46 @@ func (c *client) Enqueue(msg Message) (err error) {
 		return
 	}
 
-	m := msg.serializable(c.uid(), c.now())
+	var id = c.uid()
+	var ts = c.now()
+
+	switch m := msg.(type) {
+	case Alias:
+		m.Type = "alias"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+
+	case Group:
+		m.Type = "group"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+
+	case Identify:
+		m.Type = "identify"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+
+	case Page:
+		m.Type = "page"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+
+	case Screen:
+		m.Type = "screen"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+
+	case Track:
+		m.Type = "track"
+		m.MessageId = makeMessageId(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
+	}
 
 	defer func() {
 		// When the `msgs` channel is closed writing to it will trigger a panic.
@@ -111,7 +150,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		}
 	}()
 
-	c.msgs <- m
+	c.msgs <- msg
 	return
 }
 
@@ -130,7 +169,7 @@ func (c *client) Close() (err error) {
 }
 
 // Send batch request.
-func (c *client) send(msgs []interface{}) {
+func (c *client) send(msgs []Message) {
 	const attempts = 10
 
 	if len(msgs) == 0 {
@@ -139,7 +178,7 @@ func (c *client) send(msgs []interface{}) {
 
 	b, err := json.Marshal(batch{
 		MessageId: c.uid(),
-		SentAt:    formatTime(c.now()),
+		SentAt:    c.now(),
 		Messages:  msgs,
 		Context:   c.DefaultContext,
 	})
@@ -213,7 +252,7 @@ func (c *client) report(res *http.Response) {
 func (c *client) loop() {
 	defer close(c.shutdown)
 
-	var msgs []interface{}
+	var msgs []Message
 	var tick = time.NewTicker(c.Interval)
 	defer tick.Stop()
 

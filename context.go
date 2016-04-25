@@ -144,12 +144,3 @@ func (ctx Context) MarshalJSON() ([]byte, error) {
 
 	return json.Marshal(structToMap(v, m))
 }
-
-// In order to use the `omitempty` tag on serialized context fields we use a
-// pointer type so the nil value can be used to not serialize the field.
-func makeJsonContext(ctx Context) *Context {
-	if isZeroValue(reflect.ValueOf(ctx)) {
-		return nil
-	}
-	return &ctx
-}
