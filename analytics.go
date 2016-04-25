@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -125,6 +126,7 @@ type Client struct {
 	uid      func() string
 	now      func() time.Time
 	once     sync.Once
+	wg       sync.WaitGroup
 }
 
 // New client with write key.
@@ -240,10 +242,21 @@ func (c *Client) Close() error {
 	return nil
 }
 
+func (c *Client) sendAsync(msgs []interface{}) {
+	c.wg.Add(1)
+	go func() {
+		err := c.send(msgs)
+		if err != nil {
+			c.logf(err.Error())
+		}
+		c.wg.Done()
+	}()
+}
+
 // Send batch request.
-func (c *Client) send(msgs []interface{}) {
+func (c *Client) send(msgs []interface{}) error {
 	if len(msgs) == 0 {
-		return
+		return nil
 	}
 
 	batch := new(Batch)
@@ -254,16 +267,17 @@ func (c *Client) send(msgs []interface{}) {
 
 	b, err := json.Marshal(batch)
 	if err != nil {
-		c.log("error marshalling msgs: %s", err)
-		return
+		return fmt.Errorf("error marshalling msgs: %s", err)
 	}
 
 	for i := 0; i < 10; i++ {
-		if err := c.upload(b); err == nil {
-			break
+		if err = c.upload(b); err == nil {
+			return nil
 		}
 		Backo.Sleep(i)
 	}
+
+	return err
 }
 
 // Upload serialized batch message.
@@ -271,8 +285,7 @@ func (c *Client) upload(b []byte) error {
 	url := c.Endpoint + "/v1/batch"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
-		c.log("error creating request: %s", err)
-		return err
+		return fmt.Errorf("error creating request: %s", err)
 	}
 
 	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
@@ -282,31 +295,21 @@ func (c *Client) upload(b []byte) error {
 
 	res, err := c.Client.Do(req)
 	if err != nil {
-		c.log("error sending request: %s", err)
-		return err
+		return fmt.Errorf("error sending request: %s", err)
 	}
 	defer res.Body.Close()
 
-	c.report(res)
-
-	return nil
-}
-
-// Report on response body.
-func (c *Client) report(res *http.Response) {
 	if res.StatusCode < 400 {
 		c.verbose("response %s", res.Status)
-		return
+		return nil
 	}
 
-	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		c.log("error reading response body: %s", err)
-		return
+		return fmt.Errorf("error reading response body: %s", err)
 	}
 
-	c.log("response %s: %s – %s", res.Status, res.StatusCode, body)
+	return fmt.Errorf("response %s: %d – %s", res.Status, res.StatusCode, string(body))
 }
 
 // Batch loop.
@@ -321,14 +324,14 @@ func (c *Client) loop() {
 			msgs = append(msgs, msg)
 			if len(msgs) == c.Size {
 				c.verbose("exceeded %d messages – flushing", c.Size)
-				c.send(msgs)
-				msgs = nil
+				c.sendAsync(msgs)
+				msgs = make([]interface{}, 0, c.Size)
 			}
 		case <-tick.C:
 			if len(msgs) > 0 {
 				c.verbose("interval reached - flushing %d", len(msgs))
-				c.send(msgs)
-				msgs = nil
+				c.sendAsync(msgs)
+				msgs = make([]interface{}, 0, c.Size)
 			} else {
 				c.verbose("interval reached – nothing to send")
 			}
@@ -341,7 +344,8 @@ func (c *Client) loop() {
 				msgs = append(msgs, msg)
 			}
 			c.verbose("exit requested – flushing %d", len(msgs))
-			c.send(msgs)
+			c.sendAsync(msgs)
+			c.wg.Wait()
 			c.verbose("exit")
 			c.shutdown <- struct{}{}
 			return
@@ -357,7 +361,7 @@ func (c *Client) verbose(msg string, args ...interface{}) {
 }
 
 // Unconditional log.
-func (c *Client) log(msg string, args ...interface{}) {
+func (c *Client) logf(msg string, args ...interface{}) {
 	c.Logger.Printf(msg, args...)
 }
 
@@ -370,7 +374,9 @@ func (m *Message) setTimestamp(s string) {
 
 // Set message id.
 func (m *Message) setMessageId(s string) {
-	m.MessageId = s
+	if m.MessageId == "" {
+		m.MessageId = s
+	}
 }
 
 // Return formatted timestamp.
