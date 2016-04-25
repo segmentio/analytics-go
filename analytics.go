@@ -172,10 +172,6 @@ func (c *client) Close() (err error) {
 func (c *client) send(msgs []message) {
 	const attempts = 10
 
-	if len(msgs) == 0 {
-		return
-	}
-
 	b, err := json.Marshal(batch{
 		MessageId: c.uid(),
 		SentAt:    c.now(),
@@ -185,11 +181,13 @@ func (c *client) send(msgs []message) {
 
 	if err != nil {
 		c.errorf("marshalling mesages - %s", err)
+		c.notifyFailure(msgs, err)
 		return
 	}
 
 	for i := 0; i != attempts; i++ {
-		if err := c.upload(b); err == nil {
+		if err = c.upload(b); err == nil {
+			c.notifySuccess(msgs)
 			return
 		}
 
@@ -198,11 +196,13 @@ func (c *client) send(msgs []message) {
 		case <-time.After(c.RetryAfter(i)):
 		case <-c.quit:
 			c.errorf("%d messages dropped because they failed to be sent and the client was closed", len(msgs))
+			c.notifyFailure(msgs, err)
 			return
 		}
 	}
 
 	c.errorf("%d messages dropped because they failed to be sent after %d attempts", len(msgs), attempts)
+	c.notifyFailure(msgs, err)
 }
 
 // Upload serialized batch message.
@@ -291,6 +291,9 @@ func (c *client) push(q *messageQueue, m Message) {
 
 	if msg, err = makeMessage(m, maxMessageBytes); err != nil {
 		c.errorf("%s - %v", err, m)
+		if c.Callback != nil {
+			c.Callback.Failure(m, err)
+		}
 		return
 	}
 
@@ -330,4 +333,20 @@ func (c *client) maxBatchBytes() int {
 		Context:   c.DefaultContext,
 	})
 	return maxBatchBytes - len(b)
+}
+
+func (c *client) notifySuccess(msgs []message) {
+	if c.Callback != nil {
+		for _, m := range msgs {
+			c.Callback.Success(m.msg)
+		}
+	}
+}
+
+func (c *client) notifyFailure(msgs []message, err error) {
+	if c.Callback != nil {
+		for _, m := range msgs {
+			c.Callback.Failure(m.msg, err)
+		}
+	}
 }
