@@ -8,10 +8,11 @@ import (
 import "time"
 
 func main() {
-	client := analytics.New("h97jamjwbh")
-	client.Interval = 30 * time.Second
-	client.Size = 100
-	client.Verbose = true
+	client, _ := analytics.NewWithConfig("h97jamjwbh", analytics.Config{
+		Interval:  30 * time.Second,
+		BatchSize: 100,
+		Verbose:   true,
+	})
 	defer client.Close()
 
 	done := time.After(3 * time.Second)

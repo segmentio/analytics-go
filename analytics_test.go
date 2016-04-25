@@ -46,11 +46,13 @@ func ExampleTrack() {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
-	client.now = mockTime
-	client.uid = mockId
-	client.Size = 1
+	client, _ := NewWithConfig("h97jamjwbh", Config{
+		Endpoint:  server.URL,
+		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
+	})
+	defer client.Close()
 
 	client.Enqueue(Track{
 		Event:  "Download",
@@ -94,12 +96,15 @@ func TestTrack(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
-	client.Verbose = true
-	client.Logger = t
-	client.now = mockTime
-	client.uid = mockId
+	client, _ := NewWithConfig("h97jamjwbh", Config{
+		Endpoint:  server.URL,
+		Verbose:   true,
+		Logger:    t,
+		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
+	})
+	defer client.Close()
 
 	if err := client.Enqueue(Track{
 		Event:  "Download",
@@ -113,8 +118,6 @@ func TestTrack(t *testing.T) {
 		t.Error(err)
 		return
 	}
-
-	client.Close()
 
 	const ref = `{
   "batch": [
@@ -154,13 +157,15 @@ func TestTrackWithInterval(t *testing.T) {
 
 	t0 := time.Now()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
-	client.Interval = interval
-	client.Verbose = true
-	client.Logger = t
-	client.now = mockTime
-	client.uid = mockId
+	client, _ := NewWithConfig("h97jamjwbh", Config{
+		Endpoint: server.URL,
+		Interval: interval,
+		Verbose:  true,
+		Logger:   t,
+		now:      mockTime,
+		uid:      mockId,
+	})
+	defer client.Close()
 
 	client.Enqueue(Track{
 		Event:  "Download",
@@ -211,13 +216,15 @@ func TestTrackWithTimestamp(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
-	client.Verbose = true
-	client.Logger = t
-	client.now = mockTime
-	client.uid = mockId
-	client.Size = 1
+	client, _ := NewWithConfig("h97jamjwbh", Config{
+		Endpoint:  server.URL,
+		Verbose:   true,
+		Logger:    t,
+		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
+	})
+	defer client.Close()
 
 	client.Enqueue(Track{
 		Event:  "Download",
@@ -264,13 +271,15 @@ func TestTrackWithMessageId(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
-	client.Verbose = true
-	client.Logger = t
-	client.now = mockTime
-	client.uid = mockId
-	client.Size = 1
+	client, _ := NewWithConfig("h97jamjwbh", Config{
+		Endpoint:  server.URL,
+		Verbose:   true,
+		Logger:    t,
+		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
+	})
+	defer client.Close()
 
 	client.Enqueue(Track{
 		Event:  "Download",
@@ -317,13 +326,15 @@ func TestTrackWithContext(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
-	client.Verbose = true
-	client.Logger = t
-	client.now = mockTime
-	client.uid = mockId
-	client.Size = 1
+	client, _ := NewWithConfig("h97jamjwbh", Config{
+		Endpoint:  server.URL,
+		Verbose:   true,
+		Logger:    t,
+		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
+	})
+	defer client.Close()
 
 	client.Enqueue(Track{
 		Event:  "Download",
@@ -377,13 +388,15 @@ func TestTrackMany(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
-	client.Verbose = true
-	client.Logger = t
-	client.now = mockTime
-	client.uid = mockId
-	client.Size = 3
+	client, _ := NewWithConfig("h97jamjwbh", Config{
+		Endpoint:  server.URL,
+		Verbose:   true,
+		Logger:    t,
+		BatchSize: 3,
+		now:       mockTime,
+		uid:       mockId,
+	})
+	defer client.Close()
 
 	for i := 0; i < 5; i++ {
 		client.Enqueue(Track{
@@ -451,13 +464,15 @@ func TestTrackWithIntegrations(t *testing.T) {
 	body, server := mockServer()
 	defer server.Close()
 
-	client := New("h97jamjwbh")
-	client.Endpoint = server.URL
-	client.Verbose = true
-	client.Logger = t
-	client.now = mockTime
-	client.uid = mockId
-	client.Size = 1
+	client, _ := NewWithConfig("h97jamjwbh", Config{
+		Endpoint:  server.URL,
+		Verbose:   true,
+		Logger:    t,
+		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
+	})
+	defer client.Close()
 
 	client.Enqueue(Track{
 		Event:  "Download",
@@ -510,39 +525,17 @@ func TestTrackWithIntegrations(t *testing.T) {
 }
 
 func TestCloseTwice(t *testing.T) {
-	// This test is overly complex for what it attempts to verify but currently
-	// closing the client without sending anythinng blocks, I'll cleanup later.
-	body, server := mockServer()
-	defer server.Close()
-
 	client := New("0123456789")
-	client.Endpoint = server.URL
-	client.now = mockTime
-	client.uid = mockId
-	client.Size = 1
-
-	client.Enqueue(Track{
-		Event:  "Download",
-		UserId: "123456",
-		Properties: map[string]interface{}{
-			"application": "Segment Desktop",
-			"version":     "1.1.0",
-			"platform":    "osx",
-		},
-		Integrations: map[string]interface{}{
-			"All":      true,
-			"Intercom": false,
-			"Mixpanel": true,
-		},
-	})
-
-	<-body
 
 	if err := client.Close(); err != nil {
 		t.Error("closing a client should not a return an error")
 	}
 
-	if err := client.Close(); err != io.EOF {
-		t.Error("closing a client a second time should return io.EOF:", err)
+	if err := client.Close(); err != ErrClosed {
+		t.Error("closing a client a second time should return ErrClosed:", err)
+	}
+
+	if err := client.Enqueue(Track{UserId: "1", Event: "A"}); err != ErrClosed {
+		t.Error("using a client after it was closed should return ErrClosed:", err)
 	}
 }
