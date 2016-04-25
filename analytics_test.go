@@ -469,7 +469,9 @@ func ExampleTrackWithIntegrations() {
 	// }
 }
 
-// tests that close actually exits
+// Tests that calling Close right after creating the client object doesn't
+// block.
+// Bug: https://github.com/segmentio/analytics-go/issues/43
 func TestCloseFinish(_ *testing.T) {
 	c := New("test")
 	c.Close()
