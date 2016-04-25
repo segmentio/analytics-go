@@ -289,7 +289,7 @@ func (c *client) push(q *messageQueue, m Message) {
 	var msg message
 	var err error
 
-	if msg, err = makeMessage(m); err != nil {
+	if msg, err = makeMessage(m, maxMessageBytes); err != nil {
 		c.errorf("%s - %v", err, m)
 		return
 	}
