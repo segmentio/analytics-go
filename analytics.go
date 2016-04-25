@@ -235,6 +235,7 @@ func (c *Client) queue(msg message) {
 
 // Close and flush metrics.
 func (c *Client) Close() error {
+	c.once.Do(c.startLoop)
 	c.quit <- struct{}{}
 	close(c.msgs)
 	<-c.shutdown

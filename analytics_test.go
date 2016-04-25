@@ -3,6 +3,7 @@ package analytics
 import "net/http/httptest"
 import "encoding/json"
 import "net/http"
+import "testing"
 import "bytes"
 import "time"
 import "fmt"
@@ -466,4 +467,12 @@ func ExampleTrackWithIntegrations() {
 	//   "messageId": "I'm unique",
 	//   "sentAt": "2009-11-10T23:00:00+0000"
 	// }
+}
+
+// Tests that calling Close right after creating the client object doesn't
+// block.
+// Bug: https://github.com/segmentio/analytics-go/issues/43
+func TestCloseFinish(_ *testing.T) {
+	c := New("test")
+	c.Close()
 }
