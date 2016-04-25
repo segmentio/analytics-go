@@ -48,9 +48,9 @@ func ExampleTrack() {
 
 	client, _ := NewWithConfig("h97jamjwbh", Config{
 		Endpoint:  server.URL,
-		Now:       mockTime,
-		UID:       mockId,
 		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
 	})
 	defer client.Close()
 
@@ -100,9 +100,9 @@ func TestTrack(t *testing.T) {
 		Endpoint:  server.URL,
 		Verbose:   true,
 		Logger:    t,
-		Now:       mockTime,
-		UID:       mockId,
 		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
 	})
 	defer client.Close()
 
@@ -162,8 +162,8 @@ func TestTrackWithInterval(t *testing.T) {
 		Interval: interval,
 		Verbose:  true,
 		Logger:   t,
-		Now:      mockTime,
-		UID:      mockId,
+		now:      mockTime,
+		uid:      mockId,
 	})
 	defer client.Close()
 
@@ -220,9 +220,9 @@ func TestTrackWithTimestamp(t *testing.T) {
 		Endpoint:  server.URL,
 		Verbose:   true,
 		Logger:    t,
-		Now:       mockTime,
-		UID:       mockId,
 		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
 	})
 	defer client.Close()
 
@@ -275,9 +275,9 @@ func TestTrackWithMessageId(t *testing.T) {
 		Endpoint:  server.URL,
 		Verbose:   true,
 		Logger:    t,
-		Now:       mockTime,
-		UID:       mockId,
 		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
 	})
 	defer client.Close()
 
@@ -330,9 +330,9 @@ func TestTrackWithContext(t *testing.T) {
 		Endpoint:  server.URL,
 		Verbose:   true,
 		Logger:    t,
-		Now:       mockTime,
-		UID:       mockId,
 		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
 	})
 	defer client.Close()
 
@@ -392,9 +392,9 @@ func TestTrackMany(t *testing.T) {
 		Endpoint:  server.URL,
 		Verbose:   true,
 		Logger:    t,
-		Now:       mockTime,
-		UID:       mockId,
 		BatchSize: 3,
+		now:       mockTime,
+		uid:       mockId,
 	})
 	defer client.Close()
 
@@ -468,9 +468,9 @@ func TestTrackWithIntegrations(t *testing.T) {
 		Endpoint:  server.URL,
 		Verbose:   true,
 		Logger:    t,
-		Now:       mockTime,
-		UID:       mockId,
 		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
 	})
 	defer client.Close()
 

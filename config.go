@@ -47,13 +47,8 @@ type Config struct {
 	// to its logger.
 	Verbose bool
 
-	// A function called by the client to generate unique message identifiers.
-	// The client uses a UUID generator if none is provided.
-	UID func() string
-
-	// A function called by the client to get the current time, `time.Now` is
-	// used by default.
-	Now func() time.Time
+	// The default context set on each message sent by the client.
+	DefaultContext Context
 
 	// The retry policy used by the client to resend requests that have failed.
 	// The function is called with how many times the operation has been retried
@@ -62,8 +57,17 @@ type Config struct {
 	// If not set the client will fallback to use a default retry policy.
 	RetryAfter func(int) time.Duration
 
-	// The default context set on each message sent by the client.
-	DefaultContext Context
+	// A function called by the client to generate unique message identifiers.
+	// The client uses a UUID generator if none is provided.
+	// This field is not exported and only exposed internally to let unit tests
+	// mock the id generation.
+	uid func() string
+
+	// A function called by the client to get the current time, `time.Now` is
+	// used by default.
+	// This field is not exported and only exposed internally to let unit tests
+	// mock the current time.
+	now func() time.Time
 }
 
 // This constant sets the default endpoint to which client instances send
@@ -123,16 +127,16 @@ func makeConfig(c Config) Config {
 		c.BatchSize = DefaultBatchSize
 	}
 
-	if c.UID == nil {
-		c.UID = uid
-	}
-
-	if c.Now == nil {
-		c.Now = time.Now
-	}
-
 	if c.RetryAfter == nil {
 		c.RetryAfter = backo.DefaultBacko().Duration
+	}
+
+	if c.uid == nil {
+		c.uid = uid
+	}
+
+	if c.now == nil {
+		c.now = time.Now
 	}
 
 	// We always overwrite the 'library' field of the default context set on the

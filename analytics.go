@@ -99,7 +99,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		return
 	}
 
-	m := msg.serializable(c.UID(), c.Now())
+	m := msg.serializable(c.uid(), c.now())
 
 	defer func() {
 		// When the `msgs` channel is closed writing to it will trigger a panic.
@@ -138,8 +138,8 @@ func (c *client) send(msgs []interface{}) {
 	}
 
 	b, err := json.Marshal(batch{
-		MessageId: c.UID(),
-		SentAt:    formatTime(c.Now()),
+		MessageId: c.uid(),
+		SentAt:    formatTime(c.now()),
 		Messages:  msgs,
 		Context:   c.DefaultContext,
 	})
