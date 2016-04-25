@@ -169,7 +169,7 @@ func (c *client) Close() (err error) {
 }
 
 // Send batch request.
-func (c *client) send(msgs []Message) {
+func (c *client) send(msgs []message) {
 	const attempts = 10
 
 	if len(msgs) == 0 {
@@ -252,30 +252,21 @@ func (c *client) report(res *http.Response) {
 func (c *client) loop() {
 	defer close(c.shutdown)
 
-	var msgs []Message
-	var tick = time.NewTicker(c.Interval)
+	tick := time.NewTicker(c.Interval)
 	defer tick.Stop()
+
+	mq := messageQueue{
+		maxBatchSize:  c.BatchSize,
+		maxBatchBytes: c.maxBatchBytes(),
+	}
 
 	for {
 		select {
 		case msg := <-c.msgs:
-			c.debugf("buffer (%d/%d) %v", len(msgs), c.BatchSize, msg)
-			msgs = append(msgs, msg)
-
-			if len(msgs) == c.BatchSize {
-				c.debugf("exceeded %d messages – flushing", c.BatchSize)
-				c.send(msgs)
-				msgs = nil
-			}
+			c.push(&mq, msg)
 
 		case <-tick.C:
-			if len(msgs) > 0 {
-				c.debugf("interval reached - flushing %d", len(msgs))
-				c.send(msgs)
-				msgs = nil
-			} else {
-				c.debugf("interval reached – nothing to send")
-			}
+			c.flush(&mq)
 
 		case <-c.quit:
 			c.debugf("exit requested – draining messages")
@@ -284,15 +275,37 @@ func (c *client) loop() {
 			// messages can be pushed and otherwise the loop would never end.
 			close(c.msgs)
 			for msg := range c.msgs {
-				c.debugf("buffer (%d/%d) %v", len(msgs), c.BatchSize, msg)
-				msgs = append(msgs, msg)
+				c.push(&mq, msg)
 			}
 
-			c.debugf("exit requested – flushing %d", len(msgs))
-			c.send(msgs)
+			c.flush(&mq)
 			c.debugf("exit")
 			return
 		}
+	}
+}
+
+func (c *client) push(q *messageQueue, m Message) {
+	var msg message
+	var err error
+
+	if msg, err = makeMessage(m); err != nil {
+		c.errorf("%s - %v", err, m)
+		return
+	}
+
+	c.debugf("buffer (%d/%d) %v", len(q.pending), c.BatchSize, m)
+
+	if msgs := q.push(msg); msgs != nil {
+		c.debugf("exceeded messages batch limit with batch of %d messages – flushing", len(msgs))
+		c.send(msgs)
+	}
+}
+
+func (c *client) flush(q *messageQueue) {
+	if msgs := q.flush(); msgs != nil {
+		c.debugf("flushing %d messages", len(msgs))
+		c.send(msgs)
 	}
 }
 
@@ -308,4 +321,13 @@ func (c *client) logf(format string, args ...interface{}) {
 
 func (c *client) errorf(format string, args ...interface{}) {
 	c.Logger.Errorf(format, args...)
+}
+
+func (c *client) maxBatchBytes() int {
+	b, _ := json.Marshal(batch{
+		MessageId: c.uid(),
+		SentAt:    c.now(),
+		Context:   c.DefaultContext,
+	})
+	return maxBatchBytes - len(b)
 }

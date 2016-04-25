@@ -48,4 +48,9 @@ var (
 	// This error is returned by methods of the `Client` interface when they are
 	// called after the client was already closed.
 	ErrClosed = errors.New("the client was already closed")
+
+	// This error is used to notify the client callbacks that a message send
+	// failed because the JSON representation of a message exceeded the upper
+	// limit.
+	ErrMessageTooBig = errors.New("the message exceeds the maximum allowed size")
 )
