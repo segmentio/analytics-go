@@ -9,13 +9,13 @@ type Identify struct {
 	// the application, its value is always overwritten by the library.
 	Type string `json:"type,omitempty"`
 
-	MessageId    string                 `json:"messageId,omitempty"`
-	AnonymousId  string                 `json:"anonymousId,omitempty"`
-	UserId       string                 `json:"userId,omitempty"`
-	Timestamp    time.Time              `json:"timestamp,omitempty"`
-	Context      *Context               `json:"context,omitempty"`
-	Traits       Traits                 `json:"traits,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
+	MessageId    string       `json:"messageId,omitempty"`
+	AnonymousId  string       `json:"anonymousId,omitempty"`
+	UserId       string       `json:"userId,omitempty"`
+	Timestamp    time.Time    `json:"timestamp,omitempty"`
+	Context      *Context     `json:"context,omitempty"`
+	Traits       Traits       `json:"traits,omitempty"`
+	Integrations Integrations `json:"integrations,omitempty"`
 }
 
 func (msg Identify) validate() error {
