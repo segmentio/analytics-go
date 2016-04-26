@@ -57,7 +57,7 @@ func ExampleTrack() {
 	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
-		Properties: map[string]interface{}{
+		Properties: Properties{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
@@ -109,7 +109,7 @@ func TestTrack(t *testing.T) {
 	if err := client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
-		Properties: map[string]interface{}{
+		Properties: Properties{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
@@ -170,7 +170,7 @@ func TestTrackWithInterval(t *testing.T) {
 	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
-		Properties: map[string]interface{}{
+		Properties: Properties{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
@@ -229,7 +229,7 @@ func TestTrackWithTimestamp(t *testing.T) {
 	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
-		Properties: map[string]interface{}{
+		Properties: Properties{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
@@ -284,7 +284,7 @@ func TestTrackWithMessageId(t *testing.T) {
 	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
-		Properties: map[string]interface{}{
+		Properties: Properties{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
@@ -339,7 +339,7 @@ func TestTrackWithContext(t *testing.T) {
 	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
-		Properties: map[string]interface{}{
+		Properties: Properties{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
@@ -402,7 +402,7 @@ func TestTrackMany(t *testing.T) {
 		client.Enqueue(Track{
 			Event:  "Download",
 			UserId: "123456",
-			Properties: map[string]interface{}{
+			Properties: Properties{
 				"application": "Segment Desktop",
 				"version":     i,
 			},
@@ -477,7 +477,7 @@ func TestTrackWithIntegrations(t *testing.T) {
 	client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
-		Properties: map[string]interface{}{
+		Properties: Properties{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
