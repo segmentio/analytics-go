@@ -170,9 +170,10 @@ func (c *client) Close() (err error) {
 }
 
 // Asychronously send a batched requests.
-func (c *client) sendAsync(msgs []message, wg *sync.WaitGroup) {
+func (c *client) sendAsync(msgs []message, wg *sync.WaitGroup, ex *executor) {
 	wg.Add(1)
-	go func() {
+
+	if !ex.do(func() {
 		defer wg.Done()
 		defer func() {
 			// In case a bug is introduced in the send function that triggers
@@ -183,7 +184,11 @@ func (c *client) sendAsync(msgs []message, wg *sync.WaitGroup) {
 			}
 		}()
 		c.send(msgs)
-	}()
+	}) {
+		wg.Done()
+		c.errorf("sending messages failed - %s", ErrTooManyRequests)
+		c.notifyFailure(msgs, ErrTooManyRequests)
+	}
 }
 
 // Send batch request.
@@ -276,6 +281,9 @@ func (c *client) loop() {
 	tick := time.NewTicker(c.Interval)
 	defer tick.Stop()
 
+	ex := newExecutor(1000)
+	defer ex.close()
+
 	mq := messageQueue{
 		maxBatchSize:  c.BatchSize,
 		maxBatchBytes: c.maxBatchBytes(),
@@ -284,10 +292,10 @@ func (c *client) loop() {
 	for {
 		select {
 		case msg := <-c.msgs:
-			c.push(&mq, msg, wg)
+			c.push(&mq, msg, wg, ex)
 
 		case <-tick.C:
-			c.flush(&mq, wg)
+			c.flush(&mq, wg, ex)
 
 		case <-c.quit:
 			c.debugf("exit requested – draining messages")
@@ -296,17 +304,17 @@ func (c *client) loop() {
 			// messages can be pushed and otherwise the loop would never end.
 			close(c.msgs)
 			for msg := range c.msgs {
-				c.push(&mq, msg, wg)
+				c.push(&mq, msg, wg, ex)
 			}
 
-			c.flush(&mq, wg)
+			c.flush(&mq, wg, ex)
 			c.debugf("exit")
 			return
 		}
 	}
 }
 
-func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup) {
+func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup, ex *executor) {
 	var msg message
 	var err error
 
@@ -322,14 +330,14 @@ func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup) {
 
 	if msgs := q.push(msg); msgs != nil {
 		c.debugf("exceeded messages batch limit with batch of %d messages – flushing", len(msgs))
-		c.sendAsync(msgs, wg)
+		c.sendAsync(msgs, wg, ex)
 	}
 }
 
-func (c *client) flush(q *messageQueue, wg *sync.WaitGroup) {
+func (c *client) flush(q *messageQueue, wg *sync.WaitGroup, ex *executor) {
 	if msgs := q.flush(); msgs != nil {
 		c.debugf("flushing %d messages", len(msgs))
-		c.sendAsync(msgs, wg)
+		c.sendAsync(msgs, wg, ex)
 	}
 }
 

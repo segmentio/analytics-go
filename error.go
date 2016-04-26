@@ -49,6 +49,10 @@ var (
 	// called after the client was already closed.
 	ErrClosed = errors.New("the client was already closed")
 
+	// This error is used to notify the application that too many requests are
+	// already being sent and no more messages can be accepted.
+	ErrTooManyRequests = errors.New("too many requests are already in-flight")
+
 	// This error is used to notify the client callbacks that a message send
 	// failed because the JSON representation of a message exceeded the upper
 	// limit.
