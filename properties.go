@@ -108,7 +108,7 @@ func (p Properties) Set(name string, value interface{}) Properties {
 	return p
 }
 
-// This type represent products in the E-commerce API.
+// This type represents products in the E-commerce API.
 type Product struct {
 	ID    string  `json:"id,omitempty"`
 	SKU   string  `json:"sky,omitempty"`
