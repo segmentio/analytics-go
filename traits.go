@@ -22,7 +22,7 @@ func NewTraits() Traits {
 	return make(Traits, 10)
 }
 
-func (t Traits) SetSetAddress(address string) Traits {
+func (t Traits) SetAddress(address string) Traits {
 	return t.Set("address", address)
 }
 
@@ -56,10 +56,6 @@ func (t Traits) SetFirstName(firstName string) Traits {
 
 func (t Traits) SetGender(gender string) Traits {
 	return t.Set("gender", gender)
-}
-
-func (t Traits) SetID(id string) Traits {
-	return t.Set("id", id)
 }
 
 func (t Traits) SetLastName(lastName string) Traits {
