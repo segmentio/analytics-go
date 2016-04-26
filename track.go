@@ -15,7 +15,7 @@ type Track struct {
 	Event        string                 `json:"event"`
 	Timestamp    time.Time              `json:"timestamp,omitempty"`
 	Context      *Context               `json:"context,omitempty"`
-	Properties   map[string]interface{} `json:"properties,omitempty"`
+	Properties   Properties             `json:"properties,omitempty"`
 	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }
 

@@ -3,6 +3,7 @@ package analytics
 import (
 	"io"
 	"io/ioutil"
+	"sync"
 
 	"bytes"
 	"encoding/json"
@@ -168,13 +169,26 @@ func (c *client) Close() (err error) {
 	return
 }
 
-// Send batch request.
-func (c *client) send(msgs []Message) {
-	const attempts = 10
+// Asychronously send a batched requests.
+func (c *client) sendAsync(msgs []message, wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer func() {
+			// In case a bug is introduced in the send function that triggers
+			// a panic, we don't want this to ever crash the application so we
+			// catch it here and log it instead.
+			if err := recover(); err != nil {
+				c.errorf("panic - %s", err)
+			}
+		}()
+		c.send(msgs)
+	}()
+}
 
-	if len(msgs) == 0 {
-		return
-	}
+// Send batch request.
+func (c *client) send(msgs []message) {
+	const attempts = 10
 
 	b, err := json.Marshal(batch{
 		MessageId: c.uid(),
@@ -185,11 +199,13 @@ func (c *client) send(msgs []Message) {
 
 	if err != nil {
 		c.errorf("marshalling mesages - %s", err)
+		c.notifyFailure(msgs, err)
 		return
 	}
 
 	for i := 0; i != attempts; i++ {
-		if err := c.upload(b); err == nil {
+		if err = c.upload(b); err == nil {
+			c.notifySuccess(msgs)
 			return
 		}
 
@@ -198,11 +214,13 @@ func (c *client) send(msgs []Message) {
 		case <-time.After(c.RetryAfter(i)):
 		case <-c.quit:
 			c.errorf("%d messages dropped because they failed to be sent and the client was closed", len(msgs))
+			c.notifyFailure(msgs, err)
 			return
 		}
 	}
 
 	c.errorf("%d messages dropped because they failed to be sent after %d attempts", len(msgs), attempts)
+	c.notifyFailure(msgs, err)
 }
 
 // Upload serialized batch message.
@@ -252,30 +270,24 @@ func (c *client) report(res *http.Response) {
 func (c *client) loop() {
 	defer close(c.shutdown)
 
-	var msgs []Message
-	var tick = time.NewTicker(c.Interval)
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+
+	tick := time.NewTicker(c.Interval)
 	defer tick.Stop()
+
+	mq := messageQueue{
+		maxBatchSize:  c.BatchSize,
+		maxBatchBytes: c.maxBatchBytes(),
+	}
 
 	for {
 		select {
 		case msg := <-c.msgs:
-			c.debugf("buffer (%d/%d) %v", len(msgs), c.BatchSize, msg)
-			msgs = append(msgs, msg)
-
-			if len(msgs) == c.BatchSize {
-				c.debugf("exceeded %d messages – flushing", c.BatchSize)
-				c.send(msgs)
-				msgs = nil
-			}
+			c.push(&mq, msg, wg)
 
 		case <-tick.C:
-			if len(msgs) > 0 {
-				c.debugf("interval reached - flushing %d", len(msgs))
-				c.send(msgs)
-				msgs = nil
-			} else {
-				c.debugf("interval reached – nothing to send")
-			}
+			c.flush(&mq, wg)
 
 		case <-c.quit:
 			c.debugf("exit requested – draining messages")
@@ -284,15 +296,40 @@ func (c *client) loop() {
 			// messages can be pushed and otherwise the loop would never end.
 			close(c.msgs)
 			for msg := range c.msgs {
-				c.debugf("buffer (%d/%d) %v", len(msgs), c.BatchSize, msg)
-				msgs = append(msgs, msg)
+				c.push(&mq, msg, wg)
 			}
 
-			c.debugf("exit requested – flushing %d", len(msgs))
-			c.send(msgs)
+			c.flush(&mq, wg)
 			c.debugf("exit")
 			return
 		}
+	}
+}
+
+func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup) {
+	var msg message
+	var err error
+
+	if msg, err = makeMessage(m, maxMessageBytes); err != nil {
+		c.errorf("%s - %v", err, m)
+		if c.Callback != nil {
+			c.Callback.Failure(m, err)
+		}
+		return
+	}
+
+	c.debugf("buffer (%d/%d) %v", len(q.pending), c.BatchSize, m)
+
+	if msgs := q.push(msg); msgs != nil {
+		c.debugf("exceeded messages batch limit with batch of %d messages – flushing", len(msgs))
+		c.sendAsync(msgs, wg)
+	}
+}
+
+func (c *client) flush(q *messageQueue, wg *sync.WaitGroup) {
+	if msgs := q.flush(); msgs != nil {
+		c.debugf("flushing %d messages", len(msgs))
+		c.sendAsync(msgs, wg)
 	}
 }
 
@@ -308,4 +345,29 @@ func (c *client) logf(format string, args ...interface{}) {
 
 func (c *client) errorf(format string, args ...interface{}) {
 	c.Logger.Errorf(format, args...)
+}
+
+func (c *client) maxBatchBytes() int {
+	b, _ := json.Marshal(batch{
+		MessageId: c.uid(),
+		SentAt:    c.now(),
+		Context:   c.DefaultContext,
+	})
+	return maxBatchBytes - len(b)
+}
+
+func (c *client) notifySuccess(msgs []message) {
+	if c.Callback != nil {
+		for _, m := range msgs {
+			c.Callback.Success(m.msg)
+		}
+	}
+}
+
+func (c *client) notifyFailure(msgs []message, err error) {
+	if c.Callback != nil {
+		for _, m := range msgs {
+			c.Callback.Failure(m.msg, err)
+		}
+	}
 }
