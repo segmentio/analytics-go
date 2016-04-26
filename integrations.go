@@ -36,6 +36,8 @@ func (i Integrations) Disable(name string) Integrations {
 	return i.Set(name, false)
 }
 
+// Sets an integration named by the first argument to the specified value, any
+// value other than `false` will be interpreted as enabling the integration.
 func (i Integrations) Set(name string, value interface{}) Integrations {
 	i[name] = value
 	return i
