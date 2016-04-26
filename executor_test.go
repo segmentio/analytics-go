@@ -24,7 +24,7 @@ func TestExecutorSimple(t *testing.T) {
 		return
 	}
 
-	// Make sure wg.Done gets called, this shouldn't block idenfinitely.
+	// Make sure wg.Done gets called, this shouldn't block indefinitely.
 	wg.Wait()
 }
 
@@ -49,6 +49,6 @@ func TestExecutorMulti(t *testing.T) {
 		t.Error("the executor should have been full and refused to run more tasks")
 	}
 
-	// Make sure wg.Done gets called, this shouldn't block idenfinitely.
+	// Make sure wg.Done gets called, this shouldn't block indefinitely.
 	wg.Wait()
 }
