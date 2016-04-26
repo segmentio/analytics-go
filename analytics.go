@@ -127,6 +127,12 @@ type Client struct {
 	now      func() time.Time
 	once     sync.Once
 	wg       sync.WaitGroup
+
+	// These synchronization primitives are used to control how many goroutines
+	// are spawned by the client for uploads.
+	upmtx   sync.Mutex
+	upcond  sync.Cond
+	upcount int
 }
 
 // New client with write key.
@@ -146,6 +152,7 @@ func New(key string) *Client {
 		uid:      uid,
 	}
 
+	c.upcond.L = &c.upmtx
 	return c
 }
 
@@ -243,12 +250,22 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) sendAsync(msgs []interface{}) {
+	c.upmtx.Lock()
+	for c.upcount == 1000 {
+		c.upcond.Wait()
+	}
+	c.upcount++
+	c.upmtx.Unlock()
 	c.wg.Add(1)
 	go func() {
 		err := c.send(msgs)
 		if err != nil {
 			c.logf(err.Error())
 		}
+		c.upmtx.Lock()
+		c.upcount--
+		c.upcond.Signal()
+		c.upmtx.Unlock()
 		c.wg.Done()
 	}()
 }
