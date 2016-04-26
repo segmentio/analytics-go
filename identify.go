@@ -14,7 +14,7 @@ type Identify struct {
 	UserId       string                 `json:"userId,omitempty"`
 	Timestamp    time.Time              `json:"timestamp,omitempty"`
 	Context      *Context               `json:"context,omitempty"`
-	Traits       map[string]interface{} `json:"traits,omitempty"`
+	Traits       Traits                 `json:"traits,omitempty"`
 	Integrations map[string]interface{} `json:"integrations,omitempty"`
 }
 
