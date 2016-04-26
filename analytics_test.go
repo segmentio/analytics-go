@@ -482,7 +482,7 @@ func TestTrackWithIntegrations(t *testing.T) {
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
-		Integrations: map[string]interface{}{
+		Integrations: Integrations{
 			"All":      true,
 			"Intercom": false,
 			"Mixpanel": true,
