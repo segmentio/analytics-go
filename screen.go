@@ -16,7 +16,7 @@ type Screen struct {
 	Timestamp    time.Time              `json:"timestamp,omitempty"`
 	Context      *Context               `json:"context,omitempty"`
 	Properties   map[string]interface{} `json:"properties,omitempty"`
-	Integrations map[string]interface{} `json:"integrations,omitempty"`
+	Integrations Integrations           `json:"integrations,omitempty"`
 }
 
 func (msg Screen) validate() error {
