@@ -36,6 +36,10 @@ type Config struct {
 	// `os.Stderr`.
 	Logger Logger
 
+	// The callback object that will be used by the client to notify the
+	// application when messages sends to the backend API succeeded or failed.
+	Callback Callback
+
 	// The maximum number of messages that will be sent in one API call.
 	// Messages will be sent when they've been queued up to the maximum batch
 	// size or when the flushing interval timer triggers.

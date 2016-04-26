@@ -1,6 +1,22 @@
 package analytics
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
+
+// Values implementing this interface are used by analytics clients to notify
+// the application when a message send succeeded or failed.
+type Callback interface {
+
+	// This method is called for every message that was successfully sent to
+	// the API.
+	Success(Message)
+
+	// This method is called for every message that failed to be sent to the
+	// API and will be discarded by the client.
+	Failure(Message, error)
+}
 
 // This interface is used to represent analytics objects that can be sent via
 // a client.
@@ -23,9 +39,8 @@ func makeMessageId(id string, def string) string {
 	return id
 }
 
-// Returns a string representation of the time value passed as first argument,
-// unless it's a zero-value, in that case the default value passed as second
-// argument is used instead.
+// Returns the time value passed as first argument, unless it's the zero-value,
+// in that case the default value passed as second argument is returned.
 func makeTimestamp(t time.Time, def time.Time) time.Time {
 	if t == (time.Time{}) {
 		return def
@@ -39,6 +54,70 @@ func makeTimestamp(t time.Time, def time.Time) time.Time {
 type batch struct {
 	MessageId string    `json:"messageId"`
 	SentAt    time.Time `json:"sentAt"`
-	Messages  []Message `json:"batch"`
+	Messages  []message `json:"batch"`
 	Context   *Context  `json:"context"`
 }
+
+type message struct {
+	msg  Message
+	json []byte
+}
+
+func makeMessage(m Message, maxBytes int) (msg message, err error) {
+	if msg.json, err = json.Marshal(m); err != nil {
+		return
+	}
+
+	if len(msg.json) > maxBytes {
+		err = ErrMessageTooBig
+		return
+	}
+
+	msg.msg = m
+	return
+}
+
+func (m message) MarshalJSON() ([]byte, error) {
+	return m.json, nil
+}
+
+func (m message) size() int {
+	// The `+ 1` is for the comma that sits between each items of a JSON array.
+	return len(m.json) + 1
+}
+
+type messageQueue struct {
+	pending       []message
+	bytes         int
+	maxBatchSize  int
+	maxBatchBytes int
+}
+
+func (q *messageQueue) push(m message) (b []message) {
+	if (q.bytes + m.size()) > q.maxBatchBytes {
+		b = q.flush()
+	}
+
+	if q.pending == nil {
+		q.pending = make([]message, 0, q.maxBatchSize)
+	}
+
+	q.pending = append(q.pending, m)
+	q.bytes += len(m.json)
+
+	if b == nil && len(q.pending) == q.maxBatchSize {
+		b = q.flush()
+	}
+
+	return
+}
+
+func (q *messageQueue) flush() (msgs []message) {
+	msgs, q.pending, q.bytes = q.pending, nil, 0
+	return
+}
+
+const (
+	maxBatchBytes   = 500000
+	maxMessageBytes = 15000
+)
