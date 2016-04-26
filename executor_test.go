@@ -35,6 +35,8 @@ func TestExecutorMulti(t *testing.T) {
 
 	// Schedule a couple of tasks to fill the executor.
 	for i := 0; i != 3; i++ {
+		wg.Add(1)
+
 		if !ex.do(func() {
 			time.Sleep(10 * time.Millisecond)
 			wg.Done()
