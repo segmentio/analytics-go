@@ -3,6 +3,7 @@ package analytics
 import (
 	"io"
 	"io/ioutil"
+	"sync"
 
 	"bytes"
 	"encoding/json"
@@ -168,6 +169,23 @@ func (c *client) Close() (err error) {
 	return
 }
 
+// Asychronously send a batched requests.
+func (c *client) sendAsync(msgs []message, wg *sync.WaitGroup) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer func() {
+			// In case a bug is introduced in the send function that triggers
+			// a panic, we don't want this to ever crash the application so we
+			// catch it here and log it instead.
+			if err := recover(); err != nil {
+				c.errorf("panic - %s", err)
+			}
+		}()
+		c.send(msgs)
+	}()
+}
+
 // Send batch request.
 func (c *client) send(msgs []message) {
 	const attempts = 10
@@ -252,6 +270,9 @@ func (c *client) report(res *http.Response) {
 func (c *client) loop() {
 	defer close(c.shutdown)
 
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+
 	tick := time.NewTicker(c.Interval)
 	defer tick.Stop()
 
@@ -263,10 +284,10 @@ func (c *client) loop() {
 	for {
 		select {
 		case msg := <-c.msgs:
-			c.push(&mq, msg)
+			c.push(&mq, msg, wg)
 
 		case <-tick.C:
-			c.flush(&mq)
+			c.flush(&mq, wg)
 
 		case <-c.quit:
 			c.debugf("exit requested – draining messages")
@@ -275,17 +296,17 @@ func (c *client) loop() {
 			// messages can be pushed and otherwise the loop would never end.
 			close(c.msgs)
 			for msg := range c.msgs {
-				c.push(&mq, msg)
+				c.push(&mq, msg, wg)
 			}
 
-			c.flush(&mq)
+			c.flush(&mq, wg)
 			c.debugf("exit")
 			return
 		}
 	}
 }
 
-func (c *client) push(q *messageQueue, m Message) {
+func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup) {
 	var msg message
 	var err error
 
@@ -301,14 +322,14 @@ func (c *client) push(q *messageQueue, m Message) {
 
 	if msgs := q.push(msg); msgs != nil {
 		c.debugf("exceeded messages batch limit with batch of %d messages – flushing", len(msgs))
-		c.send(msgs)
+		c.sendAsync(msgs, wg)
 	}
 }
 
-func (c *client) flush(q *messageQueue) {
+func (c *client) flush(q *messageQueue, wg *sync.WaitGroup) {
 	if msgs := q.flush(); msgs != nil {
 		c.debugf("flushing %d messages", len(msgs))
-		c.send(msgs)
+		c.sendAsync(msgs, wg)
 	}
 }
 
