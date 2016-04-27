@@ -87,6 +87,7 @@ func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 		shutdown: make(chan struct{}),
 		http: http.Client{
 			Transport: config.Transport,
+			Timeout:   10 * time.Second,
 		},
 	}
 
