@@ -72,6 +72,12 @@ type Config struct {
 	// This field is not exported and only exposed internally to let unit tests
 	// mock the current time.
 	now func() time.Time
+
+	// The maximum number of goroutines that will be spawned by a client to send
+	// requests to the backend API.
+	// This field is not exported and only exposed internally to let unit tests
+	// mock the current time.
+	maxConcurrentRequests int
 }
 
 // This constant sets the default endpoint to which client instances send
@@ -145,6 +151,10 @@ func makeConfig(c Config) Config {
 
 	if c.now == nil {
 		c.now = time.Now
+	}
+
+	if c.maxConcurrentRequests == 0 {
+		c.maxConcurrentRequests = 1000
 	}
 
 	// We always overwrite the 'library' field of the default context set on the

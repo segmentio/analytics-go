@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"sync"
@@ -203,7 +204,7 @@ func (c *client) send(msgs []message) {
 	})
 
 	if err != nil {
-		c.errorf("marshalling mesages - %s", err)
+		c.errorf("marshalling messages - %s", err)
 		c.notifyFailure(msgs, err)
 		return
 	}
@@ -215,8 +216,10 @@ func (c *client) send(msgs []message) {
 		}
 
 		// Wait for either a retry timeout or the client to be closed.
+		c.logf("waiting for retry!")
 		select {
 		case <-time.After(c.RetryAfter(i)):
+			c.logf("retry!")
 		case <-c.quit:
 			c.errorf("%d messages dropped because they failed to be sent and the client was closed", len(msgs))
 			c.notifyFailure(msgs, err)
@@ -250,25 +253,25 @@ func (c *client) upload(b []byte) error {
 	}
 
 	defer res.Body.Close()
-	c.report(res)
-
-	return nil
+	return c.report(res)
 }
 
 // Report on response body.
-func (c *client) report(res *http.Response) {
+func (c *client) report(res *http.Response) (err error) {
+	var body []byte
+
 	if res.StatusCode < 400 {
 		c.debugf("response %s", res.Status)
 		return
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		c.errorf("reading response body - %s", err)
+	if body, err = ioutil.ReadAll(res.Body); err != nil {
+		c.errorf("response %d %s - %s", res.StatusCode, res.Status, err)
 		return
 	}
 
-	c.logf("response %s: %d – %s", res.Status, res.StatusCode, body)
+	c.logf("response %d %s – %s", res.StatusCode, res.Status, string(body))
+	return fmt.Errorf("%d %s", res.StatusCode, res.Status)
 }
 
 // Batch loop.
@@ -281,7 +284,7 @@ func (c *client) loop() {
 	tick := time.NewTicker(c.Interval)
 	defer tick.Stop()
 
-	ex := newExecutor(1000)
+	ex := newExecutor(c.maxConcurrentRequests)
 	defer ex.close()
 
 	mq := messageQueue{
@@ -320,9 +323,7 @@ func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup, ex *execut
 
 	if msg, err = makeMessage(m, maxMessageBytes); err != nil {
 		c.errorf("%s - %v", err, m)
-		if c.Callback != nil {
-			c.Callback.Failure(m, err)
-		}
+		c.notifyFailure([]message{{m, nil}}, err)
 		return
 	}
 
