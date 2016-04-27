@@ -189,3 +189,15 @@ func TestIsZeroValueStructFalse(t *testing.T) {
 		t.Error("non-empty struct should not be a zero-value")
 	}
 }
+
+func TestIsZeroValueNil(t *testing.T) {
+	if !isZeroValue(reflect.ValueOf(nil)) {
+		t.Error("nil should be a zero-value")
+	}
+}
+
+func TestIsZeroValueFunc(t *testing.T) {
+	if isZeroValue(reflect.ValueOf(func() {})) {
+		t.Error("functions should be be zero-value")
+	}
+}
