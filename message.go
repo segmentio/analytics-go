@@ -64,16 +64,13 @@ type message struct {
 }
 
 func makeMessage(m Message, maxBytes int) (msg message, err error) {
-	if msg.json, err = json.Marshal(m); err != nil {
-		return
+	if msg.json, err = json.Marshal(m); err == nil {
+		if len(msg.json) > maxBytes {
+			err = ErrMessageTooBig
+		} else {
+			msg.msg = m
+		}
 	}
-
-	if len(msg.json) > maxBytes {
-		err = ErrMessageTooBig
-		return
-	}
-
-	msg.msg = m
 	return
 }
 

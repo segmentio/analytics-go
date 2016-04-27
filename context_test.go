@@ -13,7 +13,7 @@ func TestContextMarshalJSONLibrary(t *testing.T) {
 	}
 
 	if b, err := json.Marshal(c); err != nil {
-		t.Error("marshaling context object failed:", err)
+		t.Error("marshalling context object failed:", err)
 
 	} else if s := string(b); s != `{"library":{"name":"testing"}}` {
 		t.Error("invalid marshaled representation of context:", s)
@@ -28,7 +28,7 @@ func TestContextMarshalJSONExtra(t *testing.T) {
 	}
 
 	if b, err := json.Marshal(c); err != nil {
-		t.Error("marshaling context object failed:", err)
+		t.Error("marshalling context object failed:", err)
 
 	} else if s := string(b); s != `{"answer":42}` {
 		t.Error("invalid marshaled representation of context:", s)
