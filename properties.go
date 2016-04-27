@@ -68,7 +68,7 @@ func (p Properties) SetProductId(id string) Properties {
 }
 
 func (p Properties) SetOrderId(id string) Properties {
-	return p.Set("id", id)
+	return p.Set("orderId", id)
 }
 
 func (p Properties) SetTotal(total float64) Properties {
