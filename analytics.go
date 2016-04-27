@@ -258,7 +258,7 @@ func (c *client) upload(b []byte) error {
 func (c *client) report(res *http.Response) (err error) {
 	var body []byte
 
-	if res.StatusCode < 400 {
+	if res.StatusCode < 300 {
 		c.debugf("response %s", res.Status)
 		return
 	}
