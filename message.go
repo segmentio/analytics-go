@@ -7,6 +7,14 @@ import (
 
 // Values implementing this interface are used by analytics clients to notify
 // the application when a message send succeeded or failed.
+//
+// Callback methods are called by a client's internal goroutines, there are no
+// guarantees on which goroutine will trigger the callbacks, they could be made
+// sequentially or in parallel, the order doesn't depend on the order of the
+// calls to `Enqueue`.
+//
+// Callback methods should return quickly and not cause long blocking operations
+// to avoid interferring with the client's internal work flow.
 type Callback interface {
 
 	// This method is called for every message that was successfully sent to
