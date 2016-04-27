@@ -290,6 +290,7 @@ func TestEnqueue(t *testing.T) {
 
 func TestTrackWithInterval(t *testing.T) {
 	const interval = 100 * time.Millisecond
+	var ref = fixture("test-interval-track.json")
 
 	body, server := mockServer()
 	defer server.Close()
@@ -316,31 +317,6 @@ func TestTrackWithInterval(t *testing.T) {
 		},
 	})
 
-	const ref = `{
-  "batch": [
-    {
-      "event": "Download",
-      "messageId": "I'm unique",
-      "properties": {
-        "application": "Segment Desktop",
-        "platform": "osx",
-        "version": "1.1.0"
-      },
-      "timestamp": "2009-11-10T23:00:00Z",
-      "type": "track",
-      "userId": "123456"
-    }
-  ],
-  "context": {
-    "library": {
-      "name": "analytics-go",
-      "version": "3.0.0"
-    }
-  },
-  "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00Z"
-}`
-
 	// Will flush in 100 milliseconds
 	if res := string(<-body); ref != res {
 		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
@@ -352,6 +328,8 @@ func TestTrackWithInterval(t *testing.T) {
 }
 
 func TestTrackWithTimestamp(t *testing.T) {
+	var ref = fixture("test-timestamp-track.json")
+
 	body, server := mockServer()
 	defer server.Close()
 
@@ -376,37 +354,14 @@ func TestTrackWithTimestamp(t *testing.T) {
 		Timestamp: time.Date(2015, time.July, 10, 23, 0, 0, 0, time.UTC),
 	})
 
-	const ref = `{
-  "batch": [
-    {
-      "event": "Download",
-      "messageId": "I'm unique",
-      "properties": {
-        "application": "Segment Desktop",
-        "platform": "osx",
-        "version": "1.1.0"
-      },
-      "timestamp": "2015-07-10T23:00:00Z",
-      "type": "track",
-      "userId": "123456"
-    }
-  ],
-  "context": {
-    "library": {
-      "name": "analytics-go",
-      "version": "3.0.0"
-    }
-  },
-  "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00Z"
-}`
-
 	if res := string(<-body); ref != res {
 		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
 	}
 }
 
 func TestTrackWithMessageId(t *testing.T) {
+	var ref = fixture("test-messageid-track.json")
+
 	body, server := mockServer()
 	defer server.Close()
 
@@ -431,37 +386,14 @@ func TestTrackWithMessageId(t *testing.T) {
 		MessageId: "abc",
 	})
 
-	const ref = `{
-  "batch": [
-    {
-      "event": "Download",
-      "messageId": "abc",
-      "properties": {
-        "application": "Segment Desktop",
-        "platform": "osx",
-        "version": "1.1.0"
-      },
-      "timestamp": "2009-11-10T23:00:00Z",
-      "type": "track",
-      "userId": "123456"
-    }
-  ],
-  "context": {
-    "library": {
-      "name": "analytics-go",
-      "version": "3.0.0"
-    }
-  },
-  "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00Z"
-}`
-
 	if res := string(<-body); ref != res {
 		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
 	}
 }
 
 func TestTrackWithContext(t *testing.T) {
+	var ref = fixture("test-context-track.json")
+
 	body, server := mockServer()
 	defer server.Close()
 
@@ -490,40 +422,14 @@ func TestTrackWithContext(t *testing.T) {
 		},
 	})
 
-	const ref = `{
-  "batch": [
-    {
-      "context": {
-        "whatever": "here"
-      },
-      "event": "Download",
-      "messageId": "I'm unique",
-      "properties": {
-        "application": "Segment Desktop",
-        "platform": "osx",
-        "version": "1.1.0"
-      },
-      "timestamp": "2009-11-10T23:00:00Z",
-      "type": "track",
-      "userId": "123456"
-    }
-  ],
-  "context": {
-    "library": {
-      "name": "analytics-go",
-      "version": "3.0.0"
-    }
-  },
-  "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00Z"
-}`
-
 	if res := string(<-body); ref != res {
 		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
 	}
 }
 
 func TestTrackMany(t *testing.T) {
+	var ref = fixture("test-many-track.json")
+
 	body, server := mockServer()
 	defer server.Close()
 
@@ -548,58 +454,14 @@ func TestTrackMany(t *testing.T) {
 		})
 	}
 
-	const ref = `{
-  "batch": [
-    {
-      "event": "Download",
-      "messageId": "I'm unique",
-      "properties": {
-        "application": "Segment Desktop",
-        "version": 0
-      },
-      "timestamp": "2009-11-10T23:00:00Z",
-      "type": "track",
-      "userId": "123456"
-    },
-    {
-      "event": "Download",
-      "messageId": "I'm unique",
-      "properties": {
-        "application": "Segment Desktop",
-        "version": 1
-      },
-      "timestamp": "2009-11-10T23:00:00Z",
-      "type": "track",
-      "userId": "123456"
-    },
-    {
-      "event": "Download",
-      "messageId": "I'm unique",
-      "properties": {
-        "application": "Segment Desktop",
-        "version": 2
-      },
-      "timestamp": "2009-11-10T23:00:00Z",
-      "type": "track",
-      "userId": "123456"
-    }
-  ],
-  "context": {
-    "library": {
-      "name": "analytics-go",
-      "version": "3.0.0"
-    }
-  },
-  "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00Z"
-}`
-
 	if res := string(<-body); ref != res {
 		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
 	}
 }
 
 func TestTrackWithIntegrations(t *testing.T) {
+	var ref = fixture("test-integrations-track.json")
+
 	body, server := mockServer()
 	defer server.Close()
 
@@ -627,36 +489,6 @@ func TestTrackWithIntegrations(t *testing.T) {
 			"Mixpanel": true,
 		},
 	})
-
-	const ref = `{
-  "batch": [
-    {
-      "event": "Download",
-      "integrations": {
-        "All": true,
-        "Intercom": false,
-        "Mixpanel": true
-      },
-      "messageId": "I'm unique",
-      "properties": {
-        "application": "Segment Desktop",
-        "platform": "osx",
-        "version": "1.1.0"
-      },
-      "timestamp": "2009-11-10T23:00:00Z",
-      "type": "track",
-      "userId": "123456"
-    }
-  ],
-  "context": {
-    "library": {
-      "name": "analytics-go",
-      "version": "3.0.0"
-    }
-  },
-  "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00Z"
-}`
 
 	if res := string(<-body); ref != res {
 		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
