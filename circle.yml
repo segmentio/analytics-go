@@ -6,6 +6,7 @@ checkout:
 dependencies:
   pre:
     - export GO15VENDOREXPERIMENT=1
+    - git submodule update --init --recursive
 
 test:
   pre:
