@@ -1,15 +1,32 @@
 package analytics
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 )
-import "encoding/json"
-import "net/http"
-import "bytes"
-import "time"
-import "fmt"
-import "io"
+
+func fixture(name string) string {
+	f, err := os.Open(filepath.Join("fixtures", name))
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
 
 func mockId() string { return "I'm unique" }
 
@@ -92,7 +109,50 @@ func ExampleTrack() {
 	// }
 }
 
-func TestTrack(t *testing.T) {
+func TestEnqueue(t *testing.T) {
+	tests := map[string]struct {
+		ref string
+		msg Message
+	}{
+		"alias": {
+			fixture("test-enqueue-alias.json"),
+			Alias{PreviousId: "A", UserId: "B"},
+		},
+
+		"group": {
+			fixture("test-enqueue-group.json"),
+			Group{GroupId: "A", UserId: "B"},
+		},
+
+		"identify": {
+			fixture("test-enqueue-identify.json"),
+			Identify{UserId: "B"},
+		},
+
+		"page": {
+			fixture("test-enqueue-page.json"),
+			Page{Name: "A", UserId: "B"},
+		},
+
+		"screen": {
+			fixture("test-enqueue-screen.json"),
+			Screen{Name: "A", UserId: "B"},
+		},
+
+		"track": {
+			fixture("test-enqueue-track.json"),
+			Track{
+				Event:  "Download",
+				UserId: "123456",
+				Properties: Properties{
+					"application": "Segment Desktop",
+					"version":     "1.1.0",
+					"platform":    "osx",
+				},
+			},
+		},
+	}
+
 	body, server := mockServer()
 	defer server.Close()
 
@@ -106,46 +166,15 @@ func TestTrack(t *testing.T) {
 	})
 	defer client.Close()
 
-	if err := client.Enqueue(Track{
-		Event:  "Download",
-		UserId: "123456",
-		Properties: Properties{
-			"application": "Segment Desktop",
-			"version":     "1.1.0",
-			"platform":    "osx",
-		},
-	}); err != nil {
-		t.Error(err)
-		return
-	}
+	for name, test := range tests {
+		if err := client.Enqueue(test.msg); err != nil {
+			t.Error(err)
+			return
+		}
 
-	const ref = `{
-  "batch": [
-    {
-      "event": "Download",
-      "messageId": "I'm unique",
-      "properties": {
-        "application": "Segment Desktop",
-        "platform": "osx",
-        "version": "1.1.0"
-      },
-      "timestamp": "2009-11-10T23:00:00Z",
-      "type": "track",
-      "userId": "123456"
-    }
-  ],
-  "context": {
-    "library": {
-      "name": "analytics-go",
-      "version": "3.0.0"
-    }
-  },
-  "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00Z"
-}`
-
-	if res := string(<-body); ref != res {
-		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
+		if res := string(<-body); res != test.ref {
+			t.Errorf("%s: invalid response:\n- expected %s\n- received: %s", name, test.ref, res)
+		}
 	}
 }
 
@@ -524,7 +553,7 @@ func TestTrackWithIntegrations(t *testing.T) {
 	}
 }
 
-func TestCloseTwice(t *testing.T) {
+func TestClientCloseTwice(t *testing.T) {
 	client := New("0123456789")
 
 	if err := client.Close(); err != nil {
@@ -538,4 +567,40 @@ func TestCloseTwice(t *testing.T) {
 	if err := client.Enqueue(Track{UserId: "1", Event: "A"}); err != ErrClosed {
 		t.Error("using a client after it was closed should return ErrClosed:", err)
 	}
+}
+
+func TestClientConfigError(t *testing.T) {
+	client, err := NewWithConfig("0123456789", Config{
+		Interval: -1 * time.Second,
+	})
+
+	if err == nil {
+		t.Error("no error returned when creating a client with an invalid config")
+	}
+
+	if _, ok := err.(ConfigError); !ok {
+		t.Errorf("invalid error type returned when creating a client with an invalid config: %T", err)
+	}
+
+	if client != nil {
+		t.Error("invalid non-nil client object returned when creating a client with and invalid config:", client)
+		client.Close()
+	}
+}
+
+func TestClientEnqueueError(t *testing.T) {
+	client := New("0123456789")
+	defer client.Close()
+
+	if err := client.Enqueue(testErrorMessage{}); err != testError {
+		t.Error("invlaid error returned when queueing an invalid message:", err)
+	}
+}
+
+var testError = errors.New("test error")
+
+type testErrorMessage struct{}
+
+func (m testErrorMessage) validate() error {
+	return testError
 }
