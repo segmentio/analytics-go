@@ -3,6 +3,10 @@ checkout:
       - mkdir -p ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}
       - ln -sf $(pwd) ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}/$(basename $(pwd))
 
+dependencies:
+  pre:
+    - export GO15VENDOREXPERIMENT=1
+
 test:
   pre:
     - make vet
