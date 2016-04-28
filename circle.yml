@@ -11,14 +11,11 @@ checkout:
 
 dependencies:
   pre:
-    - git submodule update --init --recursive:
-        pwd: ${REPO_DIR}
+    - git submodule update --init --recursive
 
 test:
   pre:
-    - make vet:
-        pwd: ${REPO_DIR}
+    - cd ${REPO_DIR} && make vet
 
   override:
-    - make test:
-        pwd: ${REPO_DIR}
+    - cd ${REPO_DIR} && make test
