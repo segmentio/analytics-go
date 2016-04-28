@@ -1,8 +1,9 @@
 package analytics
 
 import (
+	"io/ioutil"
 	"net/http"
-	"reflect"
+	"strings"
 	"time"
 )
 
@@ -25,23 +26,32 @@ func makeHttpClient(transport http.RoundTripper) (client http.Client) {
 }
 
 func httpClientCanTimeout(transport http.RoundTripper) bool {
-	return httpRequestIsCancelable() || httpTransportIsCancelable(transport)
-}
+	client := http.Client{
+		Transport: roundTripper{},
+		Timeout:   10 * time.Second,
+	}
 
-func httpRequestIsCancelable() bool {
-	// When this condition is true the go runtime is in version 1.6+ and a
-	// timeout can always be set on the client.
-	return reflect.ValueOf(http.Request{}).FieldByName("Cancel").IsValid()
-}
-
-func httpTransportIsCancelable(transport http.RoundTripper) bool {
-	// When the runtime is in version 1.5.x or lower there is no `Cancel`
-	// field on the request object and a timeout can only be set if the
-	// transport has a `CancelRequest` method.
+	req, _ := http.NewRequest("GET", "http://localhost/", nil)
+	_, err := client.Do(req)
 	_, ok := transport.(requestCanceler)
-	return ok
+
+	return err == nil || ok
 }
 
 type requestCanceler interface {
 	CancelRequest(*http.Request)
+}
+
+type roundTripper struct{}
+
+func (rt roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	return &http.Response{
+		Status:     http.StatusText(http.StatusOK),
+		StatusCode: http.StatusOK,
+		Proto:      r.Proto,
+		ProtoMajor: r.ProtoMajor,
+		ProtoMinor: r.ProtoMinor,
+		Body:       ioutil.NopCloser(strings.NewReader("")),
+		Request:    r,
+	}, nil
 }
