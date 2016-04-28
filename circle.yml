@@ -1,16 +1,21 @@
 checkout:
     post:
-      - mkdir -p ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}
-      - ln -sf $(pwd) ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}/$(basename $(pwd))
+      - export BASE_DIR=${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}
+      - export REPO_DIR=${BASE_DIR}/$(basename $(pwd))
+      - export GO15VENDOREXPERIMENT=1
+      - mkdir -p ${BASE_DIR}
+      - ln -sf $(pwd) ${REPO_DIR}
 
 dependencies:
   pre:
-    - export GO15VENDOREXPERIMENT=1
-    - git submodule update --init --recursive
+    - git submodule update --init --recursive:
+        pwd: ${REPO_DIR}
 
 test:
   pre:
-    - cd ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME} && pwd && make vet
+    - make vet:
+        pwd: ${REPO_DIR}
 
   override:
-    - cd ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME} && pwd && make test
+    - make test:
+        pwd: ${REPO_DIR}
