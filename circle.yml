@@ -10,9 +10,7 @@ dependencies:
 
 test:
   pre:
-    - make vet:
-        pwd: ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}
+    - cd ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME} && make vet
 
   override:
-    - make test:
-        pwd: ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}
+    - cd ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME} && make test
