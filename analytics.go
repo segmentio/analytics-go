@@ -85,16 +85,23 @@ func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 		msgs:     make(chan Message, 100),
 		quit:     make(chan struct{}),
 		shutdown: make(chan struct{}),
-		http: http.Client{
-			Transport: config.Transport,
-			Timeout:   10 * time.Second,
-		},
+		http:     makeHttpClient(config.Transport),
 	}
 
 	go c.loop()
 
 	cli = c
 	return
+}
+
+func makeHttpClient(transport http.RoundTripper) http.Client {
+	httpClient := http.Client{
+		Transport: transport,
+	}
+	if supportsTimeout(transport) {
+		httpClient.Timeout = 10 * time.Second
+	}
+	return httpClient
 }
 
 func (c *client) Enqueue(msg Message) (err error) {
