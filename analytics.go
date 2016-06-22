@@ -67,7 +67,7 @@ type batch struct {
 
 func init() {
 	// TODO: wtf, this is lame
-	uuid.SwitchFormat(uuid.CleanHyphen)
+	uuid.SwitchFormat(uuid.FormatCanonical)
 }
 
 //
