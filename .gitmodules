@@ -4,3 +4,6 @@
 [submodule "vendor/github.com/xtgo/uuid"]
 	path = vendor/github.com/xtgo/uuid
 	url = https://github.com/xtgo/uuid
+[submodule "vendor/github.com/apex/log"]
+	path = vendor/github.com/apex/log
+	url = https://github.com/apex/log

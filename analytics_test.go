@@ -15,6 +15,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/apex/log"
 )
 
 // Helper type used to implement the io.Reader interface on function values.
@@ -49,20 +51,24 @@ func (c testCallback) Failure(m Message, e error) {
 }
 
 // Instances of this type are used to mock the client logger in unit tests.
-type testLogger struct {
+type testLogHandler struct {
 	logf   func(string, ...interface{})
 	errorf func(string, ...interface{})
 }
 
-func (l testLogger) Logf(format string, args ...interface{}) {
-	if l.logf != nil {
-		l.logf(format, args...)
+func (l testLogHandler) HandleLog(entry *log.Entry) (err error) {
+	if entry.Level < log.WarnLevel {
+		l.logf("%s: %v", entry.Message, entry.Fields)
+	} else {
+		l.errorf("%s: %v", entry.Message, entry.Fields)
 	}
+	return
 }
 
-func (l testLogger) Errorf(format string, args ...interface{}) {
-	if l.errorf != nil {
-		l.errorf(format, args...)
+func newTestLogger(logf func(string, ...interface{}), errorf func(string, ...interface{})) *log.Logger {
+	return &log.Logger{
+		Handler: testLogHandler{logf, errorf},
+		Level:   log.DebugLevel,
 	}
 }
 
@@ -271,7 +277,7 @@ func TestEnqueue(t *testing.T) {
 	client, _ := NewWithConfig("h97jamjwbh", Config{
 		Endpoint:  server.URL,
 		Verbose:   true,
-		Logger:    t,
+		Logger:    newTestLogger(t.Logf, t.Errorf),
 		BatchSize: 1,
 		now:       mockTime,
 		uid:       mockId,
@@ -303,7 +309,7 @@ func TestTrackWithInterval(t *testing.T) {
 		Endpoint: server.URL,
 		Interval: interval,
 		Verbose:  true,
-		Logger:   t,
+		Logger:   newTestLogger(t.Logf, t.Errorf),
 		now:      mockTime,
 		uid:      mockId,
 	})
@@ -338,7 +344,7 @@ func TestTrackWithTimestamp(t *testing.T) {
 	client, _ := NewWithConfig("h97jamjwbh", Config{
 		Endpoint:  server.URL,
 		Verbose:   true,
-		Logger:    t,
+		Logger:    newTestLogger(t.Logf, t.Errorf),
 		BatchSize: 1,
 		now:       mockTime,
 		uid:       mockId,
@@ -370,7 +376,7 @@ func TestTrackWithMessageId(t *testing.T) {
 	client, _ := NewWithConfig("h97jamjwbh", Config{
 		Endpoint:  server.URL,
 		Verbose:   true,
-		Logger:    t,
+		Logger:    newTestLogger(t.Logf, t.Errorf),
 		BatchSize: 1,
 		now:       mockTime,
 		uid:       mockId,
@@ -402,7 +408,7 @@ func TestTrackWithContext(t *testing.T) {
 	client, _ := NewWithConfig("h97jamjwbh", Config{
 		Endpoint:  server.URL,
 		Verbose:   true,
-		Logger:    t,
+		Logger:    newTestLogger(t.Logf, t.Errorf),
 		BatchSize: 1,
 		now:       mockTime,
 		uid:       mockId,
@@ -438,7 +444,7 @@ func TestTrackMany(t *testing.T) {
 	client, _ := NewWithConfig("h97jamjwbh", Config{
 		Endpoint:  server.URL,
 		Verbose:   true,
-		Logger:    t,
+		Logger:    newTestLogger(t.Logf, t.Errorf),
 		BatchSize: 3,
 		now:       mockTime,
 		uid:       mockId,
@@ -470,7 +476,7 @@ func TestTrackWithIntegrations(t *testing.T) {
 	client, _ := NewWithConfig("h97jamjwbh", Config{
 		Endpoint:  server.URL,
 		Verbose:   true,
-		Logger:    t,
+		Logger:    newTestLogger(t.Logf, t.Errorf),
 		BatchSize: 1,
 		now:       mockTime,
 		uid:       mockId,
@@ -546,7 +552,7 @@ func TestClientCallback(t *testing.T) {
 	errchan := make(chan error, 1)
 
 	client, _ := NewWithConfig("0123456789", Config{
-		Logger: testLogger{t.Logf, t.Logf},
+		Logger: newTestLogger(t.Logf, t.Logf),
 		Callback: testCallback{
 			func(m Message) { reschan <- true },
 			func(m Message, e error) { errchan <- e },
@@ -571,7 +577,7 @@ func TestClientMarshalMessageError(t *testing.T) {
 	errchan := make(chan error, 1)
 
 	client, _ := NewWithConfig("0123456789", Config{
-		Logger: testLogger{t.Logf, t.Logf},
+		Logger: newTestLogger(t.Logf, t.Logf),
 		Callback: testCallback{
 			nil,
 			func(m Message, e error) { errchan <- e },
@@ -600,7 +606,7 @@ func TestClientMarshalContextError(t *testing.T) {
 	errchan := make(chan error, 1)
 
 	client, _ := NewWithConfig("0123456789", Config{
-		Logger: testLogger{t.Logf, t.Logf},
+		Logger: newTestLogger(t.Logf, t.Logf),
 		Callback: testCallback{
 			nil,
 			func(m Message, e error) { errchan <- e },
@@ -630,7 +636,7 @@ func TestClientNewRequestError(t *testing.T) {
 
 	client, _ := NewWithConfig("0123456789", Config{
 		Endpoint: "://localhost:80", // Malformed endpoint URL.
-		Logger:   testLogger{t.Logf, t.Logf},
+		Logger:   newTestLogger(t.Logf, t.Logf),
 		Callback: testCallback{
 			nil,
 			func(m Message, e error) { errchan <- e },
@@ -650,7 +656,7 @@ func TestClientRoundTripperError(t *testing.T) {
 	errchan := make(chan error, 1)
 
 	client, _ := NewWithConfig("0123456789", Config{
-		Logger: testLogger{t.Logf, t.Logf},
+		Logger: newTestLogger(t.Logf, t.Logf),
 		Callback: testCallback{
 			nil,
 			func(m Message, e error) { errchan <- e },
@@ -676,7 +682,7 @@ func TestClientRetryError(t *testing.T) {
 	errchan := make(chan error, 1)
 
 	client, _ := NewWithConfig("0123456789", Config{
-		Logger: testLogger{t.Logf, t.Logf},
+		Logger: newTestLogger(t.Logf, t.Logf),
 		Callback: testCallback{
 			nil,
 			func(m Message, e error) { errchan <- e },
@@ -711,7 +717,7 @@ func TestClientResponse400(t *testing.T) {
 	errchan := make(chan error, 1)
 
 	client, _ := NewWithConfig("0123456789", Config{
-		Logger: testLogger{t.Logf, t.Logf},
+		Logger: newTestLogger(t.Logf, t.Logf),
 		Callback: testCallback{
 			nil,
 			func(m Message, e error) { errchan <- e },
@@ -732,7 +738,7 @@ func TestClientResponseBodyError(t *testing.T) {
 	errchan := make(chan error, 1)
 
 	client, _ := NewWithConfig("0123456789", Config{
-		Logger: testLogger{t.Logf, t.Logf},
+		Logger: newTestLogger(t.Logf, t.Logf),
 		Callback: testCallback{
 			nil,
 			func(m Message, e error) { errchan <- e },
@@ -757,7 +763,7 @@ func TestClientMaxConcurrentRequests(t *testing.T) {
 	errchan := make(chan error, 1)
 
 	client, _ := NewWithConfig("0123456789", Config{
-		Logger: testLogger{t.Logf, t.Logf},
+		Logger: newTestLogger(t.Logf, t.Logf),
 		Callback: testCallback{
 			func(m Message) { reschan <- true },
 			func(m Message, e error) { errchan <- e },

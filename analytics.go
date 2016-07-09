@@ -1,10 +1,12 @@
 package analytics
 
 import (
-	"fmt"
+	"errors"
 	"io"
 	"io/ioutil"
 	"sync"
+
+	"github.com/apex/log"
 
 	"bytes"
 	"encoding/json"
@@ -157,7 +159,6 @@ func (c *client) Enqueue(msg Message) (err error) {
 	return
 }
 
-// Close and flush metrics.
 func (c *client) Close() (err error) {
 	defer func() {
 		// Always recover, a panic could be raised if `c`.quit was closed which
@@ -171,7 +172,6 @@ func (c *client) Close() (err error) {
 	return
 }
 
-// Asychronously send a batched requests.
 func (c *client) sendAsync(msgs []message, wg *sync.WaitGroup, ex *executor) {
 	wg.Add(1)
 
@@ -182,18 +182,21 @@ func (c *client) sendAsync(msgs []message, wg *sync.WaitGroup, ex *executor) {
 			// a panic, we don't want this to ever crash the application so we
 			// catch it here and log it instead.
 			if err := recover(); err != nil {
-				c.errorf("panic - %s", err)
+				c.Logger.WithFields(log.Fields{
+					"panic": err,
+				}).Error("recovered from internal panic")
 			}
 		}()
 		c.send(msgs)
 	}) {
 		wg.Done()
-		c.errorf("sending messages failed - %s", ErrTooManyRequests)
+		c.Logger.WithFields(log.Fields{
+			"error": ErrTooManyRequests,
+		}).Error("sending messages failed")
 		c.notifyFailure(msgs, ErrTooManyRequests)
 	}
 }
 
-// Send batch request.
 func (c *client) send(msgs []message) {
 	const attempts = 10
 
@@ -205,7 +208,10 @@ func (c *client) send(msgs []message) {
 	})
 
 	if err != nil {
-		c.errorf("marshalling messages - %s", err)
+		c.Logger.WithFields(log.Fields{
+			"error": err,
+			"count": len(msgs),
+		}).Error("dropping messages because they could not be marshalled to JSON")
 		c.notifyFailure(msgs, err)
 		return
 	}
@@ -220,23 +226,29 @@ func (c *client) send(msgs []message) {
 		select {
 		case <-time.After(c.RetryAfter(i)):
 		case <-c.quit:
-			c.errorf("%d messages dropped because they failed to be sent and the client was closed", len(msgs))
+			c.Logger.WithFields(log.Fields{
+				"count": len(msgs),
+			}).Error("dropping messages because they failed to be sent and the client was closed")
 			c.notifyFailure(msgs, err)
 			return
 		}
 	}
 
-	c.errorf("%d messages dropped because they failed to be sent after %d attempts", len(msgs), attempts)
+	c.Logger.WithFields(log.Fields{
+		"attempts": attempts,
+		"count":    len(msgs),
+	}).Error("dropping messages because they failed to be sent too many times")
 	c.notifyFailure(msgs, err)
 }
 
-// Upload serialized batch message.
-func (c *client) upload(b []byte) error {
-	url := c.Endpoint + "/v1/batch"
-	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
-	if err != nil {
-		c.errorf("creating request - %s", err)
-		return err
+func (c *client) upload(b []byte) (err error) {
+	var body []byte
+	var req *http.Request
+	var res *http.Response
+	var url = c.Endpoint + "/v1/batch"
+
+	if req, err = http.NewRequest("POST", url, bytes.NewReader(b)); err != nil {
+		return
 	}
 
 	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
@@ -244,36 +256,23 @@ func (c *client) upload(b []byte) error {
 	req.Header.Add("Content-Length", string(len(b)))
 	req.SetBasicAuth(c.key, "")
 
-	res, err := c.http.Do(req)
-
-	if err != nil {
-		c.errorf("sending request - %s", err)
-		return err
+	if res, err = c.http.Do(req); err != nil {
+		return
 	}
 
 	defer res.Body.Close()
-	return c.report(res)
-}
-
-// Report on response body.
-func (c *client) report(res *http.Response) (err error) {
-	var body []byte
 
 	if res.StatusCode < 300 {
-		c.debugf("response %s", res.Status)
 		return
 	}
 
 	if body, err = ioutil.ReadAll(res.Body); err != nil {
-		c.errorf("response %d %s - %s", res.StatusCode, res.Status, err)
 		return
 	}
 
-	c.logf("response %d %s – %s", res.StatusCode, res.Status, string(body))
-	return fmt.Errorf("%d %s", res.StatusCode, res.Status)
+	return errors.New(string(body))
 }
 
-// Batch loop.
 func (c *client) loop() {
 	defer close(c.shutdown)
 
@@ -300,7 +299,7 @@ func (c *client) loop() {
 			c.flush(&mq, wg, ex)
 
 		case <-c.quit:
-			c.debugf("exit requested – draining messages")
+			c.Logger.Debug("exit requested – draining messages")
 
 			// Drain the msg channel, we have to close it first so no more
 			// messages can be pushed and otherwise the loop would never end.
@@ -310,7 +309,7 @@ func (c *client) loop() {
 			}
 
 			c.flush(&mq, wg, ex)
-			c.debugf("exit")
+			c.Logger.Debug("exit")
 			return
 		}
 	}
@@ -321,38 +320,34 @@ func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup, ex *execut
 	var err error
 
 	if msg, err = makeMessage(m, maxMessageBytes); err != nil {
-		c.errorf("%s - %v", err, m)
+		c.Logger.WithFields(log.Fields{
+			"error": err,
+		}).Error("invalid message")
 		c.notifyFailure([]message{{m, nil}}, err)
 		return
 	}
 
-	c.debugf("buffer (%d/%d) %v", len(q.pending), c.BatchSize, m)
+	c.Logger.WithFields(log.Fields{
+		"pending": len(q.pending) + 1,
+		"limit":   c.BatchSize,
+		"message": m,
+	}).Debug("message enqueued")
 
 	if msgs := q.push(msg); msgs != nil {
-		c.debugf("exceeded messages batch limit with batch of %d messages – flushing", len(msgs))
+		c.Logger.WithFields(log.Fields{
+			"count": len(msgs),
+		}).Debug("exceeded messages batch limit")
 		c.sendAsync(msgs, wg, ex)
 	}
 }
 
 func (c *client) flush(q *messageQueue, wg *sync.WaitGroup, ex *executor) {
 	if msgs := q.flush(); msgs != nil {
-		c.debugf("flushing %d messages", len(msgs))
+		c.Logger.WithFields(log.Fields{
+			"count": len(msgs),
+		}).Debug("flushing messages")
 		c.sendAsync(msgs, wg, ex)
 	}
-}
-
-func (c *client) debugf(format string, args ...interface{}) {
-	if c.Verbose {
-		c.logf(format, args...)
-	}
-}
-
-func (c *client) logf(format string, args ...interface{}) {
-	c.Logger.Logf(format, args...)
-}
-
-func (c *client) errorf(format string, args ...interface{}) {
-	c.Logger.Errorf(format, args...)
 }
 
 func (c *client) maxBatchBytes() int {
