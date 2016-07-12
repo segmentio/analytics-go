@@ -1,17 +1,16 @@
 package analytics
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"sync"
+	"time"
 
 	"github.com/apex/log"
-
-	"bytes"
-	"encoding/json"
-	"net/http"
-	"time"
 )
 
 // Version of the client.
@@ -77,6 +76,11 @@ func New(writeKey string) Client {
 // values (like a negative flush interval for example).
 // When the function returns an error the returned client will always be nil.
 func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
+	if len(writeKey) == 0 {
+		err = FieldError{Type: "string", Name: "writeKey", Value: writeKey}
+		return
+	}
+
 	if err = config.validate(); err != nil {
 		return
 	}

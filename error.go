@@ -25,7 +25,7 @@ func (e ConfigError) Error() string {
 }
 
 // Instances of this type are used to represent errors returned when a field was
-// no initialize properly in a structure passed as argument to one of the
+// not initialized properly in a structure passed as argument to one of the
 // functions of this package.
 type FieldError struct {
 
