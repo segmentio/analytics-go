@@ -241,7 +241,7 @@ func TestClientInvalidWriteKey(t *testing.T) {
 		t.Errorf("creating a new client from an empty write key shouldn't be allowed")
 	}
 
-	if _, ok := err.(FieldError); !ok {
+	if _, ok := err.(ConfigError); !ok {
 		t.Error("invalid error type returned after creating a client with an empty write key:", err)
 	}
 }

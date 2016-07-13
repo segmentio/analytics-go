@@ -73,7 +73,7 @@ func New(writeKey string) (Client, error) {
 // When the function returns an error the returned client will always be nil.
 func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 	if len(writeKey) == 0 {
-		err = FieldError{Type: "string", Name: "writeKey", Value: writeKey}
+		err = ConfigError{Reason: "empty write key", Field: "write-key", Value: writeKey}
 		return
 	}
 
