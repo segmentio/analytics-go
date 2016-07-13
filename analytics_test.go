@@ -234,6 +234,18 @@ func ExampleTrack() {
 	// }
 }
 
+func TestClientInvalidWriteKey(t *testing.T) {
+	cli, err := New("")
+
+	if cli != nil {
+		t.Errorf("creating a new client from an empty write key shouldn't be allowed")
+	}
+
+	if _, ok := err.(FieldError); !ok {
+		t.Error("invalid error type returned after creating a client with an empty write key:", err)
+	}
+}
+
 func TestEnqueue(t *testing.T) {
 	tests := map[string]struct {
 		ref string
@@ -511,7 +523,7 @@ func TestTrackWithIntegrations(t *testing.T) {
 }
 
 func TestClientCloseTwice(t *testing.T) {
-	client := New("0123456789")
+	client, _ := New("0123456789")
 
 	if err := client.Close(); err != nil {
 		t.Error("closing a client should not a return an error")
@@ -546,7 +558,7 @@ func TestClientConfigError(t *testing.T) {
 }
 
 func TestClientEnqueueError(t *testing.T) {
-	client := New("0123456789")
+	client, _ := New("0123456789")
 	defer client.Close()
 
 	if err := client.Enqueue(testErrorMessage{}); err != testError {

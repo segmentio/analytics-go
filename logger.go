@@ -34,34 +34,62 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 }
 
+// LogLevel is an enumeration representing the different log levels supported
+// by the analytics logger.
+type LogLevel int
+
+const (
+	// DebugLevel is the log level for debug messages.
+	DebugLevel LogLevel = iota
+
+	// DebugLevel is the log level for information messages.
+	InfoLevel
+
+	// DebugLevel is the log level for warnings.
+	WarnLevel
+
+	// DebugLevel is the log level for error messages.
+	ErrorLevel
+)
+
 // This function instantiate an object that statisfies the analytics.Logger
 // interface and send logs to standard logger passed as argument.
-func StdLogger(logger *log.Logger) Logger {
+func StdLogger(logger *log.Logger, level LogLevel) Logger {
 	return stdLogger{
 		logger: logger,
+		level:  level,
 	}
 }
 
 type stdLogger struct {
 	logger *log.Logger
+	level  LogLevel
 }
 
 func (l stdLogger) Debugf(format string, args ...interface{}) {
-	l.logger.Printf("- DEBUG - "+format, args...)
+	if l.level <= DebugLevel {
+		l.logger.Printf("- DEBUG - "+format, args...)
+	}
 }
 
 func (l stdLogger) Infof(format string, args ...interface{}) {
-	l.logger.Printf("- INFO - "+format, args...)
+	if l.level <= InfoLevel {
+		l.logger.Printf("- INFO - "+format, args...)
+	}
 }
 
 func (l stdLogger) Warnf(format string, args ...interface{}) {
-	l.logger.Printf("- WARN - "+format, args...)
+	if l.level <= WarnLevel {
+		l.logger.Printf("- WARN - "+format, args...)
+	}
 }
 
 func (l stdLogger) Errorf(format string, args ...interface{}) {
-	l.logger.Printf("- ERROR - "+format, args...)
+	if l.level <= ErrorLevel {
+		l.logger.Printf("- ERROR - "+format, args...)
+	}
 }
 
 func newDefaultLogger() Logger {
-	return StdLogger(log.New(os.Stderr, "segment ", log.LstdFlags))
+	return StdLogger(log.New(os.Stderr, "segment ", log.LstdFlags), InfoLevel)
 }

@@ -11,7 +11,7 @@ import (
 // as expected.
 func TestStdLogger(t *testing.T) {
 	var buffer bytes.Buffer
-	var logger = StdLogger(log.New(&buffer, "test ", 0))
+	var logger = StdLogger(log.New(&buffer, "test ", 0), DebugLevel)
 
 	logger.Debugf("Hello World!")
 	logger.Infof("The answer is %d", 42)
