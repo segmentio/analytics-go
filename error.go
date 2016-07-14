@@ -5,6 +5,24 @@ import (
 	"fmt"
 )
 
+// Returned by functions of the package when some of the arguments are invalid.
+type ArgumentError struct {
+
+	// A human-readable message explaining why the configuration field's value
+	// is invalid.
+	Reason string
+
+	// The name of the invalid argument.
+	Argument string
+
+	// The value of the invalid argument.
+	Value interface{}
+}
+
+func (e ArgumentError) Error() string {
+	return fmt.Sprintf("ArgumentError: %s (%s: %#v)", e.Reason, e.Argument, e.Value)
+}
+
 // Returned by the `NewWithConfig` function when the one of the configuration
 // fields was set to an impossible value (like a negative duration).
 type ConfigError struct {
