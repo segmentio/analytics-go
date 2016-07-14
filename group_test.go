@@ -14,7 +14,7 @@ func TestGroupMissingGroupId(t *testing.T) {
 		t.Error("invalid error type returned when validating group:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Group",
+		Type:  "Group",
 		Name:  "GroupId",
 		Value: "",
 	}) {
@@ -34,7 +34,7 @@ func TestGroupMissingUserId(t *testing.T) {
 		t.Error("invalid error type returned when validating group:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Group",
+		Type:  "Group",
 		Name:  "UserId",
 		Value: "",
 	}) {

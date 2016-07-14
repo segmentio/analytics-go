@@ -22,7 +22,7 @@ type Track struct {
 func (msg Track) validate() error {
 	if len(msg.Event) == 0 {
 		return FieldError{
-			Type:  "analytics.Track",
+			Type:  "Track",
 			Name:  "Event",
 			Value: msg.Event,
 		}
@@ -30,7 +30,7 @@ func (msg Track) validate() error {
 
 	if len(msg.UserId) == 0 && len(msg.AnonymousId) == 0 {
 		return FieldError{
-			Type:  "analytics.Track",
+			Type:  "Track",
 			Name:  "UserId",
 			Value: msg.UserId,
 		}

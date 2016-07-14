@@ -9,7 +9,7 @@ func TestConfigError(t *testing.T) {
 		Value:  42,
 	}
 
-	if s := e.Error(); s != "analytics.NewWithConfig: testing (analytics.Config.Answer: 42)" {
+	if s := e.Error(); s != "ConfigError: testing (Answer: 42)" {
 		t.Error("invalid error message returned by config error:", s)
 	}
 }
@@ -21,7 +21,7 @@ func TestFieldError(t *testing.T) {
 		Value: 42,
 	}
 
-	if s := e.Error(); s != "testing.T.Answer: invalid field value: 42" {
+	if s := e.Error(); s != "FieldError: invalid field value (testing.T.Answer: 42)" {
 		t.Error("invalid error message returned by field error:", s)
 	}
 }

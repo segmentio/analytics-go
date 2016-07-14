@@ -21,7 +21,7 @@ type ConfigError struct {
 }
 
 func (e ConfigError) Error() string {
-	return fmt.Sprintf("analytics.NewWithConfig: %s (analytics.Config.%s: %#v)", e.Reason, e.Field, e.Value)
+	return fmt.Sprintf("ConfigError: %s (%s: %#v)", e.Reason, e.Field, e.Value)
 }
 
 // Instances of this type are used to represent errors returned when a field was
@@ -41,7 +41,7 @@ type FieldError struct {
 }
 
 func (e FieldError) Error() string {
-	return fmt.Sprintf("%s.%s: invalid field value: %#v", e.Type, e.Name, e.Value)
+	return fmt.Sprintf("FieldError: invalid field value (%s.%s: %#v)", e.Type, e.Name, e.Value)
 }
 
 var (

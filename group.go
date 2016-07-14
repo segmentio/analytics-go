@@ -22,7 +22,7 @@ type Group struct {
 func (msg Group) validate() error {
 	if len(msg.GroupId) == 0 {
 		return FieldError{
-			Type:  "analytics.Group",
+			Type:  "Group",
 			Name:  "GroupId",
 			Value: msg.GroupId,
 		}
@@ -30,7 +30,7 @@ func (msg Group) validate() error {
 
 	if len(msg.UserId) == 0 && len(msg.AnonymousId) == 0 {
 		return FieldError{
-			Type:  "analytics.Group",
+			Type:  "Group",
 			Name:  "UserId",
 			Value: msg.UserId,
 		}

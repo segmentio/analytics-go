@@ -14,7 +14,7 @@ func TestAliasMissingUserId(t *testing.T) {
 		t.Error("invalid error type returned when validating alias:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Alias",
+		Type:  "Alias",
 		Name:  "UserId",
 		Value: "",
 	}) {
@@ -34,7 +34,7 @@ func TestAliasMissingPreviousId(t *testing.T) {
 		t.Error("invalid error type returned when validating alias:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Alias",
+		Type:  "Alias",
 		Name:  "PreviousId",
 		Value: "",
 	}) {

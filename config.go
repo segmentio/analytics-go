@@ -157,12 +157,13 @@ func makeConfig(c Config) Config {
 		c.maxConcurrentRequests = 1000
 	}
 
-	// We always overwrite the 'library' field of the default context set on the
-	// client because we want this information to be accurate.
-	c.DefaultContext.Library = LibraryInfo{
-		Name:    "analytics-go",
-		Version: Version,
+	if c.DefaultContext.Library == (LibraryInfo{}) {
+		c.DefaultContext.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: Version,
+		}
 	}
+
 	return c
 }
 

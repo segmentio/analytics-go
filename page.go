@@ -22,7 +22,7 @@ type Page struct {
 func (msg Page) validate() error {
 	if len(msg.UserId) == 0 && len(msg.AnonymousId) == 0 {
 		return FieldError{
-			Type:  "analytics.Page",
+			Type:  "Page",
 			Name:  "UserId",
 			Value: msg.UserId,
 		}

@@ -22,7 +22,7 @@ type Screen struct {
 func (msg Screen) validate() error {
 	if len(msg.UserId) == 0 && len(msg.AnonymousId) == 0 {
 		return FieldError{
-			Type:  "analytics.Screen",
+			Type:  "Screen",
 			Name:  "UserId",
 			Value: msg.UserId,
 		}

@@ -21,7 +21,7 @@ type Identify struct {
 func (msg Identify) validate() error {
 	if len(msg.UserId) == 0 && len(msg.AnonymousId) == 0 {
 		return FieldError{
-			Type:  "analytics.Identify",
+			Type:  "Identify",
 			Name:  "UserId",
 			Value: msg.UserId,
 		}
