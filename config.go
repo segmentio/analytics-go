@@ -157,13 +157,7 @@ func makeConfig(c Config) Config {
 		c.maxConcurrentRequests = 1000
 	}
 
-	if c.DefaultContext.Library == (LibraryInfo{}) {
-		c.DefaultContext.Library = LibraryInfo{
-			Name:    "analytics-go",
-			Version: Version,
-		}
-	}
-
+	c.DefaultContext.Library = Library
 	return c
 }
 
@@ -172,3 +166,10 @@ func makeConfig(c Config) Config {
 func uid() string {
 	return uuid.NewRandom().String()
 }
+
+var (
+	Library = LibraryInfo{
+		Name:    "analytics-go",
+		Version: Version,
+	}
+)
