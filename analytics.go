@@ -107,8 +107,8 @@ type Alias struct {
 	Message
 }
 
-// Messager is an interface for the segment client.
-type Messager interface {
+// Messenger is an interface for the segment client.
+type Messenger interface {
 	Alias(msg *Alias) error
 	Page(msg *Page) error
 	Group(msg *Group) error
