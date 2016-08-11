@@ -107,6 +107,15 @@ type Alias struct {
 	Message
 }
 
+// Messager is an interface for the segment client.
+type Messager interface {
+	Alias(msg *Alias) error
+	Page(msg *Page) error
+	Group(msg *Group) error
+	Identify(msg *Identify) error
+	Track(msg *Track) error
+}
+
 // Client which batches messages and flushes at the given Interval or
 // when the Size limit is exceeded. Set Verbose to true to enable
 // logging output.
