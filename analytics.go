@@ -120,7 +120,7 @@ type Client struct {
 	Verbose  bool
 	Client   http.Client
 	key      string
-	msgs     chan interface{}
+	msgsC    chan interface{}
 	quit     chan struct{}
 	shutdown chan struct{}
 	uid      func() string
@@ -145,7 +145,7 @@ func New(key string) *Client {
 		Verbose:  false,
 		Client:   *http.DefaultClient,
 		key:      key,
-		msgs:     make(chan interface{}, 100),
+		msgsC:    make(chan interface{}, 100),
 		quit:     make(chan struct{}),
 		shutdown: make(chan struct{}),
 		now:      time.Now,
@@ -237,14 +237,14 @@ func (c *Client) queue(msg message) {
 	c.once.Do(c.startLoop)
 	msg.setMessageId(c.uid())
 	msg.setTimestamp(timestamp(c.now()))
-	c.msgs <- msg
+	c.msgsC <- msg
 }
 
 // Close and flush metrics.
 func (c *Client) Close() error {
 	c.once.Do(c.startLoop)
 	c.quit <- struct{}{}
-	close(c.msgs)
+	close(c.msgsC)
 	<-c.shutdown
 	return nil
 }
@@ -336,7 +336,7 @@ func (c *Client) loop() {
 
 	for {
 		select {
-		case msg := <-c.msgs:
+		case msg := <-c.msgsC:
 			c.verbose("buffer (%d/%d) %v", len(msgs), c.Size, msg)
 			msgs = append(msgs, msg)
 			if len(msgs) == c.Size {
@@ -356,7 +356,7 @@ func (c *Client) loop() {
 			tick.Stop()
 			c.verbose("exit requested – draining msgs")
 			// drain the msg channel.
-			for msg := range c.msgs {
+			for msg := range c.msgsC {
 				c.verbose("buffer (%d/%d) %v", len(msgs), c.Size, msg)
 				msgs = append(msgs, msg)
 			}
