@@ -28,8 +28,6 @@ type roundTripperFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
-func (f roundTripperFunc) CancelRequest(r *http.Request) {}
-
 // Instances of this type are used to mock the client callbacks in unit tests.
 type testCallback struct {
 	success func(Message)
