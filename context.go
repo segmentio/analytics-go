@@ -53,12 +53,13 @@ type CampaignInfo struct {
 // This type provides the representation of the `context.device` object as
 // defined in https://segment.com/docs/spec/common/#context
 type DeviceInfo struct {
-	Id           string `json:"id,omitempty"`
-	Manufacturer string `json:"manufacturer,omitempty"`
-	Model        string `json:"model,omitempty"`
-	Name         string `json:"name,omitempty"`
-	Type         string `json:"type,omitempty"`
-	Version      string `json:"version,omitempty"`
+	Id            string `json:"id,omitempty"`
+	Manufacturer  string `json:"manufacturer,omitempty"`
+	Model         string `json:"model,omitempty"`
+	Name          string `json:"name,omitempty"`
+	Type          string `json:"type,omitempty"`
+	Version       string `json:"version,omitempty"`
+	AdvertisingID string `json:"advertisingId,omitempty"`
 }
 
 // This type provides the representation of the `context.library` object as
