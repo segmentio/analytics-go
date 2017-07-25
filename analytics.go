@@ -333,6 +333,7 @@ func (c *Client) upload(b []byte) error {
 func (c *Client) loop() {
 	var msgs []interface{}
 	tick := time.NewTicker(c.Interval)
+	defer tick.Stop()
 
 	for {
 		select {
