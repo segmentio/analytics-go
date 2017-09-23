@@ -1,16 +1,12 @@
 package analytics
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
-	"sync"
-
 	"bytes"
 	"encoding/json"
-	"errors"
-	"log"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/jehiah/go-strftime"
@@ -116,7 +112,7 @@ type Client struct {
 	// configured only before any messages are enqueued.
 	Interval time.Duration
 	Size     int
-	Logger   *log.Logger
+	Logger   Logger
 	Verbose  bool
 	Client   http.Client
 	key      string
@@ -137,13 +133,20 @@ type Client struct {
 
 // New client with write key.
 func New(key string) *Client {
+	return NewWithOptions(key)
+}
+
+// NewWithOptions setup client with options
+func NewWithOptions(key string, opts ...Option) *Client {
+	options := newOptions(opts...)
+
 	c := &Client{
 		Endpoint: Endpoint,
-		Interval: 5 * time.Second,
-		Size:     250,
-		Logger:   log.New(os.Stderr, "segment ", log.LstdFlags),
-		Verbose:  false,
-		Client:   *http.DefaultClient,
+		Interval: options.Interval,
+		Size:     options.Size,
+		Logger:   options.Logger,
+		Verbose:  options.Verbose,
+		Client:   options.Client,
 		key:      key,
 		msgs:     make(chan interface{}, 100),
 		quit:     make(chan struct{}),
@@ -159,11 +162,11 @@ func New(key string) *Client {
 // Alias buffers an "alias" message.
 func (c *Client) Alias(msg *Alias) error {
 	if msg.UserId == "" {
-		return errors.New("You must pass a 'userId'.")
+		return ErrPassUserID
 	}
 
 	if msg.PreviousId == "" {
-		return errors.New("You must pass a 'previousId'.")
+		return ErrPassPreviousID
 	}
 
 	msg.Type = "alias"
@@ -175,7 +178,7 @@ func (c *Client) Alias(msg *Alias) error {
 // Page buffers an "page" message.
 func (c *Client) Page(msg *Page) error {
 	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
+		return ErrPassAnonymousOrUser
 	}
 
 	msg.Type = "page"
@@ -187,11 +190,11 @@ func (c *Client) Page(msg *Page) error {
 // Group buffers an "group" message.
 func (c *Client) Group(msg *Group) error {
 	if msg.GroupId == "" {
-		return errors.New("You must pass a 'groupId'.")
+		return ErrPassGroupID
 	}
 
 	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
+		return ErrPassAnonymousOrUser
 	}
 
 	msg.Type = "group"
@@ -203,7 +206,7 @@ func (c *Client) Group(msg *Group) error {
 // Identify buffers an "identify" message.
 func (c *Client) Identify(msg *Identify) error {
 	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
+		return ErrPassAnonymousOrUser
 	}
 
 	msg.Type = "identify"
@@ -215,11 +218,11 @@ func (c *Client) Identify(msg *Identify) error {
 // Track buffers an "track" message.
 func (c *Client) Track(msg *Track) error {
 	if msg.Event == "" {
-		return errors.New("You must pass 'event'.")
+		return ErrPassEvent
 	}
 
 	if msg.UserId == "" && msg.AnonymousId == "" {
-		return errors.New("You must pass either an 'anonymousId' or 'userId'.")
+		return ErrPassAnonymousOrUser
 	}
 
 	msg.Type = "track"
