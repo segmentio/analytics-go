@@ -35,9 +35,10 @@ type Context struct {
 // This type provides the representation of the `context.app` object as defined
 // in https://segment.com/docs/spec/common/#context
 type AppInfo struct {
-	Name    string `json:"name,omitempty"`
-	Version string `json:"version,omitempty"`
-	Build   string `json:"build,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Version   string `json:"version,omitempty"`
+	Build     string `json:"build,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // This type provides the representation of the `context.campaign` object as
