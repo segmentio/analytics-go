@@ -14,11 +14,6 @@ To install it in the GOPATH:
 go get https://github.com/segmentio/analytics-go
 ```
 
-Or via the Go vendoring mechanism:
-```
-git submodule add https://github.com/segmentio/analytics-go vendor/github.com/segmentio/analytics-go
-```
-
 ## Documentation
 
 The links bellow should provide all the documentation needed to make the best
