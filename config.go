@@ -43,8 +43,8 @@ type Config struct {
 	// The maximum number of messages that will be sent in one API call.
 	// Messages will be sent when they've been queued up to the maximum batch
 	// size or when the flushing interval timer triggers.
-	// Note that the API will still enfore a 500KB limit on each HTTP request
-	// which is independant from the number of embedded messages.
+	// Note that the API will still enforce a 500KB limit on each HTTP request
+	// which is independent from the number of embedded messages.
 	BatchSize int
 
 	// When set to true the client will send more frequent and detailed messages
