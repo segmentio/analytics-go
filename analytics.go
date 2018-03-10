@@ -152,6 +152,8 @@ func New(key string) *Client {
 		uid:      uid,
 	}
 
+	c.logf("You are currnently using the v2 version analytics-go, which is being deprecated. Please update to v3 as soon as you can https://segment.com/docs/sources/server/go/#migrating-from-v2")
+
 	c.upcond.L = &c.upmtx
 	return c
 }
