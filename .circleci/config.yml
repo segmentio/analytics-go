@@ -7,28 +7,28 @@ jobs:
     working_directory: /go/src/github.com/segmentio/analytics-go
     steps:
       - checkout
-      - run: make get vet test
+      - run: make ci
   build-go110:
     docker:
       - image: circleci/golang:1.10
     working_directory: /go/src/github.com/segmentio/analytics-go
     steps:
       - checkout
-      - run: make get vet test
+      - run: make ci
   build-go19:
     docker:
       - image: circleci/golang:1.9
     working_directory: /go/src/github.com/segmentio/analytics-go
     steps:
       - checkout
-      - run: make get vet test
+      - run: make ci
   build-go18:
     docker:
       - image: circleci/golang:1.8
     working_directory: /go/src/github.com/segmentio/analytics-go
     steps:
       - checkout
-      - run: make get vet test
+      - run: make ci
 
 workflows:
   version: 2

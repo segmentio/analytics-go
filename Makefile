@@ -17,4 +17,6 @@ test:
 	@go tool cover -func ${CIRCLE_ARTIFACTS}/cover.out -o ${CIRCLE_ARTIFACTS}/cover.txt
 	@go tool cover -html ${CIRCLE_ARTIFACTS}/cover.out -o ${CIRCLE_ARTIFACTS}/cover.html
 
-.PHONY: get vet build test
+ci: get vet test
+
+.PHONY: get vet build test ci
