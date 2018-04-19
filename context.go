@@ -120,9 +120,9 @@ type ReferrerInfo struct {
 // This type provides the representation of the `context.screen` object as
 // defined in https://segment.com/docs/spec/common/#context
 type ScreenInfo struct {
-	Density int `json:"density,omitempty"`
-	Width   int `json:"width,omitempty"`
-	Height  int `json:"height,omitempty"`
+	Density float64 `json:"density,omitempty"`
+	Width   int     `json:"width,omitempty"`
+	Height  int     `json:"height,omitempty"`
 }
 
 // Satisfy the `json.Marshaler` interface. We have to flatten out the `Extra`
