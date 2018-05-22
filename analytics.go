@@ -239,7 +239,7 @@ func (c *client) send(msgs []message) {
 
 // Upload serialized batch message.
 func (c *client) upload(b []byte) error {
-	url := c.Endpoint + "/v1/batch"
+	url := c.Endpoint
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
 		c.errorf("creating request - %s", err)
