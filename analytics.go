@@ -249,7 +249,7 @@ func (c *client) upload(b []byte) error {
 	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Content-Length", string(len(b)))
-	req.SetBasicAuth(c.key, "")
+	req.Header.Add("x-api-key", c.key)
 
 	res, err := c.http.Do(req)
 
