@@ -5,4 +5,4 @@
 
 ## License
 
- MIT
+The library is released under the [MIT license](LICENSE).
