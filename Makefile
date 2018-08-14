@@ -21,6 +21,6 @@ ci: get vet test
 	@if [ "$(RUN_E2E_TESTS)" != "true" ]; then \
 	  echo "Skipping end to end tests."; else \
 		go get github.com/segmentio/library-e2e-tester/cmd/tester; \
-		tester -segment-write-key=$(SEGMENT_WRITE_KEY) -runscope-token=$(RUNSCOPE_TOKEN) -runscope-bucket=$(RUNSCOPE_BUCKET) -path='cli'; fi
+		tester -segment-write-key=$(SEGMENT_WRITE_KEY) -webhook-auth-username=$(WEBHOOK_AUTH_USERNAME) -webhook-bucket=$(WEBHOOK_BUCKET) -path='cli'; fi
 
 .PHONY: get vet build test ci
