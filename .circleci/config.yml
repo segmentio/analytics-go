@@ -38,3 +38,17 @@ workflows:
       - build-go110
       - build-go19
       - build-go18
+  scheduled_e2e_test:
+    triggers:
+      - schedule:
+          cron: "10 * * * *"
+          filters:
+            branches:
+              only:
+                - v3.0
+                - scheduled_e2e_testing
+    jobs:
+      - build-golatest
+      - build-go110
+      - build-go19
+      - build-go18
