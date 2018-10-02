@@ -49,8 +49,8 @@ func makeMessageId(id string, def string) string {
 
 // Returns the time value passed as first argument, unless it's the zero-value,
 // in that case the default value passed as second argument is returned.
-func makeTimestamp(t time.Time, def time.Time) time.Time {
-	if t == (time.Time{}) {
+func makeTimestamp(t Time, def Time) Time {
+	if t == (Time(time.Time{})) {
 		return def
 	}
 	return t
@@ -61,7 +61,7 @@ func makeTimestamp(t time.Time, def time.Time) time.Time {
 // of messages in one API call.
 type batch struct {
 	MessageId string    `json:"messageId"`
-	SentAt    time.Time `json:"sentAt"`
+	SentAt    Time      `json:"sentAt"`
 	Messages  []message `json:"batch"`
 	Context   *Context  `json:"context"`
 }

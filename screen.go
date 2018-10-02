@@ -1,7 +1,5 @@
 package analytics
 
-import "time"
-
 // This type represents object sent in a screen call as described in
 // https://segment.com/docs/libraries/http/#screen
 type Screen struct {
@@ -13,7 +11,7 @@ type Screen struct {
 	AnonymousId  string       `json:"anonymousId,omitempty"`
 	UserId       string       `json:"userId,omitempty"`
 	Name         string       `json:"name,omitempty"`
-	Timestamp    time.Time    `json:"timestamp,omitempty"`
+	Timestamp    Time         `json:"timestamp,omitempty"`
 	Context      *Context     `json:"context,omitempty"`
 	Properties   Properties   `json:"properties,omitempty"`
 	Integrations Integrations `json:"integrations,omitempty"`

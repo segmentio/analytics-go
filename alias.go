@@ -1,7 +1,5 @@
 package analytics
 
-import "time"
-
 // This type represents object sent in a alias call as described in
 // https://segment.com/docs/libraries/http/#alias
 type Alias struct {
@@ -12,7 +10,7 @@ type Alias struct {
 	MessageId    string       `json:"messageId,omitempty"`
 	PreviousId   string       `json:"previousId"`
 	UserId       string       `json:"userId"`
-	Timestamp    time.Time    `json:"timestamp,omitempty"`
+	Timestamp    Time         `json:"timestamp,omitempty"`
 	Context      *Context     `json:"context,omitempty"`
 	Integrations Integrations `json:"integrations,omitempty"`
 }
