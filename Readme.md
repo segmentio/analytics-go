@@ -2,17 +2,22 @@
 
 Segment analytics client for Go.
 
+This is a fork of [segmentio/analytics-go](https://github.com/segmentio/analytics-go) library.
+ 
+Notable changes:
+ 
+- Use fully customised endpoint without `/v1/batch` postfix
+- Use `X-API-Key` header for authorisation
+ 
+Latest stable branch is [fh/master](https://github.com/FindHotel/analytics-go/tree/fh/master). Releases are presented on [Releases page](https://github.com/FindHotel/analytics-go/releases).
+
 ## Installation
 
-The package can be simply installed via go get, we recommend that you use a
-package version management system like the Go vendor directory or a tool like
-Godep to avoid issues related to API breaking changes introduced between major
-versions of the library.
-
-To install it in the GOPATH:
-```
-go get https://github.com/segmentio/analytics-go
-```
+If you use [dep](https://github.com/golang/dep) then add these lines into your `Gopkg.toml`:
+    
+    [[constraint]]
+      name = "github.com/FindHotel/analytics-go"
+      version = "3.1.0"
 
 ## Documentation
 
@@ -32,12 +37,17 @@ package main
 import (
     "os"
 
-    "github.com/segmentio/analytics-go"
+    analytics "github.com/FindHotel/analytics-go"
 )
 
 func main() {
     // Instantiates a client to use send messages to the segment API.
-    client := analytics.New(os.Getenv("SEGMENT_WRITE_KEY"))
+    client, _ := analytics.NewWithConfig(
+        os.Getenv("SEGMENT_WRITE_KEY"),
+        analytics.Config{
+            Endpoint: os.Getenv("SEGMENT_ENDPOINT"),
+        },
+    )
 
     // Enqueues a track event that will be sent asynchronously.
     client.Enqueue(analytics.Track{
