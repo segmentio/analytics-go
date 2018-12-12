@@ -784,3 +784,12 @@ func TestClientMaxConcurrentRequests(t *testing.T) {
 		t.Errorf("invalid error returned by erroring response body: %T: %s", err, err)
 	}
 }
+
+func TestEnqueuingReferenceFails(t *testing.T) {
+	client := New("0123456789")
+	err := client.Enqueue(&Track{UserId: "A", Event: "B"})
+
+	if err.Error() != "Cannot enqueue message with invalid type *analytics.Track" {
+		t.Errorf("invalid/missing error when queuing invalid message: %T: %s", err, err)
+	}
+}

@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -148,6 +149,9 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
+	default:
+		err = errors.New(fmt.Sprintf("Cannot enqueue message with invalid type %T", msg))
+		return
 	}
 
 	defer func() {
