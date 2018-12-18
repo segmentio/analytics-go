@@ -69,11 +69,11 @@ func New(writeKey string) Client {
 	return c
 }
 
-// Instantiate a new client that uses the write key and configuration passed as
-// arguments to send messages to the backend.
-// The function will return an error if the configuration contained impossible
-// values (like a negative flush interval for example).
-// When the function returns an error the returned client will always be nil.
+// NewWithConfig instantiates a new client that uses the write key and
+// configuration passed as arguments to send messages to the backend. The
+// function will return an error if the configuration contained impossible
+// values (like a negative flush interval for example). When the function
+// returns an error the returned client will always be nil.
 func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 	if err = config.validate(); err != nil {
 		return
@@ -89,6 +89,7 @@ func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 	}
 
 	go c.loop()
+	go c.loopMetrics()
 
 	cli = c
 	return
@@ -372,6 +373,9 @@ func (c *client) maxBatchBytes() int {
 }
 
 func (c *client) notifySuccess(msgs []message) {
+	for _, m := range msgs {
+		successCounters(m.msg.tags()...).Inc(1)
+	}
 	if c.Callback != nil {
 		for _, m := range msgs {
 			c.Callback.Success(m.msg)
@@ -380,6 +384,9 @@ func (c *client) notifySuccess(msgs []message) {
 }
 
 func (c *client) notifyFailure(msgs []message, err error) {
+	for _, m := range msgs {
+		failureCounters(m.msg.tags()...).Inc(1)
+	}
 	if c.Callback != nil {
 		for _, m := range msgs {
 			c.Callback.Failure(m.msg, err)

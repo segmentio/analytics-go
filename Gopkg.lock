@@ -2,6 +2,50 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:8dbe0536c1cd5341268fd540b86e33851267e42a1311c4b729cd2162d4f69cac"
+  name = "github.com/FindHotel/meta"
+  packages = [
+    "pkg/env",
+    "pkg/log",
+    "pkg/reports",
+  ]
+  pruneopts = "UT"
+  revision = "a4d0708c5a22471f7b5bd950a291d75df8734fc5"
+
+[[projects]]
+  digest = "1:553f73a4171c265045ae4f5d3122429ecf2c9c0c232c91f336127fe45480104a"
+  name = "github.com/cenkalti/backoff"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "62661b46c4093e2c1f38d943e663db1a29873e80"
+  version = "v2.1.0"
+
+[[projects]]
+  digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  pruneopts = "UT"
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
+
+[[projects]]
+  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  pruneopts = "UT"
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:d38f81081a389f1466ec98192cf9115a82158854d6f01e1c23e2e7554b97db71"
+  name = "github.com/rcrowley/go-metrics"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3113b8401b8a98917cde58f8bbd42a1b1c03b1fd"
+
+[[projects]]
   digest = "1:e271becdebd3dd7c004d7977a15ebdd1f4fa19f2fa7122d13e1116e9444a3190"
   name = "github.com/segmentio/analytics-go"
   packages = ["."]
@@ -51,12 +95,28 @@
   version = "v1.0.1"
 
 [[projects]]
+  digest = "1:18752d0b95816a1b777505a97f71c7467a8445b8ffb55631a7bf779f6ba4fa83"
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  pruneopts = "UT"
+  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
+  version = "v1.2.2"
+
+[[projects]]
   branch = "master"
   digest = "1:2f9538da7381bb981fb8451b2b0fb304c2bc7f1724228dc336a8f002e6fec704"
   name = "github.com/xtgo/uuid"
   packages = ["."]
   pruneopts = "UT"
   revision = "a0b114877d4caeffbd7f87e3757c17fce570fea7"
+
+[[projects]]
+  digest = "1:aa7ab4fd27851221e4153921472ef7e3c1b048eaacca8e87c73fb7a094250dd7"
+  name = "github.com/zorkian/go-datadog-api"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f3f6d2f4859047aae0cac1ce3d16689608480fd9"
+  version = "v2.18.0"
 
 [[projects]]
   digest = "1:dad6cd59e8bb8d209194efbd3850b5d054384a63061671bfc2a6b2cc0929c731"
@@ -89,10 +149,15 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/FindHotel/meta/pkg/log",
+    "github.com/FindHotel/meta/pkg/reports",
+    "github.com/rcrowley/go-metrics",
     "github.com/segmentio/analytics-go",
     "github.com/segmentio/backo-go",
     "github.com/segmentio/conf",
+    "github.com/stretchr/testify/assert",
     "github.com/xtgo/uuid",
+    "github.com/zorkian/go-datadog-api",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

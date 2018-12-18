@@ -17,6 +17,10 @@ type Group struct {
 	Integrations Integrations `json:"integrations,omitempty"`
 }
 
+func (msg Group) tags() []string {
+	return []string{"type:" + msg.Type}
+}
+
 func (msg Group) validate() error {
 	if len(msg.GroupId) == 0 {
 		return FieldError{

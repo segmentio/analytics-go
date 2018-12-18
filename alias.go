@@ -15,6 +15,10 @@ type Alias struct {
 	Integrations Integrations `json:"integrations,omitempty"`
 }
 
+func (msg Alias) tags() []string {
+	return []string{"type:" + msg.Type}
+}
+
 func (msg Alias) validate() error {
 	if len(msg.UserId) == 0 {
 		return FieldError{

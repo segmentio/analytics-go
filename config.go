@@ -61,6 +61,10 @@ type Config struct {
 	// If not set the client will fallback to use a default retry policy.
 	RetryAfter func(int) time.Duration
 
+	// Reporter is used to report metrics to external reporting system such
+	// as DataDog. Useful implementations are DataDog and LogReporter.
+	Reporter Reporter
+
 	// A function called by the client to generate unique message identifiers.
 	// The client uses a UUID generator if none is provided.
 	// This field is not exported and only exposed internally to let unit tests
@@ -108,6 +112,14 @@ func (c *Config) validate() error {
 			Reason: "negative batch sizes are not supported",
 			Field:  "BatchSize",
 			Value:  c.BatchSize,
+		}
+	}
+
+	if c.Reporter == nil {
+		return ConfigError{
+			Reason: "reporter is not provided",
+			Field:  "Reporter",
+			Value:  c.Reporter,
 		}
 	}
 
