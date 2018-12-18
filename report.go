@@ -61,8 +61,6 @@ var hostname = func() string {
 	return h
 }()
 
-var environment = os.Getenv("ENVIRONMENT")
-
 // LogReporter report metrics as a log.
 type LogReporter struct {
 	Logger Logger
@@ -77,10 +75,10 @@ func (r LogReporter) Report(metricName string, value interface{}, tags []string,
 
 // AddTags adds tags to be added to each metric reported.
 func (r *LogReporter) AddTags(tags []string) {
-	r.tags = tags
+	r.tags = append(r.tags, tags...)
 }
 
-// NewDatadogReporter is a factory method to create DataDog reporter
+// NewDatadogReporter is a factory method to create Datadog reporter
 // with sane defaults.
 func NewDatadogReporter(apiKey, appKey string) *DatadogReporter {
 	dr := DatadogReporter{
@@ -96,7 +94,7 @@ func NewDatadogReporter(apiKey, appKey string) *DatadogReporter {
 		},
 	}
 	dr.logger = newDefaultLogger()
-	dr.tags = []string{"transport:http", "sdk:go"}
+	dr.tags = []string{"transport:http", "sdk:go", "version:" + Version}
 	return &dr
 }
 
@@ -118,17 +116,8 @@ func (dd *DatadogReporter) AddTags(tags []string) {
 	dd.tags = append(dd.tags, tags...)
 }
 
-var once sync.Once
-
 // Report sends provided metric to Datadog.
 func (dd DatadogReporter) Report(metricName string, value interface{}, tags []string, ts time.Time) {
-	if environment == "" {
-		once.Do(func() {
-			dd.logger.Errorf("Not sending metrics as ENVIRONMENT is empty")
-		})
-		return
-	}
-
 	metricType := "gauge"
 	metricValue, err := func() (float64, error) {
 		switch v := value.(type) {
@@ -146,7 +135,7 @@ func (dd DatadogReporter) Report(metricName string, value interface{}, tags []st
 		return
 	}
 	metricTimestamp := float64(ts.Truncate(time.Minute).Unix())
-	allTags := append(tags, "environment:"+environment, "hostname:"+hostname)
+	allTags := append(tags, "hostname:"+hostname)
 	allTags = append(allTags, dd.tags...)
 	metric := datadog.Metric{
 		Metric: &metricName,
@@ -200,10 +189,6 @@ func newCounters(name string) func(tags ...string) metrics.Counter {
 
 func (c *client) loopMetrics() {
 	var reporter = c.Config.Reporter
-	if os.Getenv("ENVIRONMENT") == "" {
-		c.Config.Logger.Logf("Using reports.LogReporter for metrics")
-		reporter = &LogReporter{}
-	}
 	reporter.AddTags([]string{
 		"key:" + c.key,
 		"endpoint:" + c.Config.Endpoint,
