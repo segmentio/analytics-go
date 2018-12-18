@@ -142,9 +142,9 @@ func fixture(name string) string {
 
 func mockId() string { return "I'm unique" }
 
-func mockTime() time.Time {
+func mockTime() Time {
 	// time.Unix(0, 0) fails on Circle
-	return time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+	return Time(time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC))
 }
 
 func mockServer() (chan []byte, *httptest.Server) {
@@ -205,7 +205,7 @@ func ExampleTrack() {
 	//         "platform": "osx",
 	//         "version": "1.1.0"
 	//       },
-	//       "timestamp": "2009-11-10T23:00:00Z",
+	//       "timestamp": 1257894000000,
 	//       "type": "track",
 	//       "userId": "123456"
 	//     }
@@ -217,7 +217,7 @@ func ExampleTrack() {
 	//     }
 	//   },
 	//   "messageId": "I'm unique",
-	//   "sentAt": "2009-11-10T23:00:00Z"
+	//   "sentAt": 1257894000000
 	// }
 }
 
@@ -353,7 +353,7 @@ func TestTrackWithTimestamp(t *testing.T) {
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
-		Timestamp: time.Date(2015, time.July, 10, 23, 0, 0, 0, time.UTC),
+		Timestamp: Time(time.Date(2015, time.July, 10, 23, 0, 0, 0, time.UTC)),
 	})
 
 	if res := string(<-body); ref != res {

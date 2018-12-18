@@ -1,7 +1,5 @@
 package analytics
 
-import "time"
-
 // This type represents object sent in a group call as described in
 // https://segment.com/docs/libraries/http/#group
 type Group struct {
@@ -13,7 +11,7 @@ type Group struct {
 	AnonymousId  string       `json:"anonymousId,omitempty"`
 	UserId       string       `json:"userId,omitempty"`
 	GroupId      string       `json:"groupId"`
-	Timestamp    time.Time    `json:"timestamp,omitempty"`
+	Timestamp    Time         `json:"timestamp,omitempty"`
 	Context      *Context     `json:"context,omitempty"`
 	Traits       Traits       `json:"traits,omitempty"`
 	Integrations Integrations `json:"integrations,omitempty"`

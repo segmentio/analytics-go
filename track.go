@@ -1,7 +1,5 @@
 package analytics
 
-import "time"
-
 // This type represents object sent in a track call as described in
 // https://segment.com/docs/libraries/http/#track
 type Track struct {
@@ -13,7 +11,7 @@ type Track struct {
 	AnonymousId  string       `json:"anonymousId,omitempty"`
 	UserId       string       `json:"userId,omitempty"`
 	Event        string       `json:"event"`
-	Timestamp    time.Time    `json:"timestamp,omitempty"`
+	Timestamp    Time         `json:"timestamp,omitempty"`
 	Context      *Context     `json:"context,omitempty"`
 	Properties   Properties   `json:"properties,omitempty"`
 	Integrations Integrations `json:"integrations,omitempty"`

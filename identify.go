@@ -1,7 +1,5 @@
 package analytics
 
-import "time"
-
 // This type represents object sent in an identify call as described in
 // https://segment.com/docs/libraries/http/#identify
 type Identify struct {
@@ -12,7 +10,7 @@ type Identify struct {
 	MessageId    string       `json:"messageId,omitempty"`
 	AnonymousId  string       `json:"anonymousId,omitempty"`
 	UserId       string       `json:"userId,omitempty"`
-	Timestamp    time.Time    `json:"timestamp,omitempty"`
+	Timestamp    Time         `json:"timestamp,omitempty"`
 	Context      *Context     `json:"context,omitempty"`
 	Traits       Traits       `json:"traits,omitempty"`
 	Integrations Integrations `json:"integrations,omitempty"`

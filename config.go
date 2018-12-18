@@ -71,7 +71,7 @@ type Config struct {
 	// used by default.
 	// This field is not exported and only exposed internally to let unit tests
 	// mock the current time.
-	now func() time.Time
+	now func() Time
 
 	// The maximum number of goroutines that will be spawned by a client to send
 	// requests to the backend API.
@@ -150,7 +150,7 @@ func makeConfig(c Config) Config {
 	}
 
 	if c.now == nil {
-		c.now = time.Now
+		c.now = func() Time { return Time(time.Now()) }
 	}
 
 	if c.maxConcurrentRequests == 0 {

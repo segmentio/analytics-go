@@ -2,7 +2,7 @@
   "batch": [
     {
       "messageId": "I'm unique",
-      "timestamp": "2009-11-10T23:00:00Z",
+      "timestamp": 1257894000000,
       "type": "identify",
       "userId": "B"
     }
@@ -14,5 +14,5 @@
     }
   },
   "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00Z"
+  "sentAt": 1257894000000
 }
