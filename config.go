@@ -62,7 +62,7 @@ type Config struct {
 	RetryAfter func(int) time.Duration
 
 	// Reporter is used to report metrics to external reporting system such
-	// as DataDog. Useful implementations are DataDog and LogReporter.
+	// as DataDog. Useful implementations are DatadogReporter and LogReporter.
 	Reporter Reporter
 
 	// A function called by the client to generate unique message identifiers.
