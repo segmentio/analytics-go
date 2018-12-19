@@ -110,6 +110,7 @@ func NewDatadogReporter(apiKey, appKey string) *DatadogReporter {
 	dr.Client.HttpClient = &http.Client{
 		Timeout: time.Second * 30,
 		Transport: &http.Transport{
+			DisableKeepAlives: true,
 			Dial: (&net.Dialer{
 				Timeout: 30 * time.Second,
 			}).Dial,
