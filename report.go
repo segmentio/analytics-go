@@ -61,6 +61,15 @@ var hostname = func() string {
 	return h
 }()
 
+// DiscardReporter discards all metrics, useful for tests.
+type DiscardReporter struct{}
+
+// Report reports metrics.
+func (r DiscardReporter) Report(metricName string, value interface{}, tags []string, ts time.Time) {}
+
+// AddTags adds tags to be added to each metric reported.
+func (r *DiscardReporter) AddTags(tags []string) {}
+
 // LogReporter report metrics as a log.
 type LogReporter struct {
 	Logger Logger
