@@ -213,9 +213,11 @@ func (c *client) loopMetrics() {
 	if reporter == nil {
 		panic("configured reporter is nil")
 	}
+
+	ep := strings.Split(c.Config.Endpoint, "/")
 	reporter.AddTags([]string{
-		"key:" + c.key,
-		"endpoint:" + c.Config.Endpoint,
+		"key:" + fmt.Sprintf("%.6s", c.key),
+		"endpoint:" + fmt.Sprintf("%.9s", ep[len(ep)-1]),
 	})
 
 	for range time.Tick(60 * time.Second) {
