@@ -116,6 +116,7 @@ func makeHttpClient(transport http.RoundTripper) http.Client {
 
 func (c *client) Enqueue(msg Message) (err error) {
 	if err = msg.validate(); err != nil {
+		droppedCounters(msg.tags()...).Inc(1)
 		return
 	}
 
@@ -166,6 +167,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		// and instead report that the client has been closed and shouldn't be
 		// used anymore.
 		if recover() != nil {
+			droppedCounters(msg.tags()...).Inc(1)
 			err = ErrClosed
 		}
 	}()

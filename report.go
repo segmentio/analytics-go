@@ -13,13 +13,14 @@ import (
 	datadog "github.com/zorkian/go-datadog-api"
 )
 
-var successCounters = newCounters("success")
-var failureCounters = newCounters("failure")
+var successCounters = newCounters("submitted.success")
+var failureCounters = newCounters("submitted.failure")
+var droppedCounters = newCounters("dropped")
 
 // Reporter provides a function to reporting metrics.
 type Reporter interface {
 	Report(metricName string, value interface{}, tags []string, ts time.Time)
-	AddTags(tags []string)
+	AddTags(tags ...string)
 }
 
 func splitTags(name string) (string, []string) {
@@ -70,7 +71,7 @@ type DiscardReporter struct{}
 func (r DiscardReporter) Report(metricName string, value interface{}, tags []string, ts time.Time) {}
 
 // AddTags adds tags to be added to each metric reported.
-func (r *DiscardReporter) AddTags(tags []string) {}
+func (r *DiscardReporter) AddTags(tags ...string) {}
 
 // LogReporter report metrics as a log.
 type LogReporter struct {
@@ -78,12 +79,13 @@ type LogReporter struct {
 	tags   []string
 }
 
-func NewLogReporter(l Logger) *LogReporter {
-	if l == nil {
-		l = newDefaultLogger()
+// NewLogReporter returns new log repoter ready to use.
+func NewLogReporter(l ...Logger) *LogReporter {
+	if len(l) == 0 {
+		l = []Logger{newDefaultLogger()}
 	}
 	return &LogReporter{
-		logger: l,
+		logger: l[0],
 		tags:   []string{},
 	}
 }
@@ -115,7 +117,7 @@ func NewDatadogReporter(apiKey, appKey string) *DatadogReporter {
 		},
 	}
 	dr.logger = newDefaultLogger()
-	dr.tags = []string{"transport:http", "sdk:go", "version:" + Version}
+	dr.tags = []string{"transport:http", "sdkversion:go-" + Version}
 	return &dr
 }
 
@@ -133,7 +135,7 @@ type DatadogReporter struct {
 }
 
 // AddTags adds tags to be added to each metric reported.
-func (dd *DatadogReporter) AddTags(tags []string) {
+func (dd *DatadogReporter) AddTags(tags ...string) {
 	dd.tags = append(dd.tags, tags...)
 }
 
@@ -171,9 +173,8 @@ func (dd DatadogReporter) Report(metricName string, value interface{}, tags []st
 }
 
 func resetMetrics() {
-	registry := metrics.DefaultRegistry
-	for name := range registry.GetAll() {
-		metric := registry.Get(name)
+	for name := range metricsRegistry.GetAll() {
+		metric := metricsRegistry.Get(name)
 		switch m := metric.(type) {
 		case metrics.Counter:
 			m.Clear()
@@ -215,13 +216,22 @@ func (c *client) loopMetrics() {
 	}
 
 	ep := strings.Split(c.Config.Endpoint, "/")
-	reporter.AddTags([]string{
-		"key:" + fmt.Sprintf("%.6s", c.key),
-		"endpoint:" + fmt.Sprintf("%.9s", ep[len(ep)-1]),
-	})
+	reporter.AddTags(
+		"key:"+fmt.Sprintf("%.6s", c.key),
+		"endpoint:"+fmt.Sprintf("%.9s", ep[len(ep)-1]),
+	)
+
+	if ctx := c.Config.DefaultContext; ctx != nil {
+		if app := ctx.App.Name; app != "" {
+			reporter.AddTags("app:" + app)
+		}
+		if version := ctx.App.Version; version != "" {
+			reporter.AddTags("appversion:" + version)
+		}
+	}
 
 	for range time.Tick(60 * time.Second) {
-		reportAll("evas.submitted", reporter)
+		reportAll("evas.events", reporter)
 		resetMetrics()
 	}
 }
