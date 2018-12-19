@@ -59,9 +59,19 @@ type client struct {
 	http http.Client
 }
 
-// Instantiate a new client that uses the write key passed as first argument to
-// send messages to the backend.
-// The client is created with the default configuration.
+// NewDiscardClient returns client which discards all messages.
+func NewDiscardClient() Client {
+	return discardClient{}
+}
+
+type discardClient struct{}
+
+func (c discardClient) Close() error          { return nil }
+func (c discardClient) Enqueue(Message) error { return nil }
+
+// New instantiates a new client that uses the write key passed as first
+// argument to send messages to the backend. The client is created with the
+// default (empty) configuration.
 func New(writeKey string) Client {
 	// Here we can ignore the error because the default config is always valid.
 	c, _ := NewWithConfig(writeKey, Config{})
