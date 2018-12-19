@@ -1,6 +1,6 @@
 package analytics
 
-// This type represents object sent in a alias call as described in
+// Alias represents object sent in a alias call as described in
 // https://segment.com/docs/libraries/http/#alias
 type Alias struct {
 	// This field is exported for serialization purposes and shouldn't be set by

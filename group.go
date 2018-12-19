@@ -1,6 +1,6 @@
 package analytics
 
-// This type represents object sent in a group call as described in
+// Group represents object sent in a group call as described in
 // https://segment.com/docs/libraries/http/#group
 type Group struct {
 	// This field is exported for serialization purposes and shouldn't be set by

@@ -74,14 +74,24 @@ func (r *DiscardReporter) AddTags(tags []string) {}
 
 // LogReporter report metrics as a log.
 type LogReporter struct {
-	Logger Logger
+	logger Logger
 	tags   []string
+}
+
+func NewLogReporter(l Logger) *LogReporter {
+	if l == nil {
+		l = newDefaultLogger()
+	}
+	return &LogReporter{
+		logger: l,
+		tags:   []string{},
+	}
 }
 
 // Report reports metrics.
 func (r LogReporter) Report(metricName string, value interface{}, tags []string, ts time.Time) {
 	allTags := append(tags, r.tags...)
-	r.Logger.Logf("%s[%s] = %v", metricName, strings.Join(allTags, ", "), value)
+	r.logger.Logf("%s[%s] = %v", metricName, strings.Join(allTags, ", "), value)
 }
 
 // AddTags adds tags to be added to each metric reported.
@@ -200,6 +210,9 @@ func newCounters(name string) func(tags ...string) metrics.Counter {
 
 func (c *client) loopMetrics() {
 	var reporter = c.Config.Reporter
+	if reporter == nil {
+		panic("configured reporter is nil")
+	}
 	reporter.AddTags([]string{
 		"key:" + c.key,
 		"endpoint:" + c.Config.Endpoint,
