@@ -39,9 +39,11 @@ func splitTags(name string) (string, []string) {
 	return strings.Join(names, "."), tags
 }
 
+var metricsRegistry = metrics.NewRegistry()
+
 func reportAll(prefix string, r Reporter) {
 	ts := time.Now()
-	metrics := metrics.DefaultRegistry.GetAll()
+	metrics := metricsRegistry.GetAll()
 	go func() {
 		for key, metric := range metrics {
 			for measure, value := range metric {
@@ -186,7 +188,7 @@ func newCounters(name string) func(tags ...string) metrics.Counter {
 
 		counter, ok := counters[fullName]
 		if !ok {
-			counter = metrics.GetOrRegister(
+			counter = metricsRegistry.GetOrRegister(
 				fullName,
 				metrics.NewCounter(),
 			).(metrics.Counter)
