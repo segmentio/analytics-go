@@ -157,6 +157,10 @@ func makeConfig(c Config) Config {
 		c.RetryAfter = backo.DefaultBacko().Duration
 	}
 
+	if c.Reporter == nil {
+		c.Reporter = &DiscardReporter{}
+	}
+
 	if c.uid == nil {
 		c.uid = uid
 	}
