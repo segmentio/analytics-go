@@ -1,20 +1,21 @@
-# analytics-go [![Circle CI](https://circleci.com/gh/segmentio/analytics-go/tree/master.svg?style=shield)](https://circleci.com/gh/segmentio/analytics-go/tree/master) [![go-doc](https://godoc.org/github.com/segmentio/analytics-go?status.svg)](https://godoc.org/github.com/segmentio/analytics-go)
+# analytics-go [![go-doc](https://godoc.org/github.com/FindHotel/analytics-go?status.svg)](https://godoc.org/github.com/FindHotel/analytics-go)
 
 Segment analytics client for Go.
 
 This is a fork of [segmentio/analytics-go](https://github.com/segmentio/analytics-go) library.
- 
+
 Notable changes:
- 
+
 - Use fully customised endpoint without `/v1/batch` postfix
 - Use `X-API-Key` header for authorisation
- 
+- Ability to report usage metrics to DataDog
+
 Latest stable branch is [fh/master](https://github.com/FindHotel/analytics-go/tree/fh/master). Releases are presented on [Releases page](https://github.com/FindHotel/analytics-go/releases).
 
 ## Installation
 
-If you use [dep](https://github.com/golang/dep) then add these lines into your `Gopkg.toml`:
-    
+If you use [dep](https://github.com/golang/dep) then add these lines to your `Gopkg.toml`:
+
     [[constraint]]
       name = "github.com/FindHotel/analytics-go"
       version = "3.1.0"
@@ -42,10 +43,16 @@ import (
 
 func main() {
     // Instantiates a client to use send messages to the segment API.
+
+    reporter := analytics.NewDatadogReporter(os.Getenv("DD_API_KEY"), os.Getenv("DD_APP_KEY"))
+    // if you don't need metrics use
+    // reporter := &analytics.DiscardReporter{}
+
     client, _ := analytics.NewWithConfig(
         os.Getenv("SEGMENT_WRITE_KEY"),
         analytics.Config{
             Endpoint: os.Getenv("SEGMENT_ENDPOINT"),
+            Reporter: reporter,
         },
     )
 
