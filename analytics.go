@@ -1,19 +1,18 @@
 package analytics
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"sync"
-
-	"bytes"
-	"encoding/json"
 	"net/http"
+	"sync"
 	"time"
 )
 
 // Version of the client.
-const Version = "3.0.0"
+const Version = "3.2.0"
 
 // This interface is the main API exposed by the analytics package.
 // Values that satsify this interface are returned by the client constructors
@@ -60,20 +59,30 @@ type client struct {
 	http http.Client
 }
 
-// Instantiate a new client that uses the write key passed as first argument to
-// send messages to the backend.
-// The client is created with the default configuration.
+// NewDiscardClient returns client which discards all messages.
+func NewDiscardClient() Client {
+	return discardClient{}
+}
+
+type discardClient struct{}
+
+func (c discardClient) Close() error          { return nil }
+func (c discardClient) Enqueue(Message) error { return nil }
+
+// New instantiates a new client that uses the write key passed as first
+// argument to send messages to the backend. The client is created with the
+// default (empty) configuration.
 func New(writeKey string) Client {
 	// Here we can ignore the error because the default config is always valid.
 	c, _ := NewWithConfig(writeKey, Config{})
 	return c
 }
 
-// Instantiate a new client that uses the write key and configuration passed as
-// arguments to send messages to the backend.
-// The function will return an error if the configuration contained impossible
-// values (like a negative flush interval for example).
-// When the function returns an error the returned client will always be nil.
+// NewWithConfig instantiates a new client that uses the write key and
+// configuration passed as arguments to send messages to the backend. The
+// function will return an error if the configuration contained impossible
+// values (like a negative flush interval for example). When the function
+// returns an error the returned client will always be nil.
 func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 	if err = config.validate(); err != nil {
 		return
@@ -89,6 +98,7 @@ func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 	}
 
 	go c.loop()
+	go c.loopMetrics()
 
 	cli = c
 	return
@@ -106,6 +116,7 @@ func makeHttpClient(transport http.RoundTripper) http.Client {
 
 func (c *client) Enqueue(msg Message) (err error) {
 	if err = msg.validate(); err != nil {
+		droppedCounters(msg.tags()...).Inc(1)
 		return
 	}
 
@@ -156,6 +167,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		// and instead report that the client has been closed and shouldn't be
 		// used anymore.
 		if recover() != nil {
+			droppedCounters(msg.tags()...).Inc(1)
 			err = ErrClosed
 		}
 	}()
@@ -372,6 +384,9 @@ func (c *client) maxBatchBytes() int {
 }
 
 func (c *client) notifySuccess(msgs []message) {
+	for _, m := range msgs {
+		successCounters(m.msg.tags()...).Inc(1)
+	}
 	if c.Callback != nil {
 		for _, m := range msgs {
 			c.Callback.Success(m.msg)
@@ -380,6 +395,9 @@ func (c *client) notifySuccess(msgs []message) {
 }
 
 func (c *client) notifyFailure(msgs []message, err error) {
+	for _, m := range msgs {
+		failureCounters(m.msg.tags()...).Inc(1)
+	}
 	if c.Callback != nil {
 		for _, m := range msgs {
 			c.Callback.Failure(m.msg, err)

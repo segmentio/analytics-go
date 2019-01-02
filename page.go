@@ -17,6 +17,10 @@ type Page struct {
 	Integrations Integrations `json:"integrations,omitempty"`
 }
 
+func (msg Page) tags() []string {
+	return []string{"type:" + msg.Type}
+}
+
 func (msg Page) validate() error {
 	if len(msg.UserId) == 0 && len(msg.AnonymousId) == 0 {
 		return FieldError{

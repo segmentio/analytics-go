@@ -33,6 +33,9 @@ type Callback interface {
 // and therefore can be passed to the analytics.Client.Send method.
 type Message interface {
 
+	// Returns tags associated with the message.
+	tags() []string
+
 	// Validates the internal structure of the message, the method must return
 	// nil if the message is valid, or an error describing what went wrong.
 	validate() error

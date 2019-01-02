@@ -17,6 +17,10 @@ type Track struct {
 	Integrations Integrations `json:"integrations,omitempty"`
 }
 
+func (msg Track) tags() []string {
+	return []string{"type:" + msg.Type, "event:" + msg.Event}
+}
+
 func (msg Track) validate() error {
 	if len(msg.Event) == 0 {
 		return FieldError{

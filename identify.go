@@ -16,6 +16,10 @@ type Identify struct {
 	Integrations Integrations `json:"integrations,omitempty"`
 }
 
+func (msg Identify) tags() []string {
+	return []string{"type:" + msg.Type}
+}
+
 func (msg Identify) validate() error {
 	if len(msg.UserId) == 0 && len(msg.AnonymousId) == 0 {
 		return FieldError{

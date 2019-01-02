@@ -1,6 +1,6 @@
 package analytics
 
-// This type represents object sent in a alias call as described in
+// Alias represents object sent in a alias call as described in
 // https://segment.com/docs/libraries/http/#alias
 type Alias struct {
 	// This field is exported for serialization purposes and shouldn't be set by
@@ -13,6 +13,10 @@ type Alias struct {
 	Timestamp    Time         `json:"timestamp,omitempty"`
 	Context      *Context     `json:"context,omitempty"`
 	Integrations Integrations `json:"integrations,omitempty"`
+}
+
+func (msg Alias) tags() []string {
+	return []string{"type:" + msg.Type}
 }
 
 func (msg Alias) validate() error {

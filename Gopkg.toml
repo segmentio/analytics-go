@@ -44,3 +44,11 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/rcrowley/go-metrics"
+
+[[constraint]]
+  name = "github.com/zorkian/go-datadog-api"
+  version = "2.18.0"

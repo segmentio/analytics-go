@@ -1,6 +1,6 @@
 package analytics
 
-// This type represents object sent in a group call as described in
+// Group represents object sent in a group call as described in
 // https://segment.com/docs/libraries/http/#group
 type Group struct {
 	// This field is exported for serialization purposes and shouldn't be set by
@@ -15,6 +15,10 @@ type Group struct {
 	Context      *Context     `json:"context,omitempty"`
 	Traits       Traits       `json:"traits,omitempty"`
 	Integrations Integrations `json:"integrations,omitempty"`
+}
+
+func (msg Group) tags() []string {
+	return []string{"type:" + msg.Type}
 }
 
 func (msg Group) validate() error {
