@@ -8,7 +8,7 @@ import (
 	"github.com/xtgo/uuid"
 )
 
-// Instances of this type carry the different configuration options that may
+// Config instances carry the different configuration options that may
 // be set when instantiating a client.
 //
 // Each field's zero-value is either meaningful or interpreted as using the

@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-// This type provides the representation of the `context` object as defined in
+// Context provides the representation of the `context` object as defined in
 // https://segment.com/docs/spec/common/#context
 type Context struct {
 	App       AppInfo      `json:"app,omitempty"`
@@ -32,7 +32,7 @@ type Context struct {
 	Extra map[string]interface{} `json:"-"`
 }
 
-// This type provides the representation of the `context.app` object as defined
+// AppInfo provides the representation of the `context.app` object as defined
 // in https://segment.com/docs/spec/common/#context
 type AppInfo struct {
 	Name      string `json:"name,omitempty"`
@@ -41,7 +41,7 @@ type AppInfo struct {
 	Namespace string `json:"namespace,omitempty"`
 }
 
-// This type provides the representation of the `context.campaign` object as
+// CampaignInfo provides the representation of the `context.campaign` object as
 // defined in https://segment.com/docs/spec/common/#context
 type CampaignInfo struct {
 	Name    string `json:"name,omitempty"`
@@ -51,7 +51,7 @@ type CampaignInfo struct {
 	Content string `json:"content,omitempty"`
 }
 
-// This type provides the representation of the `context.device` object as
+// DeviceInfo provides the representation of the `context.device` object as
 // defined in https://segment.com/docs/spec/common/#context
 type DeviceInfo struct {
 	Id            string `json:"id,omitempty"`
@@ -63,14 +63,14 @@ type DeviceInfo struct {
 	AdvertisingID string `json:"advertisingId,omitempty"`
 }
 
-// This type provides the representation of the `context.library` object as
+// LibraryInfo provides the representation of the `context.library` object as
 // defined in https://segment.com/docs/spec/common/#context
 type LibraryInfo struct {
 	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
 }
 
-// This type provides the representation of the `context.location` object as
+// LocationInfo provides the representation of the `context.location` object as
 // defined in https://segment.com/docs/spec/common/#context
 type LocationInfo struct {
 	City      string  `json:"city,omitempty"`
@@ -81,7 +81,7 @@ type LocationInfo struct {
 	Speed     float64 `json:"speed,omitempty"`
 }
 
-// This type provides the representation of the `context.network` object as
+// NetworkInfo provides the representation of the `context.network` object as
 // defined in https://segment.com/docs/spec/common/#context
 type NetworkInfo struct {
 	Bluetooth bool   `json:"bluetooth,omitempty"`
@@ -90,14 +90,14 @@ type NetworkInfo struct {
 	Carrier   string `json:"carrier,omitempty"`
 }
 
-// This type provides the representation of the `context.os` object as defined
+// OSInfo provides the representation of the `context.os` object as defined
 // in https://segment.com/docs/spec/common/#context
 type OSInfo struct {
 	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
 }
 
-// This type provides the representation of the `context.page` object as
+// PageInfo provides the representation of the `context.page` object as
 // defined in https://segment.com/docs/spec/common/#context
 type PageInfo struct {
 	Hash     string `json:"hash,omitempty"`
@@ -108,7 +108,7 @@ type PageInfo struct {
 	URL      string `json:"url,omitempty"`
 }
 
-// This type provides the representation of the `context.referrer` object as
+// ReferrerInfo provides the representation of the `context.referrer` object as
 // defined in https://segment.com/docs/spec/common/#context
 type ReferrerInfo struct {
 	Type string `json:"type,omitempty"`
@@ -117,7 +117,7 @@ type ReferrerInfo struct {
 	Link string `json:"link,omitempty"`
 }
 
-// This type provides the representation of the `context.screen` object as
+// ScreenInfo provides the representation of the `context.screen` object as
 // defined in https://segment.com/docs/spec/common/#context
 type ScreenInfo struct {
 	Density int `json:"density,omitempty"`
@@ -125,8 +125,8 @@ type ScreenInfo struct {
 	Height  int `json:"height,omitempty"`
 }
 
-// Satisfy the `json.Marshaler` interface. We have to flatten out the `Extra`
-// field but the standard json package doesn't support it yet.
+// MarshalJSON satisfies the `json.Marshaler` interface. We have to flatten out
+// the `Extra` field but the standard json package doesn't support it yet.
 // Implementing this interface allows us to override the default marshaling of
 // the context object and to the inlining ourselves.
 //
