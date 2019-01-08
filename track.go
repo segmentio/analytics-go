@@ -1,6 +1,6 @@
 package analytics
 
-// This type represents object sent in a track call as described in
+// Track represents object sent in a track call as described in
 // https://segment.com/docs/libraries/http/#track
 type Track struct {
 	// This field is exported for serialization purposes and shouldn't be set by

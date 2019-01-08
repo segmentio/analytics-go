@@ -13,10 +13,6 @@ import (
 	datadog "github.com/zorkian/go-datadog-api"
 )
 
-var successCounters = newCounters("submitted.success")
-var failureCounters = newCounters("submitted.failure")
-var droppedCounters = newCounters("dropped")
-
 // Reporter provides a function to reporting metrics.
 type Reporter interface {
 	Report(metricName string, value interface{}, tags []string, ts time.Time)
@@ -40,11 +36,9 @@ func splitTags(name string) (string, []string) {
 	return strings.Join(names, "."), tags
 }
 
-var metricsRegistry = metrics.NewRegistry()
-
-func reportAll(prefix string, r Reporter) {
+func (c *client) reportAll(prefix string, r Reporter) {
 	ts := time.Now()
-	metrics := metricsRegistry.GetAll()
+	metrics := c.metricsRegistry.GetAll()
 	go func() {
 		for key, metric := range metrics {
 			for measure, value := range metric {
@@ -173,9 +167,10 @@ func (dd DatadogReporter) Report(metricName string, value interface{}, tags []st
 	}
 }
 
-func resetMetrics() {
-	for name := range metricsRegistry.GetAll() {
-		metric := metricsRegistry.Get(name)
+func (c *client) resetMetrics() {
+	ms := c.metricsRegistry.GetAll()
+	for name := range ms {
+		metric := c.metricsRegistry.Get(name)
 		switch m := metric.(type) {
 		case metrics.Counter:
 			m.Clear()
@@ -187,8 +182,10 @@ func resetMetrics() {
 	}
 }
 
+type countersFunc func(tags ...string) metrics.Counter
+
 // newCounters returns factory for tagged counters.
-func newCounters(name string) func(tags ...string) metrics.Counter {
+func (c *client) newCounters(name string) countersFunc {
 	counters := make(map[string]metrics.Counter)
 	mu := &sync.Mutex{}
 
@@ -200,7 +197,7 @@ func newCounters(name string) func(tags ...string) metrics.Counter {
 
 		counter, ok := counters[fullName]
 		if !ok {
-			counter = metricsRegistry.GetOrRegister(
+			counter = c.metricsRegistry.GetOrRegister(
 				fullName,
 				metrics.NewCounter(),
 			).(metrics.Counter)
@@ -232,7 +229,7 @@ func (c *client) loopMetrics() {
 	}
 
 	for range time.Tick(60 * time.Second) {
-		reportAll("evas.events", reporter)
-		resetMetrics()
+		c.reportAll("evas.events", reporter)
+		c.resetMetrics()
 	}
 }

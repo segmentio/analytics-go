@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	metrics "github.com/rcrowley/go-metrics"
 )
 
 // Version of the client.
@@ -57,6 +59,12 @@ type client struct {
 	// This HTTP client is used to send requests to the backend, it uses the
 	// HTTP transport provided in the configuration.
 	http http.Client
+
+	metricsRegistry metrics.Registry
+
+	successCounters countersFunc
+	failureCounters countersFunc
+	droppedCounters countersFunc
 }
 
 // NewDiscardClient returns client which discards all messages.
@@ -83,28 +91,31 @@ func New(writeKey string) Client {
 // function will return an error if the configuration contained impossible
 // values (like a negative flush interval for example). When the function
 // returns an error the returned client will always be nil.
-func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
-	if err = config.validate(); err != nil {
-		return
+func NewWithConfig(writeKey string, config Config) (Client, error) {
+	if err := config.validate(); err != nil {
+		return nil, err
 	}
 
 	c := &client{
-		Config:   makeConfig(config),
-		key:      writeKey,
-		msgs:     make(chan Message, 100),
-		quit:     make(chan struct{}),
-		shutdown: make(chan struct{}),
-		http:     makeHttpClient(config.Transport),
+		Config:          makeConfig(config),
+		key:             writeKey,
+		msgs:            make(chan Message, 100),
+		quit:            make(chan struct{}),
+		shutdown:        make(chan struct{}),
+		http:            makeHTTPClient(config.Transport),
+		metricsRegistry: metrics.NewRegistry(),
 	}
+	c.successCounters = c.newCounters("submitted.success")
+	c.failureCounters = c.newCounters("submitted.failure")
+	c.droppedCounters = c.newCounters("dropped")
 
 	go c.loop()
 	go c.loopMetrics()
 
-	cli = c
-	return
+	return c, nil
 }
 
-func makeHttpClient(transport http.RoundTripper) http.Client {
+func makeHTTPClient(transport http.RoundTripper) http.Client {
 	httpClient := http.Client{
 		Transport: transport,
 	}
@@ -116,7 +127,7 @@ func makeHttpClient(transport http.RoundTripper) http.Client {
 
 func (c *client) Enqueue(msg Message) (err error) {
 	if err = msg.validate(); err != nil {
-		droppedCounters(msg.tags()...).Inc(1)
+		c.droppedCounters(msg.tags()...).Inc(1)
 		return
 	}
 
@@ -167,7 +178,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		// and instead report that the client has been closed and shouldn't be
 		// used anymore.
 		if recover() != nil {
-			droppedCounters(msg.tags()...).Inc(1)
+			c.droppedCounters(msg.tags()...).Inc(1)
 			err = ErrClosed
 		}
 	}()
@@ -385,7 +396,7 @@ func (c *client) maxBatchBytes() int {
 
 func (c *client) notifySuccess(msgs []message) {
 	for _, m := range msgs {
-		successCounters(m.msg.tags()...).Inc(1)
+		c.successCounters(m.msg.tags()...).Inc(1)
 	}
 	if c.Callback != nil {
 		for _, m := range msgs {
@@ -396,7 +407,7 @@ func (c *client) notifySuccess(msgs []message) {
 
 func (c *client) notifyFailure(msgs []message, err error) {
 	for _, m := range msgs {
-		failureCounters(m.msg.tags()...).Inc(1)
+		c.failureCounters(m.msg.tags()...).Inc(1)
 	}
 	if c.Callback != nil {
 		for _, m := range msgs {
