@@ -61,9 +61,9 @@ type Config struct {
 	// If not set the client will fallback to use a default retry policy.
 	RetryAfter func(int) time.Duration
 
-	// Reporter is used to report metrics to external reporting system such
+	// Reporters are used to report metrics to external reporting system such
 	// as DataDog. Useful implementations are DatadogReporter and LogReporter.
-	Reporter Reporter
+	Reporters []Reporter
 
 	// A function called by the client to generate unique message identifiers.
 	// The client uses a UUID generator if none is provided.
@@ -84,15 +84,15 @@ type Config struct {
 	maxConcurrentRequests int
 }
 
-// This constant sets the default endpoint to which client instances send
+// DefaultEndpoint sets the default endpoint to which client instances send
 // messages if none was explictly set.
-const DefaultEndpoint = "https://api.segment.io"
+const DefaultEndpoint = "https://segment.fih.io"
 
-// This constant sets the default flush interval used by client instances if
+// DefaultInterval sets the default flush interval used by client instances if
 // none was explicitly set.
 const DefaultInterval = 5 * time.Second
 
-// This constant sets the default batch size used by client instances if none
+// DefaultBatchSize sets the default batch size used by client instances if none
 // was explicitly set.
 const DefaultBatchSize = 250
 
@@ -115,11 +115,11 @@ func (c *Config) validate() error {
 		}
 	}
 
-	if c.Reporter == nil {
+	if c.Reporters == nil {
 		return ConfigError{
-			Reason: "reporter is not provided",
-			Field:  "Reporter",
-			Value:  c.Reporter,
+			Reason: "reporters are not provided",
+			Field:  "Reporters",
+			Value:  nil,
 		}
 	}
 
@@ -157,8 +157,8 @@ func makeConfig(c Config) Config {
 		c.RetryAfter = backo.DefaultBacko().Duration
 	}
 
-	if c.Reporter == nil {
-		c.Reporter = &DiscardReporter{}
+	if c.Reporters == nil {
+		c.Reporters = []Reporter{&DiscardReporter{}}
 	}
 
 	if c.uid == nil {

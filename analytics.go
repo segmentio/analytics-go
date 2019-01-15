@@ -250,7 +250,8 @@ func (c *client) send(msgs []message) {
 		select {
 		case <-time.After(c.RetryAfter(i)):
 		case <-c.quit:
-			c.errorf("%d messages dropped because they failed to be sent and the client was closed", len(msgs))
+			err = fmt.Errorf("%d messages dropped because they failed to be sent and the client was closed", len(msgs))
+			c.errorf(err.Error())
 			c.notifyFailure(msgs, err)
 			return
 		}

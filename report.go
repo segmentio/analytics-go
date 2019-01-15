@@ -36,7 +36,7 @@ func splitTags(name string) (string, []string) {
 	return strings.Join(names, "."), tags
 }
 
-func (c *client) reportAll(prefix string, r Reporter) {
+func (c *client) reportAll(prefix string, reporters []Reporter) {
 	ts := time.Now()
 	metrics := c.metricsRegistry.GetAll()
 	go func() {
@@ -44,7 +44,9 @@ func (c *client) reportAll(prefix string, r Reporter) {
 			for measure, value := range metric {
 				name, tags := splitTags(key)
 				name = prefix + "." + name
-				r.Report(name+"."+measure, value, tags, ts)
+				for _, r := range reporters {
+					r.Report(name+"."+measure, value, tags, ts)
+				}
 			}
 		}
 	}()
@@ -208,28 +210,31 @@ func (c *client) newCounters(name string) countersFunc {
 }
 
 func (c *client) loopMetrics() {
-	var reporter = c.Config.Reporter
-	if reporter == nil {
+	var reporters = c.Config.Reporters
+	if reporters == nil {
 		panic("configured reporter is nil")
 	}
 
 	ep := strings.Split(c.Config.Endpoint, "/")
-	reporter.AddTags(
-		"key:"+fmt.Sprintf("%.6s", c.key),
-		"endpoint:"+fmt.Sprintf("%.9s", ep[len(ep)-1]),
-	)
-
-	if ctx := c.Config.DefaultContext; ctx != nil {
-		if app := ctx.App.Name; app != "" {
-			reporter.AddTags("app:" + app)
-		}
-		if version := ctx.App.Version; version != "" {
-			reporter.AddTags("appversion:" + version)
+	enrichReporter := func(reporter Reporter) {
+		reporter.AddTags(
+			"key:"+fmt.Sprintf("%.6s", c.key),
+			"endpoint:"+fmt.Sprintf("%.9s", ep[len(ep)-1]),
+		)
+		if ctx := c.Config.DefaultContext; ctx != nil {
+			if app := ctx.App.Name; app != "" {
+				reporter.AddTags("app:" + app)
+			}
+			if version := ctx.App.Version; version != "" {
+				reporter.AddTags("appversion:" + version)
+			}
 		}
 	}
-
+	for _, reporter := range reporters {
+		enrichReporter(reporter)
+	}
 	for range time.Tick(60 * time.Second) {
-		c.reportAll("evas.events", reporter)
+		c.reportAll("evas.events", reporters)
 		c.resetMetrics()
 	}
 }
