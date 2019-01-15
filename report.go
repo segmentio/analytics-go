@@ -126,6 +126,7 @@ func newHTTPTransport() *http.Transport {
 func NewDatadogReporter(apiKey, appKey string) *DatadogReporter {
 	dr := DatadogReporter{
 		Client: datadog.NewClient(apiKey, appKey),
+		Mutex:  &sync.Mutex{},
 	}
 	dr.Client.HttpClient = &http.Client{
 		Timeout:   time.Second * 30,
