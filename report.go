@@ -93,7 +93,7 @@ func (r LogReporter) Report(metricName string, value interface{}, tags []string,
 }
 
 // AddTags adds tags to be added to each metric reported.
-func (r *LogReporter) AddTags(tags []string) {
+func (r *LogReporter) AddTags(tags ...string) {
 	r.tags = append(r.tags, tags...)
 }
 
