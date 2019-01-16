@@ -159,9 +159,10 @@ func (dd *DatadogReporter) AddTags(tags ...string) {
 
 // Flush flushes reported metrics.
 func (dd *DatadogReporter) Flush() error {
+	metrics := dd.metrics // we need a copy since we can do many retries
 	err := retry.Do(
 		func() error {
-			return dd.Client.PostMetrics(dd.metrics)
+			return dd.Client.PostMetrics(metrics)
 		},
 		retry.OnRetry(func(iteration uint, err error) {
 			dd.logger.Errorf("Reporting metrics failed for the %d time: %s", iteration, err)
