@@ -199,7 +199,13 @@ func ExampleTrack() {
 		},
 	})
 
-	fmt.Printf("%s\n", <-body)
+	s := strings.Replace(string(<-body),
+		fmt.Sprintf(`"version": "%s"`, Version),
+		`"version": "3.4.0"`,
+		-1,
+	)
+
+	fmt.Printf("%s\n", s)
 	// Output:
 	// {
 	//   "batch": [
