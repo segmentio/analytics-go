@@ -1,4 +1,4 @@
-# analytics-go [![go-doc](https://godoc.org/github.com/FindHotel/analytics-go?status.svg)](https://godoc.org/github.com/FindHotel/analytics-go) [![Build Status](https://travis-ci.com/FindHotel/analytics-go.svg?branch=fh%2Fmaster)](https://travis-ci.com/FindHotel/analytics-go)
+# analytics-go [![go-doc](https://godoc.org/github.com/FindHotel/analytics-go?status.svg)](https://godoc.org/github.com/FindHotel/analytics-go) [![Build Status](https://travis-ci.com/FindHotel/analytics-go.svg?branch=master)](https://travis-ci.com/FindHotel/analytics-go)
 
 Segment analytics client for Go.
 
@@ -10,7 +10,7 @@ Notable changes:
 - Use `X-API-Key` header for authorisation
 - Ability to report usage metrics to DataDog
 
-Latest stable branch is [fh/master](https://github.com/FindHotel/analytics-go/tree/fh/master). Releases are presented on [Releases page](https://github.com/FindHotel/analytics-go/releases).
+Latest stable branch is [master](https://github.com/FindHotel/analytics-go/tree/master). Releases are presented on [Releases page](https://github.com/FindHotel/analytics-go/releases).
 
 ## Installation
 
