@@ -285,8 +285,13 @@ func (c *client) loopMetrics() {
 	for _, reporter := range reporters {
 		enrichReporter(reporter)
 	}
-	for range time.Tick(60 * time.Second) {
-		c.reportAll("evas.events", reporters)
-		c.resetMetrics()
+	for {
+		select {
+		case <-c.quit:
+			return
+		case <-time.Tick(60 * time.Second):
+			c.reportAll("evas.events", reporters)
+			c.resetMetrics()
+		}
 	}
 }
