@@ -1,4 +1,4 @@
-# analytics-go [![go-doc](https://godoc.org/github.com/FindHotel/analytics-go?status.svg)](https://godoc.org/github.com/FindHotel/analytics-go) [![Build Status](https://travis-ci.org/FindHotel/analytics-go.svg?branch=fh%2Fmaster)](https://travis-ci.org/FindHotel/analytics-go)
+# analytics-go [![go-doc](https://godoc.org/github.com/FindHotel/analytics-go?status.svg)](https://godoc.org/github.com/FindHotel/analytics-go) [![Build Status](https://travis-ci.com/FindHotel/analytics-go.svg?branch=fh%2Fmaster)](https://travis-ci.com/FindHotel/analytics-go)
 
 Segment analytics client for Go.
 
@@ -43,18 +43,57 @@ import (
 
 func main() {
     // Instantiates a client to use send messages to the segment API.
+    client, err := analytics.NewWithConfig(
+        os.Getenv("SEGMENT_WRITE_KEY"),
+        analytics.Config{
+            Endpoint: os.Getenv("SEGMENT_ENDPOINT"),
+        },
+    )
+    if err != nil { // ALWAYS check for errors!
+        panic(err)
+    }
 
+    // Enqueues a track event that will be sent asynchronously.
+    client.Enqueue(analytics.Track{
+        UserId: "test-user",
+        Event:  "test-snippet",
+    })
+
+    // Flushes any queued messages and closes the client.
+    client.Close()
+}
+```
+
+## Reporting SDK metrics to DataDog
+
+If you want to have SDK metrics (number of events succeeded, failed etc.)
+to be delivered to DataDog use the following example:
+
+```go
+package main
+
+import (
+    "os"
+
+    analytics "github.com/FindHotel/analytics-go"
+)
+
+func main() {
+    // Instantiates a client to use send messages to the segment API.
     reporter := analytics.NewDatadogReporter(os.Getenv("DD_API_KEY"), os.Getenv("DD_APP_KEY"))
     // if you don't need metrics use
     // reporter := &analytics.DiscardReporter{}
 
-    client, _ := analytics.NewWithConfig(
+    client, err := analytics.NewWithConfig(
         os.Getenv("SEGMENT_WRITE_KEY"),
         analytics.Config{
             Endpoint: os.Getenv("SEGMENT_ENDPOINT"),
-            Reporter: reporter,
+            Reporters: []analytics.Reporter{reporter},
         },
     )
+    if err != nil {
+        panic(err)
+    }
 
     // Enqueues a track event that will be sent asynchronously.
     client.Enqueue(analytics.Track{
