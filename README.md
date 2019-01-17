@@ -1,4 +1,4 @@
-# analytics-go [![go-doc](https://godoc.org/github.com/FindHotel/analytics-go?status.svg)](https://godoc.org/github.com/FindHotel/analytics-go)
+# analytics-go [![go-doc](https://godoc.org/github.com/FindHotel/analytics-go?status.svg)](https://godoc.org/github.com/FindHotel/analytics-go) [![Build Status](https://travis-ci.org/FindHotel/analytics-go.svg?branch=fh%2Fmaster)](https://travis-ci.org/FindHotel/analytics-go)
 
 Segment analytics client for Go.
 
