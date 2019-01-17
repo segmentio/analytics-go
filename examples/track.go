@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/segmentio/analytics-go"
+	"github.com/FindHotel/analytics-go"
 )
 import "time"
 
