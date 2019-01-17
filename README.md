@@ -59,7 +59,7 @@ func main() {
         Event:  "test-snippet",
     })
 
-    // Flushes any queued messages and closes the client.
+    // Flushes any queued messages and closes the client - DON'T forget this step.
     client.Close()
 }
 ```
@@ -108,4 +108,4 @@ func main() {
 
 ## License
 
-The library is released under the [MIT license](License.md).
+The library is released under the [MIT license](LICENSE.md).
