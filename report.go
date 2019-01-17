@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -9,17 +10,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/avast/retry-go"
 	metrics "github.com/rcrowley/go-metrics"
 	datadog "github.com/zorkian/go-datadog-api"
 )
 
-var successCounters = newCounters("submitted.success")
-var failureCounters = newCounters("submitted.failure")
-var droppedCounters = newCounters("dropped")
-
 // Reporter provides a function to reporting metrics.
 type Reporter interface {
 	Report(metricName string, value interface{}, tags []string, ts time.Time)
+	Flush() error
 	AddTags(tags ...string)
 }
 
@@ -40,17 +39,25 @@ func splitTags(name string) (string, []string) {
 	return strings.Join(names, "."), tags
 }
 
-var metricsRegistry = metrics.NewRegistry()
-
-func reportAll(prefix string, r Reporter) {
+func (c *client) reportAll(prefix string, reporters []Reporter) {
+	if len(reporters) == 0 {
+		return
+	}
 	ts := time.Now()
-	metrics := metricsRegistry.GetAll()
+	metrics := c.metricsRegistry.GetAll()
 	go func() {
 		for key, metric := range metrics {
 			for measure, value := range metric {
 				name, tags := splitTags(key)
 				name = prefix + "." + name
-				r.Report(name+"."+measure, value, tags, ts)
+				for _, r := range reporters {
+					r.Report(name+"."+measure, value, tags, ts)
+				}
+			}
+		}
+		for _, r := range reporters {
+			if err := r.Flush(); err != nil {
+				c.Config.Logger.Errorf("flush failed for reporter %s: %s", r, err)
 			}
 		}
 	}()
@@ -72,6 +79,9 @@ func (r DiscardReporter) Report(metricName string, value interface{}, tags []str
 
 // AddTags adds tags to be added to each metric reported.
 func (r *DiscardReporter) AddTags(tags ...string) {}
+
+// Flush flushes reported metrics.
+func (r *DiscardReporter) Flush() error { return nil }
 
 // LogReporter report metrics as a log.
 type LogReporter struct {
@@ -96,9 +106,22 @@ func (r LogReporter) Report(metricName string, value interface{}, tags []string,
 	r.logger.Logf("%s[%s] = %v", metricName, strings.Join(allTags, ", "), value)
 }
 
+// Flush flushes reported metrics.
+func (r *LogReporter) Flush() error { return nil }
+
 // AddTags adds tags to be added to each metric reported.
-func (r *LogReporter) AddTags(tags []string) {
+func (r *LogReporter) AddTags(tags ...string) {
 	r.tags = append(r.tags, tags...)
+}
+
+func newHTTPTransport() *http.Transport {
+	return &http.Transport{
+		DisableKeepAlives: true,
+		Dial: (&net.Dialer{
+			Timeout: 30 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 30 * time.Second,
+	}
 }
 
 // NewDatadogReporter is a factory method to create Datadog reporter
@@ -106,16 +129,11 @@ func (r *LogReporter) AddTags(tags []string) {
 func NewDatadogReporter(apiKey, appKey string) *DatadogReporter {
 	dr := DatadogReporter{
 		Client: datadog.NewClient(apiKey, appKey),
+		Mutex:  &sync.Mutex{},
 	}
 	dr.Client.HttpClient = &http.Client{
-		Timeout: time.Second * 30,
-		Transport: &http.Transport{
-			DisableKeepAlives: true,
-			Dial: (&net.Dialer{
-				Timeout: 30 * time.Second,
-			}).Dial,
-			TLSHandshakeTimeout: 30 * time.Second,
-		},
+		Timeout:   time.Second * 30,
+		Transport: newHTTPTransport(),
 	}
 	dr.logger = newDefaultLogger()
 	dr.tags = []string{"transport:http", "sdkversion:go-" + Version}
@@ -130,9 +148,11 @@ func (dd *DatadogReporter) WithLogger(logger Logger) *DatadogReporter {
 
 // DatadogReporter reports metrics to DataDog.
 type DatadogReporter struct {
-	Client *datadog.Client
-	logger Logger
-	tags   []string
+	Client  *datadog.Client
+	logger  Logger
+	metrics []datadog.Metric
+	tags    []string
+	*sync.Mutex
 }
 
 // AddTags adds tags to be added to each metric reported.
@@ -140,8 +160,37 @@ func (dd *DatadogReporter) AddTags(tags ...string) {
 	dd.tags = append(dd.tags, tags...)
 }
 
+// Flush flushes reported metrics.
+func (dd *DatadogReporter) Flush() error {
+	metrics := dd.metrics // we need a copy since we can do many retries
+	err := retry.Do(
+		func() error {
+			return dd.Client.PostMetrics(metrics)
+		},
+		retry.OnRetry(func(iteration uint, err error) {
+			dd.logger.Errorf("Reporting metrics failed for the %d time: %s", iteration, err)
+		}),
+		retry.RetryIf(func(err error) bool {
+			if err == io.EOF {
+				dd.Client.HttpClient.Transport = newHTTPTransport()
+				return true
+			}
+			return false
+		}),
+	)
+
+	dd.Lock()
+	dd.metrics = []datadog.Metric{}
+	dd.Unlock()
+
+	if err != nil {
+		return fmt.Errorf("submission metrics to DataDog failed for the last time, metrics are gone: %s", err)
+	}
+	return nil
+}
+
 // Report sends provided metric to Datadog.
-func (dd DatadogReporter) Report(metricName string, value interface{}, tags []string, ts time.Time) {
+func (dd *DatadogReporter) Report(metricName string, value interface{}, tags []string, ts time.Time) {
 	metricType := "gauge"
 	metricValue, err := func() (float64, error) {
 		switch v := value.(type) {
@@ -167,15 +216,15 @@ func (dd DatadogReporter) Report(metricName string, value interface{}, tags []st
 		Tags:   allTags,
 		Points: []datadog.DataPoint{{&metricTimestamp, &metricValue}},
 	}
-
-	if err := dd.Client.PostMetrics([]datadog.Metric{metric}); err != nil {
-		dd.logger.Errorf("Reporting metrics failed: %s", err)
-	}
+	dd.Lock()
+	dd.metrics = append(dd.metrics, metric)
+	dd.Unlock()
 }
 
-func resetMetrics() {
-	for name := range metricsRegistry.GetAll() {
-		metric := metricsRegistry.Get(name)
+func (c *client) resetMetrics() {
+	ms := c.metricsRegistry.GetAll()
+	for name := range ms {
+		metric := c.metricsRegistry.Get(name)
 		switch m := metric.(type) {
 		case metrics.Counter:
 			m.Clear()
@@ -187,8 +236,10 @@ func resetMetrics() {
 	}
 }
 
+type countersFunc func(tags ...string) metrics.Counter
+
 // newCounters returns factory for tagged counters.
-func newCounters(name string) func(tags ...string) metrics.Counter {
+func (c *client) newCounters(name string) countersFunc {
 	counters := make(map[string]metrics.Counter)
 	mu := &sync.Mutex{}
 
@@ -200,7 +251,7 @@ func newCounters(name string) func(tags ...string) metrics.Counter {
 
 		counter, ok := counters[fullName]
 		if !ok {
-			counter = metricsRegistry.GetOrRegister(
+			counter = c.metricsRegistry.GetOrRegister(
 				fullName,
 				metrics.NewCounter(),
 			).(metrics.Counter)
@@ -211,28 +262,31 @@ func newCounters(name string) func(tags ...string) metrics.Counter {
 }
 
 func (c *client) loopMetrics() {
-	var reporter = c.Config.Reporter
-	if reporter == nil {
-		panic("configured reporter is nil")
+	var reporters = c.Config.Reporters
+	if len(reporters) == 0 {
+		c.Logger.Logf("No reporters are configured, metrics won't be reported")
 	}
 
 	ep := strings.Split(c.Config.Endpoint, "/")
-	reporter.AddTags(
-		"key:"+fmt.Sprintf("%.6s", c.key),
-		"endpoint:"+fmt.Sprintf("%.9s", ep[len(ep)-1]),
-	)
-
-	if ctx := c.Config.DefaultContext; ctx != nil {
-		if app := ctx.App.Name; app != "" {
-			reporter.AddTags("app:" + app)
-		}
-		if version := ctx.App.Version; version != "" {
-			reporter.AddTags("appversion:" + version)
+	enrichReporter := func(reporter Reporter) {
+		reporter.AddTags(
+			"key:"+fmt.Sprintf("%.6s", c.key),
+			"endpoint:"+fmt.Sprintf("%.9s", ep[len(ep)-1]),
+		)
+		if ctx := c.Config.DefaultContext; ctx != nil {
+			if app := ctx.App.Name; app != "" {
+				reporter.AddTags("app:" + app)
+			}
+			if version := ctx.App.Version; version != "" {
+				reporter.AddTags("appversion:" + version)
+			}
 		}
 	}
-
+	for _, reporter := range reporters {
+		enrichReporter(reporter)
+	}
 	for range time.Tick(60 * time.Second) {
-		reportAll("evas.events", reporter)
-		resetMetrics()
+		c.reportAll("evas.events", reporters)
+		c.resetMetrics()
 	}
 }

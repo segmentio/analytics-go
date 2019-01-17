@@ -1,6 +1,6 @@
 package analytics
 
-// This type represents object sent in a page call as described in
+// Page represents object sent in a page call as described in
 // https://segment.com/docs/libraries/http/#page
 type Page struct {
 	// This field is exported for serialization purposes and shouldn't be set by

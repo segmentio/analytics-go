@@ -1,6 +1,4 @@
-ifndef CIRCLE_ARTIFACTS
-CIRCLE_ARTIFACTS=tmp
-endif
+ARTIFACTS_DIR ?= tmp
 
 get:
 	@go get -v -t ./...
@@ -12,10 +10,12 @@ build:
 	@go build ./...
 
 test:
-	@mkdir -p ${CIRCLE_ARTIFACTS}
-	@go test -race -coverprofile=${CIRCLE_ARTIFACTS}/cover.out .
-	@go tool cover -func ${CIRCLE_ARTIFACTS}/cover.out -o ${CIRCLE_ARTIFACTS}/cover.txt
-	@go tool cover -html ${CIRCLE_ARTIFACTS}/cover.out -o ${CIRCLE_ARTIFACTS}/cover.html
+	@mkdir -p $(ARTIFACTS_DIR)
+	@go test -race -coverprofile=$(ARTIFACTS_DIR)/cover.out .
+	@go tool cover -func $(ARTIFACTS_DIR)/cover.out -o $(ARTIFACTS_DIR)/cover.txt
+	@go tool cover -html $(ARTIFACTS_DIR)/cover.out -o $(ARTIFACTS_DIR)/cover.html
+
+RUN_E2E_TESTS ?= false
 
 ci: get vet test
 	@if [ "$(RUN_E2E_TESTS)" != "true" ]; then \
