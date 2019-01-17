@@ -1,6 +1,6 @@
 package analytics
 
-// This type is used to represent properties in messages that support it.
+// Properties represent properties in messages that support it.
 // It is a free-form object so the application can set any value it sees fit but
 // a few helper method are defined to make it easier to instantiate properties with
 // common fields.
@@ -15,6 +15,7 @@ package analytics
 //
 type Properties map[string]interface{}
 
+// NewProperties creates new Properties map.
 func NewProperties() Properties {
 	return make(Properties, 10)
 }
@@ -108,7 +109,7 @@ func (p Properties) Set(name string, value interface{}) Properties {
 	return p
 }
 
-// This type represents products in the E-commerce API.
+// Product represents products in the E-commerce API.
 type Product struct {
 	ID    string  `json:"id,omitempty"`
 	SKU   string  `json:"sky,omitempty"`

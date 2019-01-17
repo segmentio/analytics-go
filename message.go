@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Values implementing this interface are used by analytics clients to notify
+// Callback interface is used by analytics clients to notify
 // the application when a message send succeeded or failed.
 //
 // Callback methods are called by a client's internal goroutines, there are no
@@ -26,7 +26,7 @@ type Callback interface {
 	Failure(Message, error)
 }
 
-// This interface is used to represent analytics objects that can be sent via
+// Message interface is used to represent analytics objects that can be sent via
 // a client.
 //
 // Types like analytics.Track, analytics.Page, etc... implement this interface

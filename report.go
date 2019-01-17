@@ -40,6 +40,9 @@ func splitTags(name string) (string, []string) {
 }
 
 func (c *client) reportAll(prefix string, reporters []Reporter) {
+	if len(reporters) == 0 {
+		return
+	}
 	ts := time.Now()
 	metrics := c.metricsRegistry.GetAll()
 	go func() {
@@ -260,8 +263,8 @@ func (c *client) newCounters(name string) countersFunc {
 
 func (c *client) loopMetrics() {
 	var reporters = c.Config.Reporters
-	if reporters == nil {
-		panic("configured reporter is nil")
+	if len(reporters) == 0 {
+		c.Logger.Logf("No reporters are configured, metrics won't be reported")
 	}
 
 	ep := strings.Split(c.Config.Endpoint, "/")
