@@ -115,14 +115,6 @@ func (c *Config) validate() error {
 		}
 	}
 
-	if c.Reporters == nil {
-		return ConfigError{
-			Reason: "reporters are not provided",
-			Field:  "Reporters",
-			Value:  nil,
-		}
-	}
-
 	return nil
 }
 

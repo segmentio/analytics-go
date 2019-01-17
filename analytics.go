@@ -14,7 +14,7 @@ import (
 )
 
 // Version of the client.
-const Version = "3.3.0"
+const Version = "3.4.0"
 
 // Client is the main API exposed by the analytics package.
 // Values that satsify this interface are returned by the client constructors
@@ -81,8 +81,12 @@ func (c discardClient) Enqueue(Message) error { return nil }
 // argument to send messages to the backend. The client is created with the
 // default (empty) configuration.
 func New(writeKey string) Client {
-	// Here we can ignore the error because the default config is always valid.
-	c, _ := NewWithConfig(writeKey, Config{})
+	c, err := NewWithConfig(writeKey, Config{})
+	if err != nil {
+		// Default config should be always valid hence if error there's a bug in API
+		// and better to stop.
+		panic(err)
+	}
 	return c
 }
 
