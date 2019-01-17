@@ -18,7 +18,7 @@ If you use [dep](https://github.com/golang/dep) then add these lines to your `Go
 
     [[constraint]]
       name = "github.com/FindHotel/analytics-go"
-      version = "3.1.0"
+      version = "3.4.0"  # get the latest version from Releases
 
 ## Documentation
 
@@ -26,7 +26,7 @@ The links bellow should provide all the documentation needed to make the best
 use of the library and the Segment API:
 
 - [Documentation](https://segment.com/docs/libraries/go/)
-- [godoc](https://godoc.org/github.com/segmentio/analytics-go)
+- [godoc](https://godoc.org/github.com/FindHotel/analytics-go)
 - [API](https://segment.com/docs/libraries/http/)
 - [Specs](https://segment.com/docs/spec/)
 
