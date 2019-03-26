@@ -82,6 +82,11 @@ func (m *serializedMessage) Msg() Message {
 	return m.msg
 }
 
+func (m *serializedMessage) size() int {
+	// The `+ 1` is for the comma that sits between each items of a JSON array.
+	return len(m.json) + 1
+}
+
 type message interface {
 	MarshalJSON() ([]byte, error)
 	Msg() Message
@@ -99,11 +104,6 @@ func makeMessage(m Message, maxBytes int) (message, error) {
 	}
 	result.json = b
 	return result, nil
-}
-
-func (m *serializedMessage) size() int {
-	// The `+ 1` is for the comma that sits between each items of a JSON array.
-	return len(m.json) + 1
 }
 
 type messageQueue struct {
