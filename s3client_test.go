@@ -31,7 +31,7 @@ func TestTargetMessageMarshalling(t *testing.T) {
 	}
 }
 
-func TestS3Client(t *testing.T) {
+func ManualTestS3Client(t *testing.T) {
 	c, err := NewS3ClientWithConfig(
 		S3ClientConfig{
 			Stream: "tuna",

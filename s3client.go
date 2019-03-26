@@ -30,6 +30,8 @@ type S3ClientConfig struct {
 	Stream string
 
 	KeyConstructor func(now func() Time, uid func() string) string
+
+	S3UploaderOptions []func(*s3manager.Uploader)
 }
 
 // NewS3ClientWithConfig creates S3 client from provided configuration.
@@ -46,7 +48,7 @@ func NewS3ClientWithConfig(s3cfg S3ClientConfig, cfg Config) (Client, error) {
 	}
 
 	sess := session.Must(session.NewSession())
-	uploader := s3manager.NewUploader(sess)
+	uploader := s3manager.NewUploader(sess, s3Config.S3UploaderOptions...)
 
 	c := &s3Client{
 		client: client,
