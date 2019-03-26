@@ -28,6 +28,8 @@ type S3ClientConfig struct {
 	// Stream is a name of the stream where messages will be delivered. Examples:
 	// tuna, salmon, haring, etc. Each system receives its own stream.
 	Stream string
+
+	KeyConstructor func(now func() Time, uid func() string) string
 }
 
 // NewS3ClientWithConfig creates S3 client from provided configuration.
@@ -50,9 +52,7 @@ func NewS3ClientWithConfig(s3cfg S3ClientConfig, cfg Config) (Client, error) {
 		client: client,
 		config: s3Config,
 		apiContext: &apiContext{
-			Identity: &identity{
-				APIKey: "",
-			},
+			APIID: uid(),
 			Stage: s3Config.Stage,
 		},
 		uploader: uploader,
@@ -125,22 +125,11 @@ func (c *s3Client) push(q *messageQueue, m Message, wg *sync.WaitGroup, ex *exec
 	}
 }
 
-type identity struct {
-	APIKey    string `json:"apiKey,omitempty"`
-	Country   string `json:"country,omitempty"`
-	IsDesktop *bool  `json:"isDesktop,omitempty"`
-	IsMobile  *bool  `json:"isMobile,omitempty"`
-	IsTablet  *bool  `json:"isTablet,omitempty"`
-}
 type apiContext struct {
-	APIID        string    `json:"apiId,omitempty"`
-	HTTPMethod   string    `json:"httpMethod,omitempty"`
-	Identity     *identity `json:"identity,omitempty"`
-	RequestID    string    `json:"requestId,omitempty"`
-	ResourceID   string    `json:"resourceId,omitempty"`
-	ResourceMeta string    `json:"resourceMeta,omitempty"`
-	ResourcePath string    `json:"resourcePath,omitempty"`
-	Stage        string    `json:"stage,omitempty"`
+	APIID        string `json:"apiId,omitempty"`
+	RequestID    string `json:"requestId,omitempty"`
+	ResourcePath string `json:"resourcePath,omitempty"`
+	Stage        string `json:"stage,omitempty"`
 }
 
 // targetMessage is a single non-batched message delivered to s3 in one row of json.
@@ -270,17 +259,17 @@ func (c *s3Client) send(msgs []message) {
 	}
 
 	c.errorf("%d messages dropped because they failed to be sent after %d attempts", len(msgs), attempts)
-	c.notifyFailure(msgs, err)
+	c.notifyFailure(marshalledMessages, err)
 }
 
 // Upload batch to S3.
 func (c *s3Client) upload(r io.Reader) error {
-	key := "analytics/PAVEL/bulk/tuna/json/2019/03/25/20/test.json.gz"
-	c.debugf("uploading to s3 to key %s", key)
+	key := c.config.KeyConstructor(c.now, uid)
+	c.debugf("uploading to s3://%s/%s", c.config.Bucket, key)
 
 	input := &s3manager.UploadInput{
 		Body:   r,
-		Bucket: stringPtr("fh-analytics-pavel"),
+		Bucket: &(c.config.Bucket),
 		Key:    &key,
 	}
 	_, err := c.uploader.Upload(input)

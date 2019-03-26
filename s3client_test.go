@@ -33,8 +33,10 @@ func TestTargetMessageMarshalling(t *testing.T) {
 
 func TestS3Client(t *testing.T) {
 	c, err := NewS3ClientWithConfig(
-		"qwer",
-		S3ClientConfig{},
+		S3ClientConfig{
+			Stream: "tuna",
+			Stage:  "pavel",
+		},
 		Config{
 			Verbose: true,
 		},
