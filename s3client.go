@@ -6,11 +6,15 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 type s3Client struct {
 	*client
 	apiContext *apiContext
+	uploader   *s3manager.Uploader
 }
 
 // S3ClientConfig provides configuration for S3 Client.
@@ -25,6 +29,9 @@ func NewS3ClientWithConfig(writeKey string, config S3ClientConfig) (Client, erro
 		return nil, err
 	}
 
+	sess := session.Must(session.NewSession())
+	uploader := s3manager.NewUploader(sess)
+
 	c := &s3Client{
 		client: client,
 		apiContext: &apiContext{
@@ -32,6 +39,7 @@ func NewS3ClientWithConfig(writeKey string, config S3ClientConfig) (Client, erro
 				APIKey: writeKey,
 			},
 		},
+		uploader: uploader,
 	}
 
 	go c.loop()        // custom implementation
