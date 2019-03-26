@@ -6,13 +6,13 @@ import (
 )
 
 func TestMessageIdDefault(t *testing.T) {
-	if id := makeMessageId("", "42"); id != "42" {
+	if id := makeMessageID("", "42"); id != "42" {
 		t.Error("invalid default message id:", id)
 	}
 }
 
 func TestMessageIdNonDefault(t *testing.T) {
-	if id := makeMessageId("A", "42"); id != "A" {
+	if id := makeMessageID("A", "42"); id != "A" {
 		t.Error("invalid non-default message id:", id)
 	}
 }
@@ -55,7 +55,7 @@ func TestMessageQueuePushMaxBatchBytes(t *testing.T) {
 
 	q := messageQueue{
 		maxBatchSize:  100,
-		maxBatchBytes: len(m0.json) + 1,
+		maxBatchBytes: m0.size(),
 	}
 
 	if msgs := q.push(m0); msgs != nil {
@@ -76,12 +76,11 @@ func TestMakeMessage(t *testing.T) {
 
 	if msg, err := makeMessage(track, maxMessageBytes); err != nil {
 		t.Error("failed to make message from track message:", err)
-
-	} else if !reflect.DeepEqual(msg, message{
+	} else if !reflect.DeepEqual(msg.(*serializedMessage), &serializedMessage{
 		msg:  track,
 		json: []byte(`{"userId":"1","event":"","timestamp":0}`),
 	}) {
-		t.Error("invalid message generated from track message:", msg.msg, string(msg.json))
+		t.Error("invalid message generated from track message:", msg.Msg())
 	}
 }
 

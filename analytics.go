@@ -96,6 +96,17 @@ func New(writeKey string) Client {
 // values (like a negative flush interval for example). When the function
 // returns an error the returned client will always be nil.
 func NewWithConfig(writeKey string, config Config) (Client, error) {
+	c, err := newWithConfig(writeKey, config)
+	if err != nil {
+		return nil, err
+	}
+	go c.loop()
+	go c.loopMetrics()
+
+	return c, nil
+}
+
+func newWithConfig(writeKey string, config Config) (*client, error) {
 	if err := config.validate(); err != nil {
 		return nil, err
 	}
@@ -109,12 +120,10 @@ func NewWithConfig(writeKey string, config Config) (Client, error) {
 		http:            makeHTTPClient(config.Transport),
 		metricsRegistry: metrics.NewRegistry(),
 	}
+
 	c.successCounters = c.newCounters("submitted.success")
 	c.failureCounters = c.newCounters("submitted.failure")
 	c.droppedCounters = c.newCounters("dropped")
-
-	go c.loop()
-	go c.loopMetrics()
 
 	return c, nil
 }
@@ -141,37 +150,37 @@ func (c *client) Enqueue(msg Message) (err error) {
 	switch m := msg.(type) {
 	case Alias:
 		m.Type = "alias"
-		m.MessageId = makeMessageId(m.MessageId, id)
+		m.MessageId = makeMessageID(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
 
 	case Group:
 		m.Type = "group"
-		m.MessageId = makeMessageId(m.MessageId, id)
+		m.MessageId = makeMessageID(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
 
 	case Identify:
 		m.Type = "identify"
-		m.MessageId = makeMessageId(m.MessageId, id)
+		m.MessageId = makeMessageID(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
 
 	case Page:
 		m.Type = "page"
-		m.MessageId = makeMessageId(m.MessageId, id)
+		m.MessageId = makeMessageID(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
 
 	case Screen:
 		m.Type = "screen"
-		m.MessageId = makeMessageId(m.MessageId, id)
+		m.MessageId = makeMessageID(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
 
 	case Track:
 		m.Type = "track"
-		m.MessageId = makeMessageId(m.MessageId, id)
+		m.MessageId = makeMessageID(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
 	}
@@ -232,7 +241,7 @@ func (c *client) send(msgs []message) {
 	const attempts = 10
 
 	b, err := json.Marshal(batch{
-		MessageId: c.uid(),
+		MessageID: c.uid(),
 		SentAt:    c.now(),
 		Messages:  msgs,
 		Context:   c.DefaultContext,
@@ -357,7 +366,7 @@ func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup, ex *execut
 
 	if msg, err = makeMessage(m, maxMessageBytes); err != nil {
 		c.errorf("%s - %v", err, m)
-		c.notifyFailure([]message{{m, nil}}, err)
+		c.notifyFailure([]message{msg}, err)
 		return
 	}
 
@@ -392,7 +401,7 @@ func (c *client) errorf(format string, args ...interface{}) {
 
 func (c *client) maxBatchBytes() int {
 	b, _ := json.Marshal(batch{
-		MessageId: c.uid(),
+		MessageID: c.uid(),
 		SentAt:    c.now(),
 		Context:   c.DefaultContext,
 	})
@@ -401,22 +410,22 @@ func (c *client) maxBatchBytes() int {
 
 func (c *client) notifySuccess(msgs []message) {
 	for _, m := range msgs {
-		c.successCounters(m.msg.tags()...).Inc(1)
+		c.successCounters(m.Msg().tags()...).Inc(1)
 	}
 	if c.Callback != nil {
 		for _, m := range msgs {
-			c.Callback.Success(m.msg)
+			c.Callback.Success(m.Msg())
 		}
 	}
 }
 
 func (c *client) notifyFailure(msgs []message, err error) {
 	for _, m := range msgs {
-		c.failureCounters(m.msg.tags()...).Inc(1)
+		c.failureCounters(m.Msg().tags()...).Inc(1)
 	}
 	if c.Callback != nil {
 		for _, m := range msgs {
-			c.Callback.Failure(m.msg, err)
+			c.Callback.Failure(m.Msg(), err)
 		}
 	}
 }
