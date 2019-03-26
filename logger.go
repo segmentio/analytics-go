@@ -5,8 +5,7 @@ import (
 	"os"
 )
 
-// Instances of types implementing this interface can be used to define where
-// the analytics client logs are written.
+// Logger can be used to define where the analytics client logs are written.
 type Logger interface {
 
 	// Analytics clients call this method to log regular messages about the
@@ -22,7 +21,7 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 }
 
-// This function instantiate an object that statisfies the analytics.Logger
+// StdLogger instantiate an object that statisfies the analytics.Logger
 // interface and send logs to standard logger passed as argument.
 func StdLogger(logger *log.Logger) Logger {
 	return stdLogger{
