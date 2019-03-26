@@ -2,8 +2,10 @@ package analytics
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sync"
 	"time"
 
@@ -13,18 +15,30 @@ import (
 
 type s3Client struct {
 	*client
+	config     S3ClientConfig
 	apiContext *apiContext
 	uploader   *s3manager.Uploader
 }
 
 // S3ClientConfig provides configuration for S3 Client.
 type S3ClientConfig struct {
+	Bucket string
+	Stage  string
+
+	// Stream is a name of the stream where messages will be delivered. Examples:
+	// tuna, salmon, haring, etc. Each system receives its own stream.
+	Stream string
 }
 
 // NewS3ClientWithConfig creates S3 client from provided configuration.
 // Pass empty S3ClientConfig{} to use default config.
-func NewS3ClientWithConfig(writeKey string, config S3ClientConfig) (Client, error) {
-	client, err := newWithConfig(writeKey, Config{})
+func NewS3ClientWithConfig(s3cfg S3ClientConfig, cfg Config) (Client, error) {
+	client, err := newWithConfig("", cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	s3Config, err := makeS3ClientConfig(s3cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -34,10 +48,12 @@ func NewS3ClientWithConfig(writeKey string, config S3ClientConfig) (Client, erro
 
 	c := &s3Client{
 		client: client,
+		config: s3Config,
 		apiContext: &apiContext{
-			Identity: identity{
-				APIKey: writeKey,
+			Identity: &identity{
+				APIKey: "",
 			},
+			Stage: s3Config.Stage,
 		},
 		uploader: uploader,
 	}
@@ -58,7 +74,7 @@ func (c *s3Client) loop() {
 	tick := time.NewTicker(c.Interval)
 	defer tick.Stop()
 
-	ex := newExecutor(1)
+	ex := newExecutor(c.maxConcurrentRequests)
 	defer ex.close()
 
 	mq := messageQueue{
@@ -117,14 +133,14 @@ type identity struct {
 	IsTablet  *bool  `json:"isTablet,omitempty"`
 }
 type apiContext struct {
-	APIID        string   `json:"apiId,omitempty"`
-	HTTPMethod   string   `json:"httpMethod,omitempty"`
-	Identity     identity `json:"identity,omitempty"`
-	RequestID    string   `json:"requestId,omitempty"`
-	ResourceID   string   `json:"resourceId,omitempty"`
-	ResourceMeta string   `json:"resourceMeta,omitempty"`
-	ResourcePath string   `json:"resourcePath,omitempty"`
-	Stage        string   `json:"stage,omitempty"`
+	APIID        string    `json:"apiId,omitempty"`
+	HTTPMethod   string    `json:"httpMethod,omitempty"`
+	Identity     *identity `json:"identity,omitempty"`
+	RequestID    string    `json:"requestId,omitempty"`
+	ResourceID   string    `json:"resourceId,omitempty"`
+	ResourceMeta string    `json:"resourceMeta,omitempty"`
+	ResourcePath string    `json:"resourcePath,omitempty"`
+	Stage        string    `json:"stage,omitempty"`
 }
 
 // targetMessage is a single non-batched message delivered to s3 in one row of json.
@@ -152,21 +168,22 @@ func (m *targetMessage) size() int {
 // makeTargetMessage constructs targetMessage instance.
 func makeTargetMessage(m Message, maxBytes int, apiContext *apiContext, now func() Time) (message, error) {
 	ts := now()
-	result := &targetMessage{
+	result := targetMessage{
 		APIContext: apiContext,
 		Event:      m,
 		SentAt:     ts,
 		ReceivedAt: ts,
 	}
-	b, err := json.Marshal(struct{ *targetMessage }{result})
+	type alias targetMessage
+	b, err := json.Marshal(alias(result))
 	if err != nil {
-		return result, err
+		return &result, err
 	}
 	if len(b) > maxBytes {
-		return result, ErrMessageTooBig
+		return &result, ErrMessageTooBig
 	}
 	result.json = b
-	return result, nil
+	return &result, nil
 }
 
 // Asychronously send a batched requests.
@@ -191,13 +208,21 @@ func (c *s3Client) sendAsync(msgs []message, wg *sync.WaitGroup, ex *executor) {
 	}
 }
 
+func (c *s3Client) flush(q *messageQueue, wg *sync.WaitGroup, ex *executor) {
+	if msgs := q.flush(); msgs != nil {
+		c.debugf("flushing %d messages", len(msgs))
+		c.sendAsync(msgs, wg, ex)
+	}
+}
+
 // Send batch request.
 func (c *s3Client) send(msgs []message) {
 	const attempts = 10
 	var err error
 
 	buf := &bytes.Buffer{}
-	encoder := json.NewEncoder(buf)
+	wr := gzip.NewWriter(buf)
+	encoder := json.NewEncoder(wr)
 
 	marshalledMessages := []message{}
 	failedMessages := []message{}
@@ -217,15 +242,18 @@ func (c *s3Client) send(msgs []message) {
 		c.notifyFailure(failedMessages, lastError)
 	}
 
+	if err = wr.Close(); err != nil {
+		c.errorf("flushing writer failed: %s", err)
+		return
+	}
+
 	if buf.Len() == 0 || len(marshalledMessages) == 0 {
 		c.errorf("empty buffer, send is not possible")
 		return
 	}
 
-	b := buf.Bytes()
-
 	for i := 0; i != attempts; i++ {
-		if err = c.upload(b); err == nil {
+		if err = c.upload(buf); err == nil {
 			c.notifySuccess(marshalledMessages)
 			return
 		}
@@ -246,6 +274,17 @@ func (c *s3Client) send(msgs []message) {
 }
 
 // Upload batch to S3.
-func (c *s3Client) upload(b []byte) error {
-	return fmt.Errorf("not implemented")
+func (c *s3Client) upload(r io.Reader) error {
+	key := "analytics/PAVEL/bulk/tuna/json/2019/03/25/20/test.json.gz"
+	c.debugf("uploading to s3 to key %s", key)
+
+	input := &s3manager.UploadInput{
+		Body:   r,
+		Bucket: stringPtr("fh-analytics-pavel"),
+		Key:    &key,
+	}
+	_, err := c.uploader.Upload(input)
+	return err
 }
+
+func stringPtr(s string) *string { return &s }
