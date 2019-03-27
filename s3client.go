@@ -20,8 +20,8 @@ type s3Client struct {
 	uploader   *s3manager.Uploader
 }
 
-// S3ClientConfig provides configuration for S3 Client.
-type S3ClientConfig struct {
+// S3 is a configuration for s3Client.
+type S3 struct {
 	Bucket string
 	Stage  string
 
@@ -31,31 +31,37 @@ type S3ClientConfig struct {
 
 	KeyConstructor func(now func() Time, uid func() string) string
 
-	S3UploaderOptions []func(*s3manager.Uploader)
+	UploaderOptions []func(*s3manager.Uploader)
+}
+
+// S3ClientConfig provides configuration for S3 Client.
+type S3ClientConfig struct {
+	Config
+	S3 S3
 }
 
 // NewS3ClientWithConfig creates S3 client from provided configuration.
 // Pass empty S3ClientConfig{} to use default config.
-func NewS3ClientWithConfig(s3cfg S3ClientConfig, cfg Config) (Client, error) {
-	client, err := newWithConfig("", cfg)
+func NewS3ClientWithConfig(config S3ClientConfig) (Client, error) {
+	cfg, err := makeS3ClientConfig(config)
 	if err != nil {
 		return nil, err
 	}
 
-	s3Config, err := makeS3ClientConfig(s3cfg)
+	client, err := newWithConfig("", cfg.Config)
 	if err != nil {
 		return nil, err
 	}
 
 	sess := session.Must(session.NewSession())
-	uploader := s3manager.NewUploader(sess, s3Config.S3UploaderOptions...)
+	uploader := s3manager.NewUploader(sess, cfg.S3.UploaderOptions...)
 
 	c := &s3Client{
 		client: client,
-		config: s3Config,
+		config: cfg,
 		apiContext: &apiContext{
 			APIID: uid(),
-			Stage: s3Config.Stage,
+			Stage: cfg.S3.Stage,
 		},
 		uploader: uploader,
 	}
@@ -266,12 +272,12 @@ func (c *s3Client) send(msgs []message) {
 
 // Upload batch to S3.
 func (c *s3Client) upload(r io.Reader) error {
-	key := c.config.KeyConstructor(c.now, uid)
-	c.debugf("uploading to s3://%s/%s", c.config.Bucket, key)
+	key := c.config.S3.KeyConstructor(c.now, uid)
+	c.debugf("uploading to s3://%s/%s", c.config.S3.Bucket, key)
 
 	input := &s3manager.UploadInput{
 		Body:   r,
-		Bucket: &(c.config.Bucket),
+		Bucket: &(c.config.S3.Bucket),
 		Key:    &key,
 	}
 	_, err := c.uploader.Upload(input)
