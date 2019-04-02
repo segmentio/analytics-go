@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const MB = 1024 * 1024 * 1024
+
 // Given a config object as argument the function will set all zero-values to
 // their defaults and return the modified object.
 func makeS3ClientConfig(c S3ClientConfig) (S3ClientConfig, error) {
@@ -15,6 +17,10 @@ func makeS3ClientConfig(c S3ClientConfig) (S3ClientConfig, error) {
 	}
 	if c.S3.Stage == "" {
 		c.S3.Stage = "dev"
+	}
+
+	if c.S3.MaxBatchBytes == 0 {
+		c.S3.MaxBatchBytes = 128 * MB
 	}
 
 	if c.S3.Bucket == "" {

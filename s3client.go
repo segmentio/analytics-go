@@ -29,6 +29,8 @@ type S3 struct {
 	// tuna, salmon, haring, etc. Each system receives its own stream.
 	Stream string
 
+	MaxBatchBytes int
+
 	KeyConstructor func(now func() Time, uid func() string) string
 
 	UploaderOptions []func(*s3manager.Uploader)
@@ -87,7 +89,7 @@ func (c *s3Client) loop() {
 
 	mq := messageQueue{
 		maxBatchSize:  c.BatchSize,
-		maxBatchBytes: c.maxBatchBytes(),
+		maxBatchBytes: c.config.S3.MaxBatchBytes,
 	}
 
 	for {
