@@ -22,8 +22,9 @@ type s3Client struct {
 
 // S3 is a configuration for s3Client.
 type S3 struct {
-	Bucket string
-	Stage  string
+	Bucket             string
+	Stage              string
+	FullControlGrantee *string
 
 	// Stream is a name of the stream where messages will be delivered. Examples:
 	// tuna, salmon, haring, etc. Each system receives its own stream.
@@ -278,9 +279,10 @@ func (c *s3Client) upload(r io.Reader) error {
 	c.debugf("uploading to s3://%s/%s", c.config.S3.Bucket, key)
 
 	input := &s3manager.UploadInput{
-		Body:   r,
-		Bucket: &(c.config.S3.Bucket),
-		Key:    &key,
+		Body:             r,
+		Bucket:           &(c.config.S3.Bucket),
+		GrantFullControl: c.config.S3.FullControlGrantee,
+		Key:              &key,
 	}
 	_, err := c.uploader.Upload(input)
 	return err
