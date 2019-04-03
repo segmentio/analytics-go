@@ -24,7 +24,8 @@ type s3Client struct {
 type S3 struct {
 	Bucket             string
 	Stage              string
-	FullControlGrantee *string
+	FullControlGrantee string
+	fullControlGrantee *string
 
 	// Stream is a name of the stream where messages will be delivered. Examples:
 	// tuna, salmon, haring, etc. Each system receives its own stream.
@@ -261,8 +262,12 @@ func (c *s3Client) send(msgs []message) {
 		// Wait for either a retry timeout or the client to be closed.
 		select {
 		case <-time.After(c.RetryAfter(i)):
+			err = fmt.Errorf("%d messages dropped because of error: %s", len(msgs), err)
+			c.errorf(err.Error())
+			c.notifyFailure(marshalledMessages, err)
+			return
 		case <-c.quit:
-			err = fmt.Errorf("%d messages dropped because they failed to be sent and the client was closed", len(msgs))
+			err = fmt.Errorf("%d messages dropped because they failed to be sent and the client was closed, upload error: %s", len(msgs), err)
 			c.errorf(err.Error())
 			c.notifyFailure(marshalledMessages, err)
 			return
@@ -281,7 +286,7 @@ func (c *s3Client) upload(r io.Reader) error {
 	input := &s3manager.UploadInput{
 		Body:             r,
 		Bucket:           &(c.config.S3.Bucket),
-		GrantFullControl: c.config.S3.FullControlGrantee,
+		GrantFullControl: c.config.S3.fullControlGrantee,
 		Key:              &key,
 	}
 	_, err := c.uploader.Upload(input)

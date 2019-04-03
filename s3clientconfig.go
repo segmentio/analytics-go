@@ -23,6 +23,11 @@ func makeS3ClientConfig(c S3ClientConfig) (S3ClientConfig, error) {
 		c.S3.MaxBatchBytes = 128 * MB
 	}
 
+	if c.S3.FullControlGrantee != "" {
+		grantee := fmt.Sprintf(`id="%s"`, c.S3.FullControlGrantee)
+		c.S3.fullControlGrantee = &grantee
+	}
+
 	if c.S3.Bucket == "" {
 		c.S3.Bucket = "fh-analytics-" + c.S3.Stage
 	}

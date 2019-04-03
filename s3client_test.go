@@ -32,14 +32,16 @@ func TestTargetMessageMarshalling(t *testing.T) {
 }
 
 func ManualTestS3Client(t *testing.T) {
+	bucketOwner := "11f16854eb99ae7c1626f833db7678228569cf9877fd7b183efb6ecef693d85d"
 	c, err := NewS3ClientWithConfig(
 		S3ClientConfig{
 			Config: Config{
 				Verbose: true,
 			},
 			S3: S3{
-				Stream: "tuna",
-				Stage:  "pavel",
+				Stream:             "tuna",
+				Stage:              "pavel",
+				FullControlGrantee: bucketOwner,
 			},
 		},
 	)
