@@ -104,7 +104,45 @@ func makeHttpClient(transport http.RoundTripper) http.Client {
 	return httpClient
 }
 
+func dereferenceMessage(msg Message) Message {
+	switch m := msg.(type) {
+	case *Alias:
+		if m == nil {
+			return nil
+		}
+		return *m
+	case *Group:
+		if m == nil {
+			return nil
+		}
+		return *m
+	case *Identify:
+		if m == nil {
+			return nil
+		}
+		return *m
+	case *Page:
+		if m == nil {
+			return nil
+		}
+		return *m
+	case *Screen:
+		if m == nil {
+			return nil
+		}
+		return *m
+	case *Track:
+		if m == nil {
+			return nil
+		}
+		return *m
+	}
+
+	return msg
+}
+
 func (c *client) Enqueue(msg Message) (err error) {
+	msg = dereferenceMessage(msg)
 	if err = msg.validate(); err != nil {
 		return
 	}

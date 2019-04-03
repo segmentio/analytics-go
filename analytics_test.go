@@ -263,6 +263,43 @@ func TestEnqueue(t *testing.T) {
 				},
 			},
 		},
+		"*alias": {
+			fixture("test-enqueue-alias.json"),
+			&Alias{PreviousId: "A", UserId: "B"},
+		},
+
+		"*group": {
+			fixture("test-enqueue-group.json"),
+			&Group{GroupId: "A", UserId: "B"},
+		},
+
+		"*identify": {
+			fixture("test-enqueue-identify.json"),
+			&Identify{UserId: "B"},
+		},
+
+		"*page": {
+			fixture("test-enqueue-page.json"),
+			&Page{Name: "A", UserId: "B"},
+		},
+
+		"*screen": {
+			fixture("test-enqueue-screen.json"),
+			&Screen{Name: "A", UserId: "B"},
+		},
+
+		"*track": {
+			fixture("test-enqueue-track.json"),
+			&Track{
+				Event:  "Download",
+				UserId: "123456",
+				Properties: Properties{
+					"application": "Segment Desktop",
+					"version":     "1.1.0",
+					"platform":    "osx",
+				},
+			},
+		},
 	}
 
 	body, server := mockServer()
