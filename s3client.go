@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
@@ -22,13 +23,11 @@ type s3Client struct {
 
 // S3 is a configuration for s3Client.
 type S3 struct {
-	Bucket             string
-	Stage              string
-	FullControlGrantee string
-	fullControlGrantee *string
+	Bucket string
+	Stage  string
 
-	// Stream is a name of the stream where messages will be delivered. Examples:
-	// tuna, salmon, haring, etc. Each system receives its own stream.
+	// Stream is an arbitrary name of the stream where messages will be delivered.
+	// Examples: tuna, salmon, haring, etc. Each system receives its own stream.
 	Stream string
 
 	MaxBatchBytes int
@@ -284,10 +283,10 @@ func (c *s3Client) upload(r io.Reader) error {
 	c.debugf("uploading to s3://%s/%s", c.config.S3.Bucket, key)
 
 	input := &s3manager.UploadInput{
-		Body:             r,
-		Bucket:           &(c.config.S3.Bucket),
-		GrantFullControl: c.config.S3.fullControlGrantee,
-		Key:              &key,
+		Body:   r,
+		Bucket: aws.String(c.config.S3.Bucket),
+		ACL:    aws.String("public-read"),
+		Key:    aws.String(key),
 	}
 	_, err := c.uploader.Upload(input)
 	return err
