@@ -186,6 +186,10 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
+
+	default:
+		err = fmt.Errorf("messages with custom types cannot be enqueued: %T", msg)
+		return
 	}
 
 	defer func() {
