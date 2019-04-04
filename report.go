@@ -126,7 +126,7 @@ func newHTTPTransport() *http.Transport {
 
 // NewDatadogReporter is a factory method to create Datadog reporter
 // with sane defaults.
-func NewDatadogReporter(apiKey, appKey string) *DatadogReporter {
+func NewDatadogReporter(apiKey, appKey string, tags ...string) *DatadogReporter {
 	dr := DatadogReporter{
 		Client: datadog.NewClient(apiKey, appKey),
 		Mutex:  &sync.Mutex{},
@@ -136,7 +136,7 @@ func NewDatadogReporter(apiKey, appKey string) *DatadogReporter {
 		Transport: newHTTPTransport(),
 	}
 	dr.logger = newDefaultLogger()
-	dr.tags = []string{"transport:http", "sdkversion:go-" + Version}
+	dr.tags = append(tags, "transport:http", "sdkversion:go-"+Version)
 	return &dr
 }
 

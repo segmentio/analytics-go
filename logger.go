@@ -44,3 +44,12 @@ func (l stdLogger) Errorf(format string, args ...interface{}) {
 func newDefaultLogger() Logger {
 	return StdLogger(log.New(os.Stderr, "segment ", log.LstdFlags))
 }
+
+// DiscardLogger discards all log messages supplied to it.
+type DiscardLogger struct{}
+
+// Logf does nothing for DiscardLogger.
+func (l DiscardLogger) Logf(format string, args ...interface{}) {}
+
+// Errorf does nothing for DiscardLogger.
+func (l DiscardLogger) Errorf(format string, args ...interface{}) {}
