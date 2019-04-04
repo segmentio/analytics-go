@@ -327,6 +327,22 @@ func TestEnqueue(t *testing.T) {
 	}
 }
 
+type customMessage struct {
+}
+
+func (c *customMessage) validate() error {
+	return nil
+}
+
+func TestEnqueuingCustomTypeFails(t *testing.T) {
+	client := New("0123456789")
+	err := client.Enqueue(&customMessage{})
+
+	if err.Error() != "messages with custom types cannot be enqueued: *analytics.customMessage" {
+		t.Errorf("invalid/missing error when queuing unsupported message: %v", err)
+	}
+}
+
 func TestTrackWithInterval(t *testing.T) {
 	const interval = 100 * time.Millisecond
 	var ref = fixture("test-interval-track.json")
