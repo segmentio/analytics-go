@@ -25,3 +25,7 @@
 [[constraint]]
   name = "github.com/avast/retry-go"
   version = "2.1.0"
+
+[[constraint]]
+  name = "github.com/aws/aws-sdk-go"
+  version = "1.19.1"

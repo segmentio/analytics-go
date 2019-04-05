@@ -43,7 +43,7 @@ type Message interface {
 
 // Takes a message id as first argument and returns it, unless it's the zero-
 // value, in that case the default id passed as second argument is returned.
-func makeMessageId(id string, def string) string {
+func makeMessageID(id string, def string) string {
 	if len(id) == 0 {
 		return def
 	}
@@ -63,35 +63,47 @@ func makeTimestamp(t Time, def Time) Time {
 // export this type because it's only meant to be used internally to send groups
 // of messages in one API call.
 type batch struct {
-	MessageId string    `json:"messageId"`
+	MessageID string    `json:"messageId"`
 	SentAt    Time      `json:"sentAt"`
 	Messages  []message `json:"batch"`
 	Context   *Context  `json:"context"`
 }
 
-type message struct {
+type serializedMessage struct {
 	msg  Message
 	json []byte
 }
 
-func makeMessage(m Message, maxBytes int) (msg message, err error) {
-	if msg.json, err = json.Marshal(m); err == nil {
-		if len(msg.json) > maxBytes {
-			err = ErrMessageTooBig
-		} else {
-			msg.msg = m
-		}
-	}
-	return
-}
-
-func (m message) MarshalJSON() ([]byte, error) {
+func (m *serializedMessage) MarshalJSON() ([]byte, error) {
 	return m.json, nil
 }
 
-func (m message) size() int {
+func (m *serializedMessage) Msg() Message {
+	return m.msg
+}
+
+func (m *serializedMessage) size() int {
 	// The `+ 1` is for the comma that sits between each items of a JSON array.
 	return len(m.json) + 1
+}
+
+type message interface {
+	MarshalJSON() ([]byte, error)
+	Msg() Message
+	size() int
+}
+
+func makeMessage(m Message, maxBytes int) (message, error) {
+	result := &serializedMessage{msg: m}
+	b, err := json.Marshal(m)
+	if err != nil {
+		return result, err
+	}
+	if len(b) > maxBytes {
+		return result, ErrMessageTooBig
+	}
+	result.json = b
+	return result, nil
 }
 
 type messageQueue struct {
@@ -111,7 +123,7 @@ func (q *messageQueue) push(m message) (b []message) {
 	}
 
 	q.pending = append(q.pending, m)
-	q.bytes += len(m.json)
+	q.bytes += m.size()
 
 	if b == nil && len(q.pending) == q.maxBatchSize {
 		b = q.flush()
