@@ -14,6 +14,11 @@
 			"Rev": "204274ad699c0983a70203a566887f17a717fef4"
 		},
 		{
+			"ImportPath": "github.com/tj/docopt",
+			"Comment": "v1.0.0",
+			"Rev": "c8470e45692f168e8b380c5d625327e756d7d0a9"
+		},
+		{
 			"ImportPath": "github.com/xtgo/uuid",
 			"Rev": "a0b114877d4caeffbd7f87e3757c17fce570fea7"
 		}
