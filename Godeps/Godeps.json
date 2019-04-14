@@ -7,7 +7,7 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/jehiah/go-strftime",
-			"Rev": "834e15c05a45371503440cc195bbd05c9a0968d9"
+			"Rev": "1d33003b386959af197ba96475f198c114627b5e"
 		},
 		{
 			"ImportPath": "github.com/segmentio/backo-go",
