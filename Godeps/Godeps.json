@@ -10,6 +10,10 @@
 			"Rev": "834e15c05a45371503440cc195bbd05c9a0968d9"
 		},
 		{
+			"ImportPath": "github.com/segmentio/backo-go",
+			"Rev": "204274ad699c0983a70203a566887f17a717fef4"
+		},
+		{
 			"ImportPath": "github.com/xtgo/uuid",
 			"Rev": "a0b114877d4caeffbd7f87e3757c17fce570fea7"
 		}
