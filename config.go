@@ -90,7 +90,7 @@ const DefaultInterval = 5 * time.Second
 
 // This constant sets the default batch size used by client instances if none
 // was explicitly set.
-const DefaultBatchSize = 250
+const DefaultBatchSize = 20
 
 // Verifies that fields that don't have zero-values are set to valid values,
 // returns an error describing the problem if a field was invalid.
