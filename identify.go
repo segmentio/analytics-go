@@ -21,6 +21,7 @@ type Identify struct {
 }
 
 func (msg Identify) internal() {
+	panic(unimplementedError)
 }
 
 func (msg Identify) Validate() error {

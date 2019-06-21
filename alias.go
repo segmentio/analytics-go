@@ -20,6 +20,7 @@ type Alias struct {
 }
 
 func (msg Alias) internal() {
+	panic(unimplementedError)
 }
 
 func (msg Alias) Validate() error {

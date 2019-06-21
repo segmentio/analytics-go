@@ -22,6 +22,7 @@ type Screen struct {
 }
 
 func (msg Screen) internal() {
+	panic(unimplementedError)
 }
 
 func (msg Screen) Validate() error {

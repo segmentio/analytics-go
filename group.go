@@ -22,6 +22,7 @@ type Group struct {
 }
 
 func (msg Group) internal() {
+	panic(unimplementedError)
 }
 
 func (msg Group) Validate() error {

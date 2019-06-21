@@ -22,7 +22,7 @@ type Track struct {
 }
 
 func (msg Track) internal() {
-	panic("implement me")
+	panic(unimplementedError)
 }
 
 func (msg Track) Validate() error {

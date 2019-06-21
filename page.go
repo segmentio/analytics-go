@@ -22,6 +22,7 @@ type Page struct {
 }
 
 func (msg Page) internal() {
+	panic(unimplementedError)
 }
 
 func (msg Page) Validate() error {
