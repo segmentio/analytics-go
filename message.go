@@ -37,7 +37,7 @@ type Message interface {
 	// nil if the message is valid, or an error describing what went wrong.
 	Validate() error
 
-	// internal is an unexposed interface function to ensure only Message types defined within this package are usable.
+	// internal is an unexposed interface function to ensure only types defined within this package can satisfy the Message interface. Invoking this method will panic.
 	internal()
 }
 
