@@ -7,7 +7,7 @@ func TestGroupMissingGroupId(t *testing.T) {
 		UserId: "1",
 	}
 
-	if err := group.validate(); err == nil {
+	if err := group.Validate(); err == nil {
 		t.Error("validating an invalid group object succeeded:", group)
 
 	} else if e, ok := err.(FieldError); !ok {
@@ -27,7 +27,7 @@ func TestGroupMissingUserId(t *testing.T) {
 		GroupId: "1",
 	}
 
-	if err := group.validate(); err == nil {
+	if err := group.Validate(); err == nil {
 		t.Error("validating an invalid group object succeeded:", group)
 
 	} else if e, ok := err.(FieldError); !ok {
@@ -48,7 +48,7 @@ func TestGroupValidWithUserId(t *testing.T) {
 		UserId:  "2",
 	}
 
-	if err := group.validate(); err != nil {
+	if err := group.Validate(); err != nil {
 		t.Error("validating a valid group object failed:", group, err)
 	}
 }
@@ -59,7 +59,7 @@ func TestGroupValidWithAnonymousId(t *testing.T) {
 		AnonymousId: "2",
 	}
 
-	if err := group.validate(); err != nil {
+	if err := group.Validate(); err != nil {
 		t.Error("validating a valid group object failed:", group, err)
 	}
 }

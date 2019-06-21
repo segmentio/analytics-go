@@ -7,7 +7,7 @@ func TestAliasMissingUserId(t *testing.T) {
 		PreviousId: "1",
 	}
 
-	if err := alias.validate(); err == nil {
+	if err := alias.Validate(); err == nil {
 		t.Error("validating an invalid alias object succeeded:", alias)
 
 	} else if e, ok := err.(FieldError); !ok {
@@ -27,7 +27,7 @@ func TestAliasMissingPreviousId(t *testing.T) {
 		UserId: "1",
 	}
 
-	if err := alias.validate(); err == nil {
+	if err := alias.Validate(); err == nil {
 		t.Error("validating an invalid alias object succeeded:", alias)
 
 	} else if e, ok := err.(FieldError); !ok {
@@ -48,7 +48,7 @@ func TestAliasValid(t *testing.T) {
 		UserId:     "2",
 	}
 
-	if err := alias.validate(); err != nil {
+	if err := alias.Validate(); err != nil {
 		t.Error("validating a valid alias object failed:", alias, err)
 	}
 }

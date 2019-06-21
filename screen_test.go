@@ -5,7 +5,7 @@ import "testing"
 func TestScreenMissingUserId(t *testing.T) {
 	screen := Screen{}
 
-	if err := screen.validate(); err == nil {
+	if err := screen.Validate(); err == nil {
 		t.Error("validating an invalid screen object succeeded:", screen)
 
 	} else if e, ok := err.(FieldError); !ok {
@@ -25,7 +25,7 @@ func TestScreenValidWithUserId(t *testing.T) {
 		UserId: "2",
 	}
 
-	if err := screen.validate(); err != nil {
+	if err := screen.Validate(); err != nil {
 		t.Error("validating a valid screen object failed:", screen, err)
 	}
 }
@@ -35,7 +35,7 @@ func TestScreenValidWithAnonymousId(t *testing.T) {
 		AnonymousId: "2",
 	}
 
-	if err := screen.validate(); err != nil {
+	if err := screen.Validate(); err != nil {
 		t.Error("validating a valid screen object failed:", screen, err)
 	}
 }

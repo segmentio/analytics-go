@@ -143,7 +143,7 @@ func dereferenceMessage(msg Message) Message {
 
 func (c *client) Enqueue(msg Message) (err error) {
 	msg = dereferenceMessage(msg)
-	if err = msg.validate(); err != nil {
+	if err = msg.Validate(); err != nil {
 		return
 	}
 
