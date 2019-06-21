@@ -7,7 +7,7 @@ func TestTrackMissingEvent(t *testing.T) {
 		UserId: "1",
 	}
 
-	if err := track.validate(); err == nil {
+	if err := track.Validate(); err == nil {
 		t.Error("validating an invalid track object succeeded:", track)
 
 	} else if e, ok := err.(FieldError); !ok {
@@ -27,7 +27,7 @@ func TestTrackMissingUserId(t *testing.T) {
 		Event: "1",
 	}
 
-	if err := track.validate(); err == nil {
+	if err := track.Validate(); err == nil {
 		t.Error("validating an invalid track object succeeded:", track)
 
 	} else if e, ok := err.(FieldError); !ok {
@@ -48,7 +48,7 @@ func TestTrackValidWithUserId(t *testing.T) {
 		UserId: "2",
 	}
 
-	if err := track.validate(); err != nil {
+	if err := track.Validate(); err != nil {
 		t.Error("validating a valid track object failed:", track, err)
 	}
 }
@@ -59,7 +59,7 @@ func TestTrackValidWithAnonymousId(t *testing.T) {
 		AnonymousId: "2",
 	}
 
-	if err := track.validate(); err != nil {
+	if err := track.Validate(); err != nil {
 		t.Error("validating a valid track object failed:", track, err)
 	}
 }

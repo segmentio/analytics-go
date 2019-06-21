@@ -5,7 +5,7 @@ import "testing"
 func TestPageMissingUserId(t *testing.T) {
 	page := Page{}
 
-	if err := page.validate(); err == nil {
+	if err := page.Validate(); err == nil {
 		t.Error("validating an invalid page object succeeded:", page)
 
 	} else if e, ok := err.(FieldError); !ok {
@@ -25,7 +25,7 @@ func TestPageValidWithUserId(t *testing.T) {
 		UserId: "2",
 	}
 
-	if err := page.validate(); err != nil {
+	if err := page.Validate(); err != nil {
 		t.Error("validating a valid page object failed:", page, err)
 	}
 }
@@ -35,7 +35,7 @@ func TestPageValidWithAnonymousId(t *testing.T) {
 		AnonymousId: "2",
 	}
 
-	if err := page.validate(); err != nil {
+	if err := page.Validate(); err != nil {
 		t.Error("validating a valid page object failed:", page, err)
 	}
 }

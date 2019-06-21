@@ -14,6 +14,7 @@ import (
 
 // Version of the client.
 const Version = "3.0.0"
+const unimplementedError = "not implemented"
 
 // This interface is the main API exposed by the analytics package.
 // Values that satsify this interface are returned by the client constructors
@@ -143,7 +144,7 @@ func dereferenceMessage(msg Message) Message {
 
 func (c *client) Enqueue(msg Message) (err error) {
 	msg = dereferenceMessage(msg)
-	if err = msg.validate(); err != nil {
+	if err = msg.Validate(); err != nil {
 		return
 	}
 

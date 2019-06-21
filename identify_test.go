@@ -5,7 +5,7 @@ import "testing"
 func TestIdentifyMissingUserId(t *testing.T) {
 	identify := Identify{}
 
-	if err := identify.validate(); err == nil {
+	if err := identify.Validate(); err == nil {
 		t.Error("validating an invalid identify object succeeded:", identify)
 
 	} else if e, ok := err.(FieldError); !ok {
@@ -25,7 +25,7 @@ func TestIdentifyValidWithUserId(t *testing.T) {
 		UserId: "2",
 	}
 
-	if err := identify.validate(); err != nil {
+	if err := identify.Validate(); err != nil {
 		t.Error("validating a valid identify object failed:", identify, err)
 	}
 }
@@ -35,7 +35,7 @@ func TestIdentifyValidWithAnonymousId(t *testing.T) {
 		AnonymousId: "2",
 	}
 
-	if err := identify.validate(); err != nil {
+	if err := identify.Validate(); err != nil {
 		t.Error("validating a valid identify object failed:", identify, err)
 	}
 }
