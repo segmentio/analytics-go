@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/segmentio/analytics-go"
-	"github.com/segmentio/conf"
+	"github.com/rudderlabs/analytics-go"
+	"github.com/rudderlabs/conf"
 )
 
 func main() {

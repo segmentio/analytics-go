@@ -12,7 +12,7 @@ type Context struct {
 	App       AppInfo      `json:"app,omitempty"`
 	Campaign  CampaignInfo `json:"campaign,omitempty"`
 	Device    DeviceInfo   `json:"device,omitempty"`
-	Library   LibraryInfo  `json:"library,omitempty"`
+	Library   LibraryInfo  `json:"rl_library,omitempty"`
 	Location  LocationInfo `json:"location,omitempty"`
 	Network   NetworkInfo  `json:"network,omitempty"`
 	OS        OSInfo       `json:"os,omitempty"`
@@ -36,7 +36,7 @@ type Context struct {
 // in https://segment.com/docs/spec/common/#context
 type AppInfo struct {
 	Name      string `json:"name,omitempty"`
-	Version   string `json:"version,omitempty"`
+	Version   string `json:"rl_version,omitempty"`
 	Build     string `json:"build,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 }
@@ -66,8 +66,8 @@ type DeviceInfo struct {
 // This type provides the representation of the `context.library` object as
 // defined in https://segment.com/docs/spec/common/#context
 type LibraryInfo struct {
-	Name    string `json:"name,omitempty"`
-	Version string `json:"version,omitempty"`
+	Name    string `json:"rl_name,omitempty"`
+	Version string `json:"rl_version,omitempty"`
 }
 
 // This type provides the representation of the `context.location` object as

@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -21,6 +22,8 @@ func structToMap(v reflect.Value, m map[string]interface{}) map[string]interface
 		field := t.Field(i)
 		value := v.Field(i)
 		name, omitempty := parseJsonTag(field.Tag.Get("json"), field.Name)
+
+		fmt.Println("Field name " + name)
 
 		if name != "-" && !(omitempty && isZeroValue(value)) {
 			m[name] = value.Interface()
