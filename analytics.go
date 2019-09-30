@@ -1,13 +1,14 @@
 package analytics
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"sync"
+
+	"bytes"
+	"encoding/json"
+	"net/http"
 	"time"
 )
 
@@ -182,7 +183,6 @@ func (c *client) Enqueue(msg Message) (err error) {
 		msg = m
 
 	case Track:
-		fmt.Println("New code picked")
 		m.Type = "track"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
@@ -248,14 +248,11 @@ func (c *client) send(msgs []message) {
 	const attempts = 10
 
 	b, err := json.Marshal(batch{
-		//MessageId: c.uid(),
-		SentAt:   c.now(),
-		Messages: msgs,
-		//Context:   c.DefaultContext,
-		WriteKey: c.key,
+		MessageId: c.uid(),
+		SentAt:    c.now(),
+		Messages:  msgs,
+		Context:   c.DefaultContext,
 	})
-
-	fmt.Println("JSON : " + string(b))
 
 	if err != nil {
 		c.errorf("marshalling messages - %s", err)
@@ -313,7 +310,7 @@ func (c *client) report(res *http.Response) (err error) {
 	var body []byte
 
 	if res.StatusCode < 300 {
-		//c.debugf("response %s", res.Status)
+		c.debugf("response %s", res.Status)
 		return
 	}
 
@@ -353,7 +350,7 @@ func (c *client) loop() {
 			c.flush(&mq, wg, ex)
 
 		case <-c.quit:
-			//c.debugf("exit requested – draining messages")
+			c.debugf("exit requested – draining messages")
 
 			// Drain the msg channel, we have to close it first so no more
 			// messages can be pushed and otherwise the loop would never end.
@@ -363,7 +360,7 @@ func (c *client) loop() {
 			}
 
 			c.flush(&mq, wg, ex)
-			//c.debugf("exit")
+			c.debugf("exit")
 			return
 		}
 	}
@@ -379,17 +376,17 @@ func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup, ex *execut
 		return
 	}
 
-	////c.debugf("buffer (%d/%d) %v", len(q.pending), c.BatchSize, m)
+	c.debugf("buffer (%d/%d) %v", len(q.pending), c.BatchSize, m)
 
 	if msgs := q.push(msg); msgs != nil {
-		////c.debugf("exceeded messages batch limit with batch of %d messages – flushing", len(msgs))
+		c.debugf("exceeded messages batch limit with batch of %d messages – flushing", len(msgs))
 		c.sendAsync(msgs, wg, ex)
 	}
 }
 
 func (c *client) flush(q *messageQueue, wg *sync.WaitGroup, ex *executor) {
 	if msgs := q.flush(); msgs != nil {
-		////c.debugf("flushing %d messages", len(msgs))
+		c.debugf("flushing %d messages", len(msgs))
 		c.sendAsync(msgs, wg, ex)
 	}
 }
@@ -410,10 +407,9 @@ func (c *client) errorf(format string, args ...interface{}) {
 
 func (c *client) maxBatchBytes() int {
 	b, _ := json.Marshal(batch{
-		//MessageId: c.uid(),
-		SentAt: c.now(),
-		//Context:   c.DefaultContext,
-		WriteKey: c.key,
+		MessageId: c.uid(),
+		SentAt:    c.now(),
+		Context:   c.DefaultContext,
 	})
 	return maxBatchBytes - len(b)
 }
@@ -421,7 +417,7 @@ func (c *client) maxBatchBytes() int {
 func (c *client) notifySuccess(msgs []message) {
 	if c.Callback != nil {
 		for _, m := range msgs {
-			c.Callback.Success(m.Msg)
+			c.Callback.Success(m.msg)
 		}
 	}
 }
@@ -429,7 +425,7 @@ func (c *client) notifySuccess(msgs []message) {
 func (c *client) notifyFailure(msgs []message, err error) {
 	if c.Callback != nil {
 		for _, m := range msgs {
-			c.Callback.Failure(m.Msg, err)
+			c.Callback.Failure(m.msg, err)
 		}
 	}
 }

@@ -3,14 +3,14 @@ package main
 import (
 	"fmt"
 
-	"github.com/rudderlabs/analytics-go"
+	"github.com/segmentio/analytics-go"
 )
 import "time"
 
 func main() {
 	client, _ := analytics.NewWithConfig("h97jamjwbh", analytics.Config{
-		Interval:  time.Second,
-		BatchSize: 1,
+		Interval:  30 * time.Second,
+		BatchSize: 100,
 		Verbose:   true,
 	})
 	defer client.Close()
@@ -27,7 +27,7 @@ func main() {
 		case <-tick:
 			if err := client.Enqueue(analytics.Track{
 				Event:  "Download",
-				UserId: "444333",
+				UserId: "123456",
 				Properties: map[string]interface{}{
 					"application": "Segment Desktop",
 					"version":     "1.1.0",

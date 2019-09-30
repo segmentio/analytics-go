@@ -2,7 +2,6 @@ package analytics
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 )
 
@@ -64,15 +63,14 @@ func makeTimestamp(t time.Time, def time.Time) time.Time {
 // export this type because it's only meant to be used internally to send groups
 // of messages in one API call.
 type batch struct {
-	//MessageId string    `json:"messageId"`
-	SentAt   time.Time `json:"sent_at"`
-	Messages []message `json:"batch"`
-	//Context   *Context  `json:"rl_context"`
-	WriteKey string `json:"writeKey"`
+	MessageId string    `json:"messageId"`
+	SentAt    time.Time `json:"sentAt"`
+	Messages  []message `json:"batch"`
+	Context   *Context  `json:"context"`
 }
 
 type message struct {
-	Msg  Message
+	msg  Message
 	json []byte
 }
 
@@ -81,15 +79,13 @@ func makeMessage(m Message, maxBytes int) (msg message, err error) {
 		if len(msg.json) > maxBytes {
 			err = ErrMessageTooBig
 		} else {
-			msg.Msg = m
+			msg.msg = m
 		}
 	}
 	return
 }
 
 func (m message) MarshalJSON() ([]byte, error) {
-	m.json = []byte(`{"rl_message":` + string(m.json) + "}")
-	fmt.Println("JSON inside : " + string(m.json))
 	return m.json, nil
 }
 

@@ -9,16 +9,15 @@ var _ Message = (*Track)(nil)
 type Track struct {
 	// This field is exported for serialization purposes and shouldn't be set by
 	// the application, its value is always overwritten by the library.
-	Type string `json:"rl_type,omitempty"`
+	Type string `json:"type,omitempty"`
 
-	MessageId string `json:"messageId,omitempty"`
-	//AnonymousId  string       `json:"anonymousId,omitempty"`
-	AnonymousId  string       `json:"rl_anonymous_id,omitempty"`
-	UserId       string       `json:"rl_user_id,omitempty"`
-	Event        string       `json:"rl_event"`
-	Timestamp    time.Time    `json:"rl_timestamp,omitempty"`
-	Context      *Context     `json:"ctx,omitempty"`
-	Properties   Properties   `json:"rl_properties,omitempty"`
+	MessageId    string       `json:"messageId,omitempty"`
+	AnonymousId  string       `json:"anonymousId,omitempty"`
+	UserId       string       `json:"userId,omitempty"`
+	Event        string       `json:"event"`
+	Timestamp    time.Time    `json:"timestamp,omitempty"`
+	Context      *Context     `json:"context,omitempty"`
+	Properties   Properties   `json:"properties,omitempty"`
 	Integrations Integrations `json:"integrations,omitempty"`
 }
 
