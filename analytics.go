@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"sync"
+	"log"
 
 	"bytes"
 	"encoding/json"
@@ -282,7 +283,8 @@ func (c *client) send(msgs []message) {
 
 // Upload serialized batch message.
 func (c *client) upload(b []byte) error {
-	url := c.Endpoint + "/v1/batch"
+	//url := c.Endpoint + "/v1/batch"
+	url := c.Endpoint
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
 		c.errorf("creating request - %s", err)
@@ -308,6 +310,8 @@ func (c *client) upload(b []byte) error {
 // Report on response body.
 func (c *client) report(res *http.Response) (err error) {
 	var body []byte
+
+	log.Println("Response %d %s", res.StatusCode, res.Status)
 
 	if res.StatusCode < 300 {
 		c.debugf("response %s", res.Status)

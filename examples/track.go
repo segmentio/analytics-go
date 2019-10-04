@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/segmentio/analytics-go"
+	"github.com/rudderlabs/analytics-go"
 )
 import "time"
 
@@ -15,8 +15,8 @@ func main() {
 	})
 	defer client.Close()
 
-	done := time.After(3 * time.Second)
-	tick := time.Tick(50 * time.Millisecond)
+	done := time.After(2 * time.Second)
+	tick := time.Tick(1 * time.Second)
 
 	for {
 		select {
