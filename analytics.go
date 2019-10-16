@@ -200,36 +200,66 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.Type = "alias"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		m.Context = &Context{}
+		m.Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
 		msg = m
 
 	case Group:
 		m.Type = "group"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		m.Context = &Context{}
+		m.Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
 		msg = m
 
 	case Identify:
 		m.Type = "identify"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		m.Context = &Context{}
+		m.Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
 		msg = m
 
 	case Page:
 		m.Type = "page"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		m.Context = &Context{}
+		m.Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
 		msg = m
 
 	case Screen:
 		m.Type = "screen"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		m.Context = &Context{}
+		m.Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
 		msg = m
 
 	case Track:
 		m.Type = "track"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		m.Context = &Context{}
+		m.Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
 		msg = m
 
 	default:
