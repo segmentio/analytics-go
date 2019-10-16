@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"sync"
 	"log"
+	"sync"
 
 	"bytes"
 	"encoding/json"
@@ -311,7 +311,7 @@ func (c *client) upload(b []byte) error {
 func (c *client) report(res *http.Response) (err error) {
 	var body []byte
 
-	log.Println("Response %d %s", res.StatusCode, res.Status)
+	log.Printf("Response %d %s", res.StatusCode, res.Status)
 
 	if res.StatusCode < 300 {
 		c.debugf("response %s", res.Status)
