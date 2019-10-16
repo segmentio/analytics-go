@@ -112,73 +112,37 @@ func dereferenceMessage(msg Message) Message {
 		if m == nil {
 			return nil
 		}
-		message := msg.(*Alias)
-		(*message).Context = &Context{}
-		(*message).Context.Library = LibraryInfo{
-			Name:    "analytics-go",
-			Version: "1.0.0",
-		}
-		msg = message
+
 		return *m
 	case *Group:
 		if m == nil {
 			return nil
 		}
-		message := msg.(*Group)
-		(*message).Context = &Context{}
-		(*message).Context.Library = LibraryInfo{
-			Name:    "analytics-go",
-			Version: "1.0.0",
-		}
-		msg = message
+
 		return *m
 	case *Identify:
 		if m == nil {
 			return nil
 		}
-		message := msg.(*Identify)
-		(*message).Context = &Context{}
-		(*message).Context.Library = LibraryInfo{
-			Name:    "analytics-go",
-			Version: "1.0.0",
-		}
-		msg = message
+
 		return *m
 	case *Page:
 		if m == nil {
 			return nil
 		}
-		message := msg.(*Page)
-		(*message).Context = &Context{}
-		(*message).Context.Library = LibraryInfo{
-			Name:    "analytics-go",
-			Version: "1.0.0",
-		}
-		msg = message
+
 		return *m
 	case *Screen:
 		if m == nil {
 			return nil
 		}
-		message := msg.(*Screen)
-		(*message).Context = &Context{}
-		(*message).Context.Library = LibraryInfo{
-			Name:    "analytics-go",
-			Version: "1.0.0",
-		}
-		msg = message
+
 		return *m
 	case *Track:
 		if m == nil {
 			return nil
 		}
-		message := msg.(*Track)
-		(*message).Context = &Context{}
-		(*message).Context.Library = LibraryInfo{
-			Name:    "analytics-go",
-			Version: "1.0.0",
-		}
-		msg = message
+
 		return *m
 	}
 
@@ -356,7 +320,9 @@ func (c *client) send(msgs []message) {
 
 // Upload serialized batch message.
 func (c *client) upload(b []byte) error {
-	//url := c.Endpoint + "/v1/batch"
+	var jsons map[string]interface{}
+	json.Unmarshal(b, &jsons)
+	fmt.Print(string(b))
 	url := c.Endpoint
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
