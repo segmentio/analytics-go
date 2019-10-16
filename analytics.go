@@ -323,7 +323,7 @@ func (c *client) upload(b []byte) error {
 	var jsons map[string]interface{}
 	json.Unmarshal(b, &jsons)
 	fmt.Print(string(b))
-	url := c.Endpoint
+	url := c.Endpoint + "/v1/batch"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
 		c.errorf("creating request - %s", err)
