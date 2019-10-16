@@ -112,31 +112,73 @@ func dereferenceMessage(msg Message) Message {
 		if m == nil {
 			return nil
 		}
+		message := msg.(*Alias)
+		(*message).Context = &Context{}
+		(*message).Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
+		msg = message
 		return *m
 	case *Group:
 		if m == nil {
 			return nil
 		}
+		message := msg.(*Group)
+		(*message).Context = &Context{}
+		(*message).Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
+		msg = message
 		return *m
 	case *Identify:
 		if m == nil {
 			return nil
 		}
+		message := msg.(*Identify)
+		(*message).Context = &Context{}
+		(*message).Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
+		msg = message
 		return *m
 	case *Page:
 		if m == nil {
 			return nil
 		}
+		message := msg.(*Page)
+		(*message).Context = &Context{}
+		(*message).Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
+		msg = message
 		return *m
 	case *Screen:
 		if m == nil {
 			return nil
 		}
+		message := msg.(*Screen)
+		(*message).Context = &Context{}
+		(*message).Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
+		msg = message
 		return *m
 	case *Track:
 		if m == nil {
 			return nil
 		}
+		message := msg.(*Track)
+		(*message).Context = &Context{}
+		(*message).Context.Library = LibraryInfo{
+			Name:    "analytics-go",
+			Version: "1.0.0",
+		}
+		msg = message
 		return *m
 	}
 
@@ -144,6 +186,7 @@ func dereferenceMessage(msg Message) Message {
 }
 
 func (c *client) Enqueue(msg Message) (err error) {
+
 	msg = dereferenceMessage(msg)
 	if err = msg.Validate(); err != nil {
 		return
@@ -252,6 +295,7 @@ func (c *client) send(msgs []message) {
 		MessageId: c.uid(),
 		SentAt:    c.now(),
 		Messages:  msgs,
+		Context:   c.DefaultContext,
 	})
 
 	if err != nil {
@@ -375,7 +419,7 @@ func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup, ex *execut
 
 	if msg, err = makeMessage(m, maxMessageBytes); err != nil {
 		c.errorf("%s - %v", err, m)
-		c.notifyFailure([]message{{m, c.DefaultContext, nil}}, err)
+		c.notifyFailure([]message{{m, nil}}, err)
 		return
 	}
 
@@ -412,6 +456,7 @@ func (c *client) maxBatchBytes() int {
 	b, _ := json.Marshal(batch{
 		MessageId: c.uid(),
 		SentAt:    c.now(),
+		Context:   c.DefaultContext,
 	})
 	return maxBatchBytes - len(b)
 }
