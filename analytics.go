@@ -252,7 +252,6 @@ func (c *client) send(msgs []message) {
 		MessageId: c.uid(),
 		SentAt:    c.now(),
 		Messages:  msgs,
-		Context:   c.DefaultContext,
 	})
 
 	if err != nil {
@@ -376,7 +375,7 @@ func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup, ex *execut
 
 	if msg, err = makeMessage(m, maxMessageBytes); err != nil {
 		c.errorf("%s - %v", err, m)
-		c.notifyFailure([]message{{m, nil}}, err)
+		c.notifyFailure([]message{{m, c.DefaultContext, nil}}, err)
 		return
 	}
 
@@ -413,7 +412,6 @@ func (c *client) maxBatchBytes() int {
 	b, _ := json.Marshal(batch{
 		MessageId: c.uid(),
 		SentAt:    c.now(),
-		Context:   c.DefaultContext,
 	})
 	return maxBatchBytes - len(b)
 }

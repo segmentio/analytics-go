@@ -66,12 +66,12 @@ type batch struct {
 	MessageId string    `json:"messageId"`
 	SentAt    time.Time `json:"sentAt"`
 	Messages  []message `json:"batch"`
-	Context   *Context  `json:"context"`
 }
 
 type message struct {
-	msg  Message
-	json []byte
+	msg     Message
+	Context *Context `json:"context"`
+	json    []byte
 }
 
 func makeMessage(m Message, maxBytes int) (msg message, err error) {
