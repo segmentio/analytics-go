@@ -1,0 +1,24 @@
+# github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c
+github.com/segmentio/backo-go
+# github.com/segmentio/conf v1.2.0
+github.com/segmentio/conf
+# github.com/segmentio/go-snakecase v1.1.0
+github.com/segmentio/go-snakecase
+# github.com/segmentio/objconv v1.0.1
+github.com/segmentio/objconv
+github.com/segmentio/objconv/adapters
+github.com/segmentio/objconv/adapters/net
+github.com/segmentio/objconv/adapters/net/mail
+github.com/segmentio/objconv/adapters/net/url
+github.com/segmentio/objconv/json
+github.com/segmentio/objconv/objutil
+github.com/segmentio/objconv/yaml
+# github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c
+github.com/xtgo/uuid
+# gopkg.in/go-playground/mold.v2 v2.2.0
+gopkg.in/go-playground/mold.v2
+gopkg.in/go-playground/mold.v2/modifiers
+# gopkg.in/validator.v2 v2.0.0-20180514200540-135c24b11c19
+gopkg.in/validator.v2
+# gopkg.in/yaml.v2 v2.2.1
+gopkg.in/yaml.v2

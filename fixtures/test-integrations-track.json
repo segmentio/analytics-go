@@ -9,7 +9,7 @@
       },
       "messageId": "I'm unique",
       "properties": {
-        "application": "Segment Desktop",
+        "application": "Rudder Desktop",
         "platform": "osx",
         "version": "1.1.0"
       },
