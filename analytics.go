@@ -106,6 +106,23 @@ func makeHttpClient(transport http.RoundTripper) http.Client {
 	return httpClient
 }
 
+func makeContext() *Context {
+	context := Context{}
+	context.Library = LibraryInfo{
+		Name:    "analytics-go",
+		Version: "1.0.0",
+	}
+
+	return &context
+}
+
+func makeAnonymousId(msg Message) Message {
+
+	msg.AnonymousId = msg.UserId
+
+	return msg.AnonymousId
+}
+
 func dereferenceMessage(msg Message) Message {
 	switch m := msg.(type) {
 	case *Alias:
@@ -165,28 +182,19 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		if m.Context == nil {
-			m.Context = &Context{}
-			m.Context.Library = LibraryInfo{
-				Name:    "analytics-go",
-				Version: "1.0.0",
-			}
+			m.Context = makeContext()
 		}
-
 		msg = m
 
 	case Group:
 		m.Type = "group"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		if m.AnonymousId == "" {
-			m.AnonymousId = m.UserId
+			m.AnonymousId = makeAnonymousId()
 		}
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		if m.Context == nil {
-			m.Context = &Context{}
-			m.Context.Library = LibraryInfo{
-				Name:    "analytics-go",
-				Version: "1.0.0",
-			}
+			m.Context = makeContext()
 		}
 		msg = m
 
@@ -194,15 +202,11 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.Type = "identify"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		if m.AnonymousId == "" {
-			m.AnonymousId = m.UserId
+			m.AnonymousId = makeAnonymousId()
 		}
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		if m.Context == nil {
-			m.Context = &Context{}
-			m.Context.Library = LibraryInfo{
-				Name:    "analytics-go",
-				Version: "1.0.0",
-			}
+			m.Context = makeContext()
 		}
 		msg = m
 
@@ -210,15 +214,11 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.Type = "page"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		if m.AnonymousId == "" {
-			m.AnonymousId = m.UserId
+			m.AnonymousId = makeAnonymousId()
 		}
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		if m.Context == nil {
-			m.Context = &Context{}
-			m.Context.Library = LibraryInfo{
-				Name:    "analytics-go",
-				Version: "1.0.0",
-			}
+			m.Context = makeContext()
 		}
 		msg = m
 
@@ -226,15 +226,11 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.Type = "screen"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		if m.AnonymousId == "" {
-			m.AnonymousId = m.UserId
+			m.AnonymousId = makeAnonymousId()
 		}
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		if m.Context == nil {
-			m.Context = &Context{}
-			m.Context.Library = LibraryInfo{
-				Name:    "analytics-go",
-				Version: "1.0.0",
-			}
+			m.Context = makeContext()
 		}
 		msg = m
 
@@ -242,15 +238,11 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.Type = "track"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		if m.AnonymousId == "" {
-			m.AnonymousId = m.UserId
+			m.AnonymousId = makeAnonymousId()
 		}
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		if m.Context == nil {
-			m.Context = &Context{}
-			m.Context.Library = LibraryInfo{
-				Name:    "analytics-go",
-				Version: "1.0.0",
-			}
+			m.Context = makeContext()
 		}
 		msg = m
 
