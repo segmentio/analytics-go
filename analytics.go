@@ -116,11 +116,12 @@ func makeContext() *Context {
 	return &context
 }
 
-func makeAnonymousId(msg Message) Message {
+func makeAnonymousId(userId string) string {
 
-	msg.AnonymousId = msg.UserId
-
-	return msg.AnonymousId
+	if userId != "" {
+		return userId
+	}
+	return uid()
 }
 
 func dereferenceMessage(msg Message) Message {
@@ -190,7 +191,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.Type = "group"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		if m.AnonymousId == "" {
-			m.AnonymousId = makeAnonymousId()
+			m.AnonymousId = makeAnonymousId(m.UserId)
 		}
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		if m.Context == nil {
@@ -202,7 +203,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.Type = "identify"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		if m.AnonymousId == "" {
-			m.AnonymousId = makeAnonymousId()
+			m.AnonymousId = makeAnonymousId(m.UserId)
 		}
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		if m.Context == nil {
@@ -214,7 +215,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.Type = "page"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		if m.AnonymousId == "" {
-			m.AnonymousId = makeAnonymousId()
+			m.AnonymousId = makeAnonymousId(m.UserId)
 		}
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		if m.Context == nil {
@@ -226,7 +227,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.Type = "screen"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		if m.AnonymousId == "" {
-			m.AnonymousId = makeAnonymousId()
+			m.AnonymousId = makeAnonymousId(m.UserId)
 		}
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		if m.Context == nil {
@@ -238,7 +239,7 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.Type = "track"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		if m.AnonymousId == "" {
-			m.AnonymousId = makeAnonymousId()
+			m.AnonymousId = makeAnonymousId(m.UserId)
 		}
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		if m.Context == nil {
