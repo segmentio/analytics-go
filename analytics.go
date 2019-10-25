@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"sync"
 
 	"bytes"
@@ -341,9 +340,6 @@ func (c *client) send(msgs []message) {
 
 // Upload serialized batch message.
 func (c *client) upload(b []byte) error {
-	var jsons map[string]interface{}
-	json.Unmarshal(b, &jsons)
-	fmt.Print(string(b))
 	url := c.Endpoint + "/v1/batch"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
@@ -370,8 +366,6 @@ func (c *client) upload(b []byte) error {
 // Report on response body.
 func (c *client) report(res *http.Response) (err error) {
 	var body []byte
-
-	log.Printf("Response %d %s", res.StatusCode, res.Status)
 
 	if res.StatusCode < 300 {
 		c.debugf("response %s", res.Status)
