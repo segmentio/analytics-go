@@ -1,8 +1,7 @@
 
 ## Installation
 
-The package can be simply installed via go get, we recommend that you use a
-package version management system like the Go vendor directory or a tool like
+The package can be simply installed via "go get", we recommend that you use a tool like
 Godep to avoid issues related to API breaking changes introduced between major
 versions of the library.
 
@@ -25,7 +24,8 @@ import (
 
 func main() {
     // Instantiates a client to use send messages to the Rudder API.
-    client := analytics.New(os.Getenv("RUDDER WRITE KEY"))
+    // User your WRITE KEY in below placeholder "RUDDER WRITE KEY"
+    client := analytics.New("RUDDER WRITE KEY")
 
     // Enqueues a track event that will be sent asynchronously.
     client.Enqueue(analytics.Track{
