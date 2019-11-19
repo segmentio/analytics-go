@@ -83,7 +83,7 @@ type Config struct {
 // This constant sets the default endpoint to which client instances send
 // messages if none was explictly set.
 
-const DefaultEndpoint = "https://api.rudderlabs.com"
+const DefaultEndpoint = ""
 
 // This constant sets the default flush interval used by client instances if
 // none was explicitly set.
