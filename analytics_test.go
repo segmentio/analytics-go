@@ -67,6 +67,7 @@ func (l testLogger) Errorf(format string, args ...interface{}) {
 }
 
 var _ Message = (*testErrorMessage)(nil)
+
 // Instances of this type are used to force message validation errors in unit
 // tests.
 type testErrorMessage struct{}
@@ -191,7 +192,7 @@ func ExampleTrack() {
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
-			"application": "Segment Desktop",
+			"application": "Rudder Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
@@ -205,7 +206,7 @@ func ExampleTrack() {
 	//       "event": "Download",
 	//       "messageId": "I'm unique",
 	//       "properties": {
-	//         "application": "Segment Desktop",
+	//         "application": "Rudder Desktop",
 	//         "platform": "osx",
 	//         "version": "1.1.0"
 	//       },
@@ -261,7 +262,7 @@ func TestEnqueue(t *testing.T) {
 				Event:  "Download",
 				UserId: "123456",
 				Properties: Properties{
-					"application": "Segment Desktop",
+					"application": "Rudder Desktop",
 					"version":     "1.1.0",
 					"platform":    "osx",
 				},
@@ -298,7 +299,7 @@ func TestEnqueue(t *testing.T) {
 				Event:  "Download",
 				UserId: "123456",
 				Properties: Properties{
-					"application": "Segment Desktop",
+					"application": "Rudder Desktop",
 					"version":     "1.1.0",
 					"platform":    "osx",
 				},
@@ -375,7 +376,7 @@ func TestTrackWithInterval(t *testing.T) {
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
-			"application": "Segment Desktop",
+			"application": "Rudder Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
@@ -411,7 +412,7 @@ func TestTrackWithTimestamp(t *testing.T) {
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
-			"application": "Segment Desktop",
+			"application": "Rudder Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
@@ -443,7 +444,7 @@ func TestTrackWithMessageId(t *testing.T) {
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
-			"application": "Segment Desktop",
+			"application": "Rudder Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
@@ -475,7 +476,7 @@ func TestTrackWithContext(t *testing.T) {
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
-			"application": "Segment Desktop",
+			"application": "Rudder Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
@@ -512,7 +513,7 @@ func TestTrackMany(t *testing.T) {
 			Event:  "Download",
 			UserId: "123456",
 			Properties: Properties{
-				"application": "Segment Desktop",
+				"application": "Rudder Desktop",
 				"version":     i,
 			},
 		})
@@ -543,7 +544,7 @@ func TestTrackWithIntegrations(t *testing.T) {
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
-			"application": "Segment Desktop",
+			"application": "Rudder Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
