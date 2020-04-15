@@ -66,9 +66,7 @@ type client struct {
 // The client is created with the default configuration.
 func New(writeKey string, dataPlaneUrl string) Client {
 	// Here we can ignore the error because the default config is always valid.
-	c, _ := NewWithConfig(writeKey, Config{
-		Endpoint: dataPlaneUrl,
-	})
+	c, _ := NewWithConfig(writeKey, dataPlaneUrl, Config{})
 	return c
 }
 
