@@ -9,11 +9,13 @@ import (
 )
 
 func main() {
-	client, _ := analytics.NewWithConfig("h97jamjwbh", analytics.Config{
-		Interval:  30 * time.Second,
-		BatchSize: 100,
-		Verbose:   true,
-	})
+	client, _ := analytics.NewWithConfig("1aUR9IELHp6jqOW8HWkrYvMYHWy",
+		"https://218da72a.ngrok.io",
+		analytics.Config{
+			Interval:  30 * time.Second,
+			BatchSize: 100,
+			Verbose:   true,
+		})
 	defer client.Close()
 
 	done := time.After(2 * time.Second)
