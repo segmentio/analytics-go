@@ -77,10 +77,12 @@ func New(writeKey string, dataPlaneUrl string) Client {
 // The function will return an error if the configuration contained impossible
 // values (like a negative flush interval for example).
 // When the function returns an error the returned client will always be nil.
-func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
+func NewWithConfig(writeKey string, dataPlaneUrl string, config Config) (cli Client, err error) {
 	if err = config.validate(); err != nil {
 		return
 	}
+
+	config.Endpoint = dataPlaneUrl
 
 	c := &client{
 		Config:   makeConfig(config),
