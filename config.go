@@ -52,7 +52,7 @@ type Config struct {
 	Verbose bool
 
 	// The default context set on each message sent by the client.
-	DefaultContext *Context
+	DefaultContext map[string]interface{}
 
 	// The retry policy used by the client to resend requests that have failed.
 	// The function is called with how many times the operation has been retried
@@ -138,7 +138,7 @@ func makeConfig(c Config) Config {
 	}
 
 	if c.DefaultContext == nil {
-		c.DefaultContext = &Context{}
+		c.DefaultContext = map[string]interface{}{}
 	}
 
 	if c.RetryAfter == nil {
@@ -159,9 +159,9 @@ func makeConfig(c Config) Config {
 
 	// We always overwrite the 'library' field of the default context set on the
 	// client because we want this information to be accurate.
-	c.DefaultContext.Library = LibraryInfo{
-		Name:    "analytics-go",
-		Version: Version,
+	c.DefaultContext["library"] = map[string]interface{}{
+		"name":    "analytics-go",
+		"version": Version,
 	}
 	return c
 }

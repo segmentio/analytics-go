@@ -66,16 +66,6 @@ func (l testLogger) Errorf(format string, args ...interface{}) {
 	}
 }
 
-var _ Message = (*testErrorMessage)(nil)
-// Instances of this type are used to force message validation errors in unit
-// tests.
-type testErrorMessage struct{}
-
-func (m testErrorMessage) internal() {
-}
-
-func (m testErrorMessage) Validate() error { return testError }
-
 var (
 	// A control error returned by mock functions to emulate a failure.
 	testError = errors.New("test error")
@@ -187,10 +177,11 @@ func ExampleTrack() {
 	})
 	defer client.Close()
 
-	client.Enqueue(Track{
-		Event:  "Download",
-		UserId: "123456",
-		Properties: Properties{
+	client.Enqueue(Message{
+		"type":   "track",
+		"event":  "Download",
+		"userId": "123456",
+		"properties": map[string]interface{}{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
@@ -232,72 +223,36 @@ func TestEnqueue(t *testing.T) {
 	}{
 		"alias": {
 			fixture("test-enqueue-alias.json"),
-			Alias{PreviousId: "A", UserId: "B"},
+			Message{"type": "alias", "previousId": "A", "userId": "B"},
 		},
 
 		"group": {
 			fixture("test-enqueue-group.json"),
-			Group{GroupId: "A", UserId: "B"},
+			Message{"type": "group", "groupId": "A", "userId": "B"},
 		},
 
 		"identify": {
 			fixture("test-enqueue-identify.json"),
-			Identify{UserId: "B"},
+			Message{"type": "identify", "userId": "B"},
 		},
 
 		"page": {
 			fixture("test-enqueue-page.json"),
-			Page{Name: "A", UserId: "B"},
+			Message{"type": "page", "name": "A", "userId": "B"},
 		},
 
 		"screen": {
 			fixture("test-enqueue-screen.json"),
-			Screen{Name: "A", UserId: "B"},
+			Message{"type": "screen", "name": "A", "userId": "B"},
 		},
 
 		"track": {
 			fixture("test-enqueue-track.json"),
-			Track{
-				Event:  "Download",
-				UserId: "123456",
-				Properties: Properties{
-					"application": "Segment Desktop",
-					"version":     "1.1.0",
-					"platform":    "osx",
-				},
-			},
-		},
-		"*alias": {
-			fixture("test-enqueue-alias.json"),
-			&Alias{PreviousId: "A", UserId: "B"},
-		},
-
-		"*group": {
-			fixture("test-enqueue-group.json"),
-			&Group{GroupId: "A", UserId: "B"},
-		},
-
-		"*identify": {
-			fixture("test-enqueue-identify.json"),
-			&Identify{UserId: "B"},
-		},
-
-		"*page": {
-			fixture("test-enqueue-page.json"),
-			&Page{Name: "A", UserId: "B"},
-		},
-
-		"*screen": {
-			fixture("test-enqueue-screen.json"),
-			&Screen{Name: "A", UserId: "B"},
-		},
-
-		"*track": {
-			fixture("test-enqueue-track.json"),
-			&Track{
-				Event:  "Download",
-				UserId: "123456",
-				Properties: Properties{
+			Message{
+				"type":   "track",
+				"event":  "Download",
+				"userId": "123456",
+				"properties": map[string]interface{}{
 					"application": "Segment Desktop",
 					"version":     "1.1.0",
 					"platform":    "osx",
@@ -331,27 +286,6 @@ func TestEnqueue(t *testing.T) {
 	}
 }
 
-var _ Message = (*customMessage)(nil)
-
-type customMessage struct {
-}
-
-func (c *customMessage) internal() {
-}
-
-func (c *customMessage) Validate() error {
-	return nil
-}
-
-func TestEnqueuingCustomTypeFails(t *testing.T) {
-	client := New("0123456789")
-	err := client.Enqueue(&customMessage{})
-
-	if err.Error() != "messages with custom types cannot be enqueued: *analytics.customMessage" {
-		t.Errorf("invalid/missing error when queuing unsupported message: %v", err)
-	}
-}
-
 func TestTrackWithInterval(t *testing.T) {
 	const interval = 100 * time.Millisecond
 	var ref = fixture("test-interval-track.json")
@@ -371,10 +305,11 @@ func TestTrackWithInterval(t *testing.T) {
 	})
 	defer client.Close()
 
-	client.Enqueue(Track{
-		Event:  "Download",
-		UserId: "123456",
-		Properties: Properties{
+	client.Enqueue(Message{
+		"type":   "track",
+		"event":  "Download",
+		"userId": "123456",
+		"properties": map[string]interface{}{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
@@ -407,15 +342,16 @@ func TestTrackWithTimestamp(t *testing.T) {
 	})
 	defer client.Close()
 
-	client.Enqueue(Track{
-		Event:  "Download",
-		UserId: "123456",
-		Properties: Properties{
+	client.Enqueue(Message{
+		"type":   "track",
+		"event":  "Download",
+		"userId": "123456",
+		"properties": map[string]interface{}{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
-		Timestamp: time.Date(2015, time.July, 10, 23, 0, 0, 0, time.UTC),
+		"timestamp": time.Date(2015, time.July, 10, 23, 0, 0, 0, time.UTC),
 	})
 
 	if res := string(<-body); ref != res {
@@ -439,15 +375,16 @@ func TestTrackWithMessageId(t *testing.T) {
 	})
 	defer client.Close()
 
-	client.Enqueue(Track{
-		Event:  "Download",
-		UserId: "123456",
-		Properties: Properties{
+	client.Enqueue(Message{
+		"type":   "track",
+		"event":  "Download",
+		"userId": "123456",
+		"properties": map[string]interface{}{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
-		MessageId: "abc",
+		"messageId": "abc",
 	})
 
 	if res := string(<-body); ref != res {
@@ -471,16 +408,17 @@ func TestTrackWithContext(t *testing.T) {
 	})
 	defer client.Close()
 
-	client.Enqueue(Track{
-		Event:  "Download",
-		UserId: "123456",
-		Properties: Properties{
+	client.Enqueue(Message{
+		"type":   "track",
+		"event":  "Download",
+		"userId": "123456",
+		"properties": map[string]interface{}{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
-		Context: &Context{
-			Extra: map[string]interface{}{
+		"context": map[string]interface{}{
+			"extra": map[string]interface{}{
 				"whatever": "here",
 			},
 		},
@@ -508,10 +446,11 @@ func TestTrackMany(t *testing.T) {
 	defer client.Close()
 
 	for i := 0; i < 5; i++ {
-		client.Enqueue(Track{
-			Event:  "Download",
-			UserId: "123456",
-			Properties: Properties{
+		client.Enqueue(Message{
+			"type":   "track",
+			"event":  "Download",
+			"userId": "123456",
+			"properties": map[string]interface{}{
 				"application": "Segment Desktop",
 				"version":     i,
 			},
@@ -539,15 +478,16 @@ func TestTrackWithIntegrations(t *testing.T) {
 	})
 	defer client.Close()
 
-	client.Enqueue(Track{
-		Event:  "Download",
-		UserId: "123456",
-		Properties: Properties{
+	client.Enqueue(Message{
+		"type":   "track",
+		"event":  "Download",
+		"userId": "123456",
+		"properties": map[string]interface{}{
 			"application": "Segment Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
-		Integrations: Integrations{
+		"integrations": map[string]interface{}{
 			"All":      true,
 			"Intercom": false,
 			"Mixpanel": true,
@@ -570,7 +510,7 @@ func TestClientCloseTwice(t *testing.T) {
 		t.Error("closing a client a second time should return ErrClosed:", err)
 	}
 
-	if err := client.Enqueue(Track{UserId: "1", Event: "A"}); err != ErrClosed {
+	if err := client.Enqueue(Message{"type": "track", "userId": "1", "event": "A"}); err != ErrClosed {
 		t.Error("using a client after it was closed should return ErrClosed:", err)
 	}
 }
@@ -595,12 +535,13 @@ func TestClientConfigError(t *testing.T) {
 }
 
 func TestClientEnqueueError(t *testing.T) {
-	client := New("0123456789")
-	defer client.Close()
-
-	if err := client.Enqueue(testErrorMessage{}); err != testError {
-		t.Error("invlaid error returned when queueing an invalid message:", err)
-	}
+	t.Error("TODO")
+	// client := New("0123456789")
+	// defer client.Close()
+	//
+	// if err := client.Enqueue(testErrorMessage{}); err != testError {
+	//   t.Error("invlaid error returned when queueing an invalid message:", err)
+	// }
 }
 
 func TestClientCallback(t *testing.T) {
@@ -616,9 +557,10 @@ func TestClientCallback(t *testing.T) {
 		Transport: testTransportOK,
 	})
 
-	client.Enqueue(Track{
-		UserId: "A",
-		Event:  "B",
+	client.Enqueue(Message{
+		"type":   "track",
+		"userId": "A",
+		"event":  "B",
 	})
 	client.Close()
 
@@ -643,10 +585,11 @@ func TestClientMarshalMessageError(t *testing.T) {
 
 	// Functions cannot be serializable, this should break the JSON marshaling
 	// and trigger the failure callback.
-	client.Enqueue(Track{
-		UserId:     "A",
-		Event:      "B",
-		Properties: Properties{"invalid": func() {}},
+	client.Enqueue(Message{
+		"type":       "track",
+		"userId":     "A",
+		"event":      "B",
+		"properties": map[string]interface{}{"invalid": func() {}},
 	})
 	client.Close()
 
@@ -667,16 +610,16 @@ func TestClientMarshalContextError(t *testing.T) {
 			nil,
 			func(m Message, e error) { errchan <- e },
 		},
-		DefaultContext: &Context{
+		DefaultContext: map[string]interface{}{
 			// The context set on the batch message is invalid this should also
 			// cause the batched message to fail to be serialized and call the
 			// failure callback.
-			Extra: map[string]interface{}{"invalid": func() {}},
+			"extra": map[string]interface{}{"invalid": func() {}},
 		},
 		Transport: testTransportOK,
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
+	client.Enqueue(Message{"type": "track", "userId": "A", "event": "B"})
 	client.Close()
 
 	if err := <-errchan; err == nil {
@@ -700,7 +643,7 @@ func TestClientNewRequestError(t *testing.T) {
 		Transport: testTransportOK,
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
+	client.Enqueue(Message{"type": "track", "userId": "A", "event": "B"})
 	client.Close()
 
 	if err := <-errchan; err == nil {
@@ -720,7 +663,7 @@ func TestClientRoundTripperError(t *testing.T) {
 		Transport: testTransportError,
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
+	client.Enqueue(Message{"type": "track", "userId": "A", "event": "B"})
 	client.Close()
 
 	if err := <-errchan; err == nil {
@@ -750,7 +693,7 @@ func TestClientRetryError(t *testing.T) {
 		RetryAfter: func(i int) time.Duration { return time.Millisecond },
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
+	client.Enqueue(Message{"type": "track", "userId": "A", "event": "B"})
 
 	// Each retry should happen ~1 millisecond, this should give enough time to
 	// the test to trigger the failure callback.
@@ -782,7 +725,7 @@ func TestClientResponse400(t *testing.T) {
 		Transport: testTransportBadRequest,
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
+	client.Enqueue(Message{"type": "track", "userId": "A", "event": "B"})
 	client.Close()
 
 	if err := <-errchan; err == nil {
@@ -803,7 +746,7 @@ func TestClientResponseBodyError(t *testing.T) {
 		Transport: testTransportBodyError,
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
+	client.Enqueue(Message{"type": "track", "userId": "A", "event": "B"})
 	client.Close()
 
 	if err := <-errchan; err == nil {
@@ -831,8 +774,8 @@ func TestClientMaxConcurrentRequests(t *testing.T) {
 		maxConcurrentRequests: 1,
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
-	client.Enqueue(Track{UserId: "A", Event: "B"})
+	client.Enqueue(Message{"type": "track", "userId": "A", "event": "B"})
+	client.Enqueue(Message{"type": "track", "userId": "A", "event": "B"})
 	client.Close()
 
 	if _, ok := <-reschan; !ok {

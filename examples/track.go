@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 
+	"time"
+
 	"github.com/segmentio/analytics-go"
 )
-import "time"
 
 func main() {
 	client, _ := analytics.NewWithConfig("h97jamjwbh", analytics.Config{
@@ -25,10 +26,10 @@ func main() {
 			return
 
 		case <-tick:
-			if err := client.Enqueue(analytics.Track{
-				Event:  "Download",
-				UserId: "123456",
-				Properties: map[string]interface{}{
+			if err := client.Enqueue(analytics.Message{
+				"event":  "Download",
+				"userId": "123456",
+				"properties": map[string]interface{}{
 					"application": "Segment Desktop",
 					"version":     "1.1.0",
 					"platform":    "osx",

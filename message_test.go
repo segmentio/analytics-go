@@ -5,27 +5,17 @@ import (
 	"testing"
 )
 
-func TestMessageIdDefault(t *testing.T) {
-	if id := makeMessageId("", "42"); id != "42" {
-		t.Error("invalid default message id:", id)
-	}
-}
-
-func TestMessageIdNonDefault(t *testing.T) {
-	if id := makeMessageId("A", "42"); id != "A" {
-		t.Error("invalid non-default message id:", id)
-	}
-}
-
 func TestMessageQueuePushMaxBatchSize(t *testing.T) {
-	m0, _ := makeMessage(Track{
-		UserId: "1",
-		Event:  "A",
+	m0, _ := makeMessage(Message{
+		"type":   "track",
+		"userId": "1",
+		"event":  "A",
 	}, maxMessageBytes)
 
-	m1, _ := makeMessage(Track{
-		UserId: "2",
-		Event:  "A",
+	m1, _ := makeMessage(Message{
+		"type":   "track",
+		"userId": "2",
+		"event":  "A",
 	}, maxMessageBytes)
 
 	q := messageQueue{
@@ -43,14 +33,14 @@ func TestMessageQueuePushMaxBatchSize(t *testing.T) {
 }
 
 func TestMessageQueuePushMaxBatchBytes(t *testing.T) {
-	m0, _ := makeMessage(Track{
-		UserId: "1",
-		Event:  "A",
+	m0, _ := makeMessage(Message{"type": "track",
+		"userId": "1",
+		"event":  "A",
 	}, maxMessageBytes)
 
-	m1, _ := makeMessage(Track{
-		UserId: "2",
-		Event:  "A",
+	m1, _ := makeMessage(Message{"type": "track",
+		"userId": "2",
+		"event":  "A",
 	}, maxMessageBytes)
 
 	q := messageQueue{
@@ -72,7 +62,7 @@ func TestMessageQueuePushMaxBatchBytes(t *testing.T) {
 }
 
 func TestMakeMessage(t *testing.T) {
-	track := Track{UserId: "1"}
+	track := Message{"type": "track", "userId": "1"}
 
 	if msg, err := makeMessage(track, maxMessageBytes); err != nil {
 		t.Error("failed to make message from track message:", err)
@@ -86,7 +76,7 @@ func TestMakeMessage(t *testing.T) {
 }
 
 func TestMakeMessageTooBig(t *testing.T) {
-	if _, err := makeMessage(Track{UserId: "1"}, 1); err != ErrMessageTooBig {
+	if _, err := makeMessage(Message{"type": "track", "userId": "1"}, 1); err != ErrMessageTooBig {
 		t.Error("invalid error returned when creating a message bigger than the limit:", err)
 	}
 }

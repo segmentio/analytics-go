@@ -35,33 +35,31 @@ func main() {
 
 	switch config.Type {
 	case "track":
-		client.Enqueue(analytics.Track{
-			UserId:     config.UserID,
-			Event:      config.Event,
-			Properties: parseJSON(config.Properties),
+		client.Enqueue(analytics.Message{
+			"type":       config.Type,
+			"userId":     config.UserID,
+			"event":      config.Event,
+			"properties": parseJSON(config.Properties),
 		})
 	case "identify":
-		client.Enqueue(analytics.Identify{
-			UserId: config.UserID,
-			Traits: parseJSON(config.Traits),
+		client.Enqueue(analytics.Message{
+			"type":   config.Type,
+			"userId": config.UserID,
+			"traits": parseJSON(config.Traits),
 		})
 	case "group":
-		client.Enqueue(analytics.Group{
-			UserId:  config.UserID,
-			GroupId: config.GroupID,
-			Traits:  parseJSON(config.Traits),
+		client.Enqueue(analytics.Message{
+			"type":    config.Type,
+			"userId":  config.UserID,
+			"groupId": config.GroupID,
+			"traits":  parseJSON(config.Traits),
 		})
-	case "page":
-		client.Enqueue(analytics.Page{
-			UserId:     config.UserID,
-			Name:       config.Name,
-			Properties: parseJSON(config.Properties),
-		})
-	case "screen":
-		client.Enqueue(analytics.Screen{
-			UserId:     config.UserID,
-			Name:       config.Name,
-			Properties: parseJSON(config.Properties),
+	case "page", "screen":
+		client.Enqueue(analytics.Message{
+			"type":       config.Type,
+			"userId":     config.UserID,
+			"name":       config.Name,
+			"properties": parseJSON(config.Properties),
 		})
 	}
 

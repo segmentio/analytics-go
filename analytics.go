@@ -98,100 +98,14 @@ func NewWithConfig(writeKey string, config Config) (cli Client, err error) {
 func makeHttpClient(transport http.RoundTripper) http.Client {
 	httpClient := http.Client{
 		Transport: transport,
-	}
-	if supportsTimeout(transport) {
-		httpClient.Timeout = 10 * time.Second
+		Timeout:   10 * time.Second,
 	}
 	return httpClient
 }
 
-func dereferenceMessage(msg Message) Message {
-	switch m := msg.(type) {
-	case *Alias:
-		if m == nil {
-			return nil
-		}
-		return *m
-	case *Group:
-		if m == nil {
-			return nil
-		}
-		return *m
-	case *Identify:
-		if m == nil {
-			return nil
-		}
-		return *m
-	case *Page:
-		if m == nil {
-			return nil
-		}
-		return *m
-	case *Screen:
-		if m == nil {
-			return nil
-		}
-		return *m
-	case *Track:
-		if m == nil {
-			return nil
-		}
-		return *m
-	}
-
-	return msg
-}
-
 func (c *client) Enqueue(msg Message) (err error) {
-	msg = dereferenceMessage(msg)
-	if err = msg.Validate(); err != nil {
-		return
-	}
-
-	var id = c.uid()
-	var ts = c.now()
-
-	switch m := msg.(type) {
-	case Alias:
-		m.Type = "alias"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
-	case Group:
-		m.Type = "group"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
-	case Identify:
-		m.Type = "identify"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
-	case Page:
-		m.Type = "page"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
-	case Screen:
-		m.Type = "screen"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
-	case Track:
-		m.Type = "track"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
-	default:
-		err = fmt.Errorf("messages with custom types cannot be enqueued: %T", msg)
-		return
-	}
+	msg.EnsureMessageID(c.uid())
+	msg.EnsureTimestamp(c.now())
 
 	defer func() {
 		// When the `msgs` channel is closed writing to it will trigger a panic.
