@@ -4,7 +4,7 @@ The Segment analytics client for Go.
 
 **Latest version is the [v3 branch](https://github.com/segmentio/analytics-go/tree/v3.0)**, which is canonical and documented. (The `master` branch contains the v2 library code to preserve backward compatibility for folks not using go modules.)
 
-For more documentation see the [official Segment Go library documentation](https://segment.com/docs/connections/sources/catalog/libraries/server/go/) or view the [godocs](http://godoc.org/github.com/segmentio/analytics-go).
+For more documentation see the [official Segment Go library documentation](https://segment.com/docs/connections/sources/catalog/libraries/server/go/) or view the [godocs](https://godoc.org/gopkg.in/segmentio/analytics-go.v3).
 
 ---
 
