@@ -1,6 +1,9 @@
 package analytics
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestGenericMessageMissingType(t *testing.T) {
 	msg := GenericMessage{
@@ -270,5 +273,63 @@ func TestGenericMessageTrackInvalid(t *testing.T) {
 		Value: "",
 	}) {
 		t.Error("invalid error type returned when validating a generic message:", err)
+	}
+}
+
+func TestGenericMessageQueuePushMaxBatchSize(t *testing.T) {
+	m0, _ := makeMessage(GenericMessage{
+		"type":   "track",
+		"userId": "1",
+		"event":  "A",
+	}, maxMessageBytes)
+
+	m1, _ := makeMessage(GenericMessage{
+		"type":   "track",
+		"userId": "2",
+		"event":  "A",
+	}, maxMessageBytes)
+
+	q := messageQueue{
+		maxBatchSize:  2,
+		maxBatchBytes: maxBatchBytes,
+	}
+
+	if msgs := q.push(m0); msgs != nil {
+		t.Error("unexpected message batch returned after pushing only one message")
+	}
+
+	if msgs := q.push(m1); !reflect.DeepEqual(msgs, []message{m0, m1}) {
+		t.Error("invalid message batch returned after pushing two messages:", msgs)
+	}
+}
+
+func TestGenericMessageQueuePushMaxBatchBytes(t *testing.T) {
+	m0, _ := makeMessage(GenericMessage{
+		"type":   "track",
+		"UserId": "1",
+		"Event":  "A",
+	}, maxMessageBytes)
+
+	m1, _ := makeMessage(GenericMessage{
+		"type":   "track",
+		"UserId": "2",
+		"Event":  "A",
+	}, maxMessageBytes)
+
+	q := messageQueue{
+		maxBatchSize:  100,
+		maxBatchBytes: len(m0.json) + 1,
+	}
+
+	if msgs := q.push(m0); msgs != nil {
+		t.Error("unexpected message batch returned after pushing only one message")
+	}
+
+	if msgs := q.push(m1); !reflect.DeepEqual(msgs, []message{m0}) {
+		t.Error("invalid message batch returned after pushing two messages:", msgs)
+	}
+
+	if !reflect.DeepEqual(q.pending, []message{m1}) {
+		t.Error("invalid state of the message queue after pushing two messages:", q.pending)
 	}
 }
