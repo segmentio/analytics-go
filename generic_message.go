@@ -2,7 +2,7 @@ package analytics
 
 var _ Message = GenericMessage(nil)
 
-// This type represents any event type sent in a track call as described in
+// This type represents any event type sent to the Tracking API as described in
 // https://segment.com/docs/libraries/http/
 type GenericMessage map[string]interface{}
 
