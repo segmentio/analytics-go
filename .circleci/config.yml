@@ -8,23 +8,23 @@ jobs:
     steps:
       - checkout
       - run: make ci
-  build-go110:
+  build-go113:
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.13
     working_directory: /go/src/github.com/segmentio/analytics-go
     steps:
       - checkout
       - run: make ci
-  build-go19:
+  build-go112:
     docker:
-      - image: circleci/golang:1.9
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/segmentio/analytics-go
     steps:
       - checkout
       - run: make ci
-  build-go18:
+  build-go111:
     docker:
-      - image: circleci/golang:1.8
+      - image: circleci/golang:1.11
     working_directory: /go/src/github.com/segmentio/analytics-go
     steps:
       - checkout
@@ -35,11 +35,6 @@ workflows:
   build:
     jobs:
       - build-golatest
-      - build-go110
-      - build-go19
-      - build-go18
-    jobs:
-      - build-golatest
-      - build-go110
-      - build-go19
-      - build-go18
+      - build-go113
+      - build-go112
+      - build-go111
