@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -183,6 +184,11 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.MessageId = makeMessageID(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
+	case TrackObj:
+		m.Type = "track"
+		m.MessageId = makeMessageID(m.MessageId, id)
+		m.Timestamp = makeTimestamp(m.Timestamp, ts)
+		msg = m
 	}
 
 	defer func() {
@@ -285,7 +291,7 @@ func (c *client) upload(b []byte) error {
 
 	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Content-Length", string(len(b)))
+	req.Header.Add("Content-Length", strconv.Itoa(len(b)))
 	req.Header.Add("x-api-key", c.key)
 
 	res, err := c.http.Do(req)
@@ -427,5 +433,19 @@ func (c *client) notifyFailure(msgs []message, err error) {
 		for _, m := range msgs {
 			c.Callback.Failure(m.Msg(), err)
 		}
+	}
+}
+
+func (c *client) notifyFailureMsg(m Message, err error, count int64) {
+	c.failureCounters(m.tags()...).Inc(count)
+	if c.Callback != nil {
+		c.Callback.Failure(m, err)
+	}
+}
+
+func (c *client) notifySuccessMsg(m Message, count int64) {
+	c.successCounters(m.tags()...).Inc(count)
+	if c.Callback != nil {
+		c.Callback.Success(m)
 	}
 }
