@@ -5,10 +5,11 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -69,7 +70,7 @@ func NewS3ClientWithConfig(config S3ClientConfig) (Client, error) {
 		return nil, err
 	}
 
-	client.msgs = make(chan Message, 1024*4) // overrite the buffer
+	client.msgs = make(chan Message, 1024) // overrite the buffer
 
 	sess := session.Must(session.NewSession())
 	uploader := s3manager.NewUploader(sess, cfg.S3.UploaderOptions...)
@@ -83,21 +84,15 @@ func NewS3ClientWithConfig(config S3ClientConfig) (Client, error) {
 		},
 		uploader: uploader,
 	}
-	buf, err := newBuffer(c.config.S3.BufferFilePath, c.config.S3.MaxBatchBytes)
-	if err != nil {
-		return nil, fmt.Errorf("can't create a buffer for the encoder: %s", err)
-	}
 
-	go c.loop(buf)     // custom implementation
+	go c.loop()        // custom implementation
 	go c.loopMetrics() // reuse client's implementation
 
 	return c, nil
 }
 
 // a copy of client.loop() function.
-func (c *s3Client) loop(buf encodedBuffer) {
-	defer buf.Close()
-
+func (c *s3Client) loop() {
 	defer close(c.shutdown)
 
 	wg := &sync.WaitGroup{}
@@ -109,19 +104,22 @@ func (c *s3Client) loop(buf encodedBuffer) {
 	ex := newExecutor(c.maxConcurrentRequests)
 	defer ex.close()
 
-	bw := newBufferedEncoder(
-		c.BatchSize,
-		int64(c.config.S3.MaxBatchBytes),
-		buf,
-	)
+	bw := bufferedEncoder{
+		maxBatchSize:  c.BatchSize,
+		maxBatchBytes: int64(c.config.S3.MaxBatchBytes),
+		newBufFunc: func() encodedBuffer {
+			return c.newBuffer(c.config.S3.BufferFilePath, c.config.S3.MaxBatchBytes)
+		},
+	}
+	bw.init()
 
 	for {
 		select {
 		case msg := <-c.msgs:
-			c.push(bw, msg, wg, ex)
+			c.push(&bw, msg, wg, ex)
 
 		case <-tick.C:
-			c.flush(bw, wg, ex)
+			c.flush(&bw, wg, ex)
 
 		case <-c.quit:
 			log.Println("exit requested – draining messages")
@@ -131,22 +129,30 @@ func (c *s3Client) loop(buf encodedBuffer) {
 			// messages can be pushed and otherwise the loop would never end.
 			close(c.msgs)
 			for msg := range c.msgs {
-				c.push(bw, msg, wg, ex)
+				c.push(&bw, msg, wg, ex)
 			}
 
-			c.flush(bw, wg, ex)
+			c.flush(&bw, wg, ex)
+			defer bw.buf.Close()
 			c.debugf("exit")
 			return
 		}
 	}
 }
 
-func newBuffer(path string, size int) (encodedBuffer, error) {
+func (c *s3Client) newBuffer(path string, size int) encodedBuffer {
 	if path == "" {
-		return newMemBuffer(size), nil
+		return newMemBuffer(size)
 	}
 
-	return newFileBuffer(path)
+	buf, err := newFileBuffer(path)
+	if err != nil {
+		c.errorf("invalid file name", err)
+		// fallback to a small membuffer
+		return newMemBuffer(1024)
+	}
+
+	return buf
 }
 
 type apiContext struct {
@@ -201,10 +207,11 @@ func (c *s3Client) push(encoder *bufferedEncoder, m Message, wg *sync.WaitGroup,
 
 	if ready {
 		c.debugf("exceeded messages batch limit with batch of %d messages – flushing", encoder.messages)
-		c.send(encoder)
+		c.sendAsync(encoder, wg, ex)
 	}
 }
 
+// we need this functio to send metrics
 func (c *s3Client) setTagsIfExsist(m Message) {
 	if len(c.tagsOnlyMsg.t) == 0 {
 		c.tagsOnlyMsg.t = m.tags()
@@ -226,6 +233,18 @@ func encodeMessage(bw *bufferedEncoder, m Message, ctx *apiContext, now func() T
 
 // Asychronously send a batched requests.
 func (c *s3Client) sendAsync(bw *bufferedEncoder, wg *sync.WaitGroup, ex *executor) {
+	if bw.BytesLen() == 0 {
+		c.errorf("empty buffer, send is not possible")
+		return
+	}
+
+	msgs := bw.TotalMsgs()
+	buf, err := bw.CommitBuffer()
+	if err != nil {
+		c.errorf("can't flush gzip, send is not possible")
+		return
+	}
+
 	wg.Add(1)
 
 	if !ex.do(func() {
@@ -238,7 +257,7 @@ func (c *s3Client) sendAsync(bw *bufferedEncoder, wg *sync.WaitGroup, ex *execut
 				c.errorf("panic - %s", err)
 			}
 		}()
-		c.send(bw)
+		c.send(buf, msgs)
 	}) {
 		wg.Done()
 		c.errorf("sending messages failed - %s", ErrTooManyRequests)
@@ -250,24 +269,17 @@ func (c *s3Client) flush(bw *bufferedEncoder, wg *sync.WaitGroup, ex *executor) 
 	msgs := bw.TotalMsgs()
 	if msgs > 0 {
 		c.debugf("flushing %d messages", msgs)
-		c.send(bw)
+		c.sendAsync(bw, wg, ex)
 	}
 }
 
 // Send batch request.
-func (c *s3Client) send(bw *bufferedEncoder) {
+func (c *s3Client) send(buf encodedBuffer, msgs int) {
 	const attempts = 10
+	defer buf.Close()
 
-	if bw.BytesLen() == 0 {
-		c.errorf("empty buffer, send is not possible")
-		return
-	}
-
-	defer bw.Reset()
-
-	msgs := bw.TotalMsgs()
 	for i := 0; i != attempts; i++ {
-		reader, err := bw.Reader()
+		reader, err := buf.Reader()
 		if err != nil {
 			c.errorf("can't get reader", err)
 		}
@@ -310,22 +322,12 @@ type bufferedEncoder struct {
 	maxBatchSize  int
 	maxBatchBytes int64
 
+	newBufFunc func() encodedBuffer
+
 	buf      encodedBuffer
 	encoder  *json.Encoder
 	gziper   *gzip.Writer
 	messages int
-}
-
-func newBufferedEncoder(maxBatchSize int, maxBatchBytes int64, buf encodedBuffer) *bufferedEncoder {
-	w := &bufferedEncoder{
-		maxBatchSize:  maxBatchSize,
-		maxBatchBytes: maxBatchBytes,
-		buf:           buf,
-	}
-
-	w.gziper = gzip.NewWriter(w.buf)
-	w.encoder = json.NewEncoder(w.gziper)
-	return w
 }
 
 func (q *bufferedEncoder) BytesLen() int64 {
@@ -336,12 +338,16 @@ func (q *bufferedEncoder) TotalMsgs() int {
 	return q.messages
 }
 
-func (q *bufferedEncoder) Reader() (io.Reader, error) {
+func (q *bufferedEncoder) CommitBuffer() (encodedBuffer, error) {
 	err := q.gziper.Close()
 	if err != nil {
 		return nil, err
 	}
-	return q.buf.Reader()
+
+	oldbuff := q.buf
+	q.init()
+
+	return oldbuff, nil
 }
 
 func (q *bufferedEncoder) Push(v interface{}) (bool, error) {
@@ -361,15 +367,11 @@ func (q *bufferedEncoder) Push(v interface{}) (bool, error) {
 	return false, nil
 }
 
-func (q *bufferedEncoder) Reset() error {
-	err := q.buf.Reset()
-	if err != nil {
-		return err
-	}
+func (q *bufferedEncoder) init() {
+	q.buf = q.newBufFunc()
 	q.gziper = gzip.NewWriter(q.buf)
 	q.encoder = json.NewEncoder(q.gziper)
 	q.messages = 0
-	return nil
 }
 
 type encodedBuffer interface {
@@ -385,7 +387,7 @@ type memBuffer struct {
 
 func newMemBuffer(size int) *memBuffer {
 	var buf bytes.Buffer
-	if size > 1 {
+	if size > 0 {
 		buf.Grow(size)
 	}
 
@@ -423,11 +425,12 @@ type fileBuffer struct {
 }
 
 func newFileBuffer(path string) (*fileBuffer, error) {
-	fd, err := os.Create(path)
+	dir, file := filepath.Split(path)
+
+	fd, err := ioutil.TempFile(dir, file)
 	if err != nil {
 		return nil, err
 	}
-
 	return &fileBuffer{
 		fd:     fd,
 		writer: bufio.NewWriter(fd),
@@ -473,5 +476,8 @@ func (m *fileBuffer) Size() int64 {
 }
 
 func (m *fileBuffer) Close() error {
-	return m.fd.Close()
+	fileName := m.fd.Name()
+	m.fd.Close()
+
+	return os.Remove(fileName)
 }

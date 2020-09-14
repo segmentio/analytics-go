@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"log"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -31,21 +33,22 @@ func TestTargetMessageMarshalling(t *testing.T) {
 		},
 	}
 
-	buf := &memBuffer{
-		buf: bytes.NewBuffer(nil),
+	encoder := &bufferedEncoder{
+		maxBatchSize:  100,
+		maxBatchBytes: 10,
+		newBufFunc: func() encodedBuffer {
+			return newMemBuffer(1024)
+		},
 	}
-
-	encoder := newBufferedEncoder(100, 10, buf)
+	encoder.init()
 
 	_, err := encodeMessage(encoder, m, nil, func() Time { return Time{} })
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
-	reader, err := encoder.Reader()
-	if err != nil {
-		t.Error(err)
-	}
+	buf, err := encoder.CommitBuffer()
+	require.NoError(t, err)
+	reader, err := buf.Reader()
+	require.NoError(t, err)
 
 	result := readAndUngzip(t, reader)
 
@@ -56,19 +59,18 @@ func TestTargetMessageMarshalling(t *testing.T) {
 
 func readAndUngzip(t *testing.T, r io.Reader) []byte {
 	q, err := gzip.NewReader(r)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer q.Close()
 
 	d, err := ioutil.ReadAll(q)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	return d
 }
 
 func Test_encodedBuffers(t *testing.T) {
-	fileBuf, err := newFileBuffer("/tmp/buffer_events.json")
-	if err != nil {
-		t.Error(err)
-	}
+	fileBuf, err := newFileBuffer(filePath)
+	require.NoError(t, err)
+	defer fileBuf.Close()
 
 	tests := map[string]struct {
 		buf encodedBuffer
@@ -101,22 +103,20 @@ func Test_encodedBuffers(t *testing.T) {
 
 func writeAndReadBuffer(t *testing.T, buf encodedBuffer, expected string) {
 	_, err := buf.Write([]byte(expected))
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	reader, err := buf.Reader()
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	result, err := ioutil.ReadAll(reader)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	require.Equal(t, expected, string(result))
 }
+
+const (
+	filePath = "/tmp/buffer_events.tmp"
+)
 
 func ManualTestS3Client(t *testing.T) {
 	c, err := NewS3ClientWithConfig(
@@ -127,13 +127,11 @@ func ManualTestS3Client(t *testing.T) {
 			S3: S3{
 				Stream:         "tuna",
 				Stage:          "dev",
-				BufferFilePath: "/tmp/buffer_events.json",
+				BufferFilePath: filePath,
 			},
 		},
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	for i := 0; i < 10; i++ {
 		m := Track{
@@ -144,18 +142,15 @@ func ManualTestS3Client(t *testing.T) {
 				"qwer":  3424,
 			},
 		}
-		if err := c.Enqueue(m); err != nil {
-			t.Error(err)
-		}
+		require.NoError(t, c.Enqueue(m))
 	}
-	if err := c.Close(); err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, c.Close())
 
 	t.FailNow()
 }
 
 func Test_TriggerByTime(t *testing.T) {
+	defer checkNoFilesLeft(t, filePath)
 	um := uploadMock{
 		resultChan: make(chan []byte, 1),
 	}
@@ -168,7 +163,7 @@ func Test_TriggerByTime(t *testing.T) {
 		S3: S3{
 			Stream:         "tuna",
 			Stage:          "dev",
-			BufferFilePath: "/tmp/buffer_events.tmp",
+			BufferFilePath: filePath,
 		},
 	}, &um)
 
@@ -183,28 +178,27 @@ func Test_TriggerByTime(t *testing.T) {
 		t.Errorf("no message by timeout")
 	}
 
-	err := c.Close()
-	assert.NoError(t, err)
-
-	assert.Empty(t, um.resultChan, "no messages")
+	require.NoError(t, c.Close())
+	require.Empty(t, um.resultChan, "no messages")
 }
 
 func Test_MemoryLimit(t *testing.T) {
+	defer checkNoFilesLeft(t, filePath)
 	const bytesLimit = 5 * 1024 * 1024 // 5 MiB
 
 	um := uploadMock{
-		resultChan: make(chan []byte, 1024),
+		resultChan: make(chan []byte, 4),
 	}
 	c := newPatchedClient(t, S3ClientConfig{
 		Config: Config{
-			Interval:       1 * time.Minute,
-			BatchSize:      200_000,
+			Interval:  5 * time.Minute,
+			BatchSize: 200_000,
 		},
 		S3: S3{
-			Stream:        "tuna",
-			Stage:         "dev",
-			MaxBatchBytes: bytesLimit,
-			BufferFilePath: "/tmp/buffer_events.tmp",
+			Stream:         "tuna",
+			Stage:          "dev",
+			MaxBatchBytes:  bytesLimit,
+			BufferFilePath: filePath,
 		},
 	}, &um)
 
@@ -213,50 +207,61 @@ func Test_MemoryLimit(t *testing.T) {
 	readOneEvent(t, um.resultChan, bytesLimit)
 	readOneEvent(t, um.resultChan, bytesLimit)
 
-	err := c.Close()
-	assert.NoError(t, err)
+	require.NoError(t, c.Close())
+}
+
+func checkNoFilesLeft(t *testing.T, path string) {
+	t.Helper()
+	dir, fn := filepath.Split(path)
+	files, err := ioutil.ReadDir(dir)
+	require.NoError(t, err)
+
+	for _, file := range files {
+		assert.NotContains(t, file.Name(), fn)
+	}
 }
 
 func readOneEvent(t *testing.T, resultChan <-chan []byte, bytesLimit int) {
 	eventsData := <-resultChan
-	t.Log("event size: ", float64(len(eventsData))/1024/1024, " mib")
+	log.Println("event size: ", float64(len(eventsData))/1024/1024, " mib")
 	readAllMessagies(t, eventsData)
-	assert.GreaterOrEqual(t, len(eventsData), bytesLimit)
+	require.GreaterOrEqual(t, len(eventsData), bytesLimit)
 }
 
 func Test_MessagesLimit(t *testing.T) {
 	const msgsLimit = 10
 
 	um := uploadMock{
-		resultChan: make(chan []byte, 1024),
+		resultChan: make(chan []byte, 3),
 	}
 	c := newPatchedClient(t, S3ClientConfig{
 		Config: Config{
-			Verbose:   true,
-			BatchSize: msgsLimit,
+			Verbose:               true,
+			BatchSize:             msgsLimit,
+			maxConcurrentRequests: 1,
 		},
 		S3: S3{
-			Stream:         "tuna",
-			Stage:          "dev",
+			Stream: "tuna",
+			Stage:  "dev",
 		},
 	}, &um)
 
 	writeEvents(t, c, msgsLimit*2, 0)
 
 	msgs1 := readAllMessagies(t, <-um.resultChan)
-	assert.Equal(t, msgsLimit, len(msgs1))
+	require.Equal(t, msgsLimit, len(msgs1))
 	msgs2 := readAllMessagies(t, <-um.resultChan)
-	assert.Equal(t, msgsLimit, len(msgs2))
+	require.Equal(t, msgsLimit, len(msgs2))
 
 	err := c.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.Empty(t, um.resultChan, "no messages")
+	require.Empty(t, um.resultChan, "no messages")
 }
 
 func newPatchedClient(t *testing.T, cfg S3ClientConfig, um *uploadMock) Client {
 	c, err := NewS3ClientWithConfig(cfg)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	c.(*s3Client).uploader = um
 	return c
@@ -264,7 +269,7 @@ func newPatchedClient(t *testing.T, cfg S3ClientConfig, um *uploadMock) Client {
 
 func readAllMessagies(t *testing.T, input []byte) []Properties {
 	gunzip, err := gzip.NewReader(bytes.NewReader(input))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer gunzip.Close()
 
 	scan := bufio.NewReader(gunzip)
@@ -275,11 +280,11 @@ func readAllMessagies(t *testing.T, input []byte) []Properties {
 		if err == io.EOF {
 			break
 		}
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		v := Properties{}
 		err = json.Unmarshal(row, &v)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		totalMsgs = append(totalMsgs, v)
 	}
@@ -298,9 +303,7 @@ func writeEvents(t *testing.T, c Client, messages int, delay time.Duration) {
 				"qwer":  3424,
 			},
 		}
-		if err := c.Enqueue(m); err != nil {
-			t.Error(err)
-		}
+		require.NoError(t, c.Enqueue(m))
 	}
 }
 
