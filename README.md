@@ -14,11 +14,11 @@ Latest stable branch is [master](https://github.com/FindHotel/analytics-go/tree/
 
 ## Installation
 
-If you use [dep](https://github.com/golang/dep) then add these lines to your `Gopkg.toml`:
+If you use [go modules](https://blog.golang.org/v2-go-modules):
 
-    [[constraint]]
-      name = "github.com/FindHotel/analytics-go"
-      version = "3.4.0"  # get the latest version from Releases
+```shell
+    go get -u github.com/FindHotel/analytics-go@3.6.0 
+```
 
 ## Documentation
 
