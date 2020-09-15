@@ -21,7 +21,7 @@ func makeS3ClientConfig(c S3ClientConfig) (S3ClientConfig, error) {
 	}
 
 	if c.S3.MaxBatchBytes == 0 {
-		c.S3.MaxBatchBytes = 128 * MB
+		c.S3.MaxBatchBytes = 20 * MB
 	}
 
 	if c.S3.Bucket == "" {

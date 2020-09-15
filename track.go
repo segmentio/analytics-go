@@ -40,3 +40,12 @@ func (msg Track) validate() error {
 
 	return nil
 }
+
+// TrackObj represents object sent in a track call as Track
+// but instead of map[string]interface{} accepts any struct which should be serialized to json
+type TrackObj struct {
+	// This field is exported for serialization purposes and shouldn't be set by
+	// the application, its value is always overwritten by the library.
+	Track
+	Properties interface{} `json:"properties,omitempty"`
+}
