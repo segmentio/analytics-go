@@ -1,21 +1,21 @@
 package analytics
 
-var _ Message = GenericMessage(nil)
+var _ Message = Event(nil)
 
 // This type represents any event type sent to the Tracking API as described in
 // https://segment.com/docs/libraries/http/
-type GenericMessage map[string]interface{}
+type Event map[string]interface{}
 
-func (msg GenericMessage) internal() {
+func (msg Event) internal() {
 	panic(unimplementedError)
 }
 
-func (msg GenericMessage) string(field string) string {
+func (msg Event) string(field string) string {
 	val, _ := msg[field].(string)
 	return val
 }
 
-func (msg GenericMessage) Validate() error {
+func (msg Event) Validate() error {
 	if typ, ok := msg["type"].(string); ok {
 		switch typ {
 		case "alias":
@@ -59,7 +59,7 @@ func (msg GenericMessage) Validate() error {
 		}
 	}
 	return FieldError{
-		Type:  "analytics.GenericMessage",
+		Type:  "analytics.Event",
 		Name:  "Type",
 		Value: msg["type"],
 	}

@@ -6,7 +6,7 @@ import (
 )
 
 func TestGenericMessageMissingType(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"userId": "user123",
 	}
 
@@ -16,7 +16,7 @@ func TestGenericMessageMissingType(t *testing.T) {
 		t.Error("invalid error type returned when validating a generic message:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.GenericMessage",
+		Type:  "analytics.Event",
 		Name:  "Type",
 		Value: nil,
 	}) {
@@ -25,7 +25,7 @@ func TestGenericMessageMissingType(t *testing.T) {
 }
 
 func TestGenericMessageInvalidType(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":   "invalid",
 		"userId": "user123",
 	}
@@ -36,7 +36,7 @@ func TestGenericMessageInvalidType(t *testing.T) {
 		t.Error("invalid error type returned when validating a generic message:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.GenericMessage",
+		Type:  "analytics.Event",
 		Name:  "Type",
 		Value: "invalid",
 	}) {
@@ -45,7 +45,7 @@ func TestGenericMessageInvalidType(t *testing.T) {
 }
 
 func TestGenericMessageAlias(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":       "alias",
 		"userId":     "user123",
 		"previousId": "user456",
@@ -56,7 +56,7 @@ func TestGenericMessageAlias(t *testing.T) {
 }
 
 func TestGenericMessageAliasInvalid(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":   "alias",
 		"userId": "user123",
 	}
@@ -76,7 +76,7 @@ func TestGenericMessageAliasInvalid(t *testing.T) {
 }
 
 func TestGenericMessageGroup(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":    "group",
 		"userId":  "user123",
 		"groupId": "group1",
@@ -87,7 +87,7 @@ func TestGenericMessageGroup(t *testing.T) {
 }
 
 func TestGenericMessageGroupAnonymous(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":        "group",
 		"anonymousId": "user123",
 		"groupId":     "group1",
@@ -98,7 +98,7 @@ func TestGenericMessageGroupAnonymous(t *testing.T) {
 }
 
 func TestGenericMessageGroupInvalid(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":   "group",
 		"userId": "user123",
 	}
@@ -118,7 +118,7 @@ func TestGenericMessageGroupInvalid(t *testing.T) {
 }
 
 func TestGenericMessageIdentify(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":   "identify",
 		"userId": "user123",
 	}
@@ -128,7 +128,7 @@ func TestGenericMessageIdentify(t *testing.T) {
 }
 
 func TestGenericMessageIdentifyAnonymous(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":        "identify",
 		"anonymousId": "user123",
 	}
@@ -138,7 +138,7 @@ func TestGenericMessageIdentifyAnonymous(t *testing.T) {
 }
 
 func TestGenericMessageIdentifyInvalid(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type": "identify",
 	}
 
@@ -157,7 +157,7 @@ func TestGenericMessageIdentifyInvalid(t *testing.T) {
 }
 
 func TestGenericMessagePage(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":   "page",
 		"userId": "user123",
 	}
@@ -167,7 +167,7 @@ func TestGenericMessagePage(t *testing.T) {
 }
 
 func TestGenericMessagePageAnonymous(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":        "page",
 		"anonymousId": "user123",
 	}
@@ -177,7 +177,7 @@ func TestGenericMessagePageAnonymous(t *testing.T) {
 }
 
 func TestGenericMessagePageInvalid(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type": "page",
 	}
 
@@ -196,7 +196,7 @@ func TestGenericMessagePageInvalid(t *testing.T) {
 }
 
 func TestGenericMessageScreen(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":   "screen",
 		"userId": "user123",
 	}
@@ -206,7 +206,7 @@ func TestGenericMessageScreen(t *testing.T) {
 }
 
 func TestGenericMessageScreenAnonymous(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":        "screen",
 		"anonymousId": "user123",
 	}
@@ -216,7 +216,7 @@ func TestGenericMessageScreenAnonymous(t *testing.T) {
 }
 
 func TestGenericMessageScreenInvalid(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type": "screen",
 	}
 
@@ -235,7 +235,7 @@ func TestGenericMessageScreenInvalid(t *testing.T) {
 }
 
 func TestGenericMessageTrack(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":   "track",
 		"userId": "user123",
 		"event":  "testing",
@@ -246,7 +246,7 @@ func TestGenericMessageTrack(t *testing.T) {
 }
 
 func TestGenericMessageTrackAnonymous(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":        "track",
 		"anonymousId": "user123",
 		"event":       "testing",
@@ -257,7 +257,7 @@ func TestGenericMessageTrackAnonymous(t *testing.T) {
 }
 
 func TestGenericMessageTrackInvalid(t *testing.T) {
-	msg := GenericMessage{
+	msg := Event{
 		"type":   "track",
 		"userId": "user123",
 	}
@@ -277,13 +277,13 @@ func TestGenericMessageTrackInvalid(t *testing.T) {
 }
 
 func TestGenericMessageQueuePushMaxBatchSize(t *testing.T) {
-	m0, _ := makeMessage(GenericMessage{
+	m0, _ := makeMessage(Event{
 		"type":   "track",
 		"userId": "1",
 		"event":  "A",
 	}, maxMessageBytes)
 
-	m1, _ := makeMessage(GenericMessage{
+	m1, _ := makeMessage(Event{
 		"type":   "track",
 		"userId": "2",
 		"event":  "A",
@@ -304,13 +304,13 @@ func TestGenericMessageQueuePushMaxBatchSize(t *testing.T) {
 }
 
 func TestGenericMessageQueuePushMaxBatchBytes(t *testing.T) {
-	m0, _ := makeMessage(GenericMessage{
+	m0, _ := makeMessage(Event{
 		"type":   "track",
 		"UserId": "1",
 		"Event":  "A",
 	}, maxMessageBytes)
 
-	m1, _ := makeMessage(GenericMessage{
+	m1, _ := makeMessage(Event{
 		"type":   "track",
 		"UserId": "2",
 		"Event":  "A",
