@@ -241,6 +241,66 @@ func ExampleTrackObj() {
 	// }
 }
 
+func ExampleTrackObjLess() {
+	body, server := mockServer()
+	defer server.Close()
+
+	client, _ := NewWithConfig("h97jamjwbh", Config{
+		Endpoint:  server.URL,
+		BatchSize: 1,
+		now:       mockTime,
+		uid:       mockId,
+	})
+	defer client.Close()
+
+	type msg struct {
+		Application string `json:"application"`
+		Version     string `json:"version"`
+		Platform    string `json:"platform"`
+	}
+
+	client.Enqueue(TrackObjLess{
+		Track: Track{
+			Event: "Download",
+		},
+		Properties: &msg{
+			Application: "Segment Desktop",
+			Version:     "1.1.0",
+			Platform:    "osx",
+		},
+	})
+
+	s := strings.Replace(string(<-body),
+		fmt.Sprintf(`"version": "%s"`, Version),
+		`"version": "3.4.0"`,
+		-1,
+	)
+
+	fmt.Printf("%s\n", s)
+	// Output:
+	// {
+	//   "batch": [
+	//     {
+	//       "event": "Download",
+	//       "properties": {
+	//         "application": "Segment Desktop",
+	//         "platform": "osx",
+	//         "version": "1.1.0"
+	//       },
+	//       "type": "track"
+	//     }
+	//   ],
+	//   "context": {
+	//     "library": {
+	//       "name": "analytics-go",
+	//       "version": "3.4.0"
+	//     }
+	//   },
+	//   "messageId": "I'm unique",
+	//   "sentAt": 1257894000000
+	// }
+}
+
 func ExampleTrack() {
 	body, server := mockServer()
 	defer server.Close()

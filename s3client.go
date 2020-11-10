@@ -46,6 +46,9 @@ type S3 struct {
 	// BufferFilePath if specified the temp file will be used to store the data
 	BufferFilePath string
 
+	// UnwrappedMessage if specified wraps message with context, but it useless for most of s3 messages
+	UnwrappedMessage bool
+
 	KeyConstructor func(now func() Time, uid func() string) string
 
 	UploaderOptions []func(*s3manager.Uploader)
@@ -133,7 +136,7 @@ func (c *s3Client) loop() {
 			}
 
 			c.flush(&bw, wg, ex)
-			defer bw.buf.Close()
+			bw.buf.Close()
 			c.debugf("exit")
 			return
 		}
@@ -198,7 +201,7 @@ func (m *tagsOnlyMsg) validate() error {
 func (c *s3Client) push(encoder *bufferedEncoder, m Message, wg *sync.WaitGroup, ex *executor) {
 	c.setTagsIfExsist(m)
 
-	ready, err := encodeMessage(encoder, m, c.apiContext, c.now)
+	ready, err := c.encodeMessage(encoder, m)
 	if err != nil {
 		c.errorf("cant encode message: ", err)
 		c.notifyFailureMsg(m, err, 1)
@@ -218,10 +221,14 @@ func (c *s3Client) setTagsIfExsist(m Message) {
 	}
 }
 
-func encodeMessage(bw *bufferedEncoder, m Message, ctx *apiContext, now func() Time) (ready bool, err error) {
-	ts := now()
+func (c *s3Client) encodeMessage(bw *bufferedEncoder, m Message) (ready bool, err error) {
+	if c.config.S3.UnwrappedMessage {
+		return bw.Push(m)
+	}
+
+	ts := c.now()
 	msg := targetMessage{
-		APIContext: ctx,
+		APIContext: c.apiContext,
 		Event:      m,
 		SentAt:     ts,
 		ReceivedAt: ts,
@@ -231,7 +238,7 @@ func encodeMessage(bw *bufferedEncoder, m Message, ctx *apiContext, now func() T
 	return bw.Push(alias(msg))
 }
 
-// Asychronously send a batched requests.
+// Asynchronously send a batched requests.
 func (c *s3Client) sendAsync(bw *bufferedEncoder, wg *sync.WaitGroup, ex *executor) {
 	if bw.BytesLen() == 0 {
 		c.errorf("empty buffer, send is not possible")

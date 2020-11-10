@@ -49,3 +49,25 @@ type TrackObj struct {
 	Track
 	Properties interface{} `json:"properties,omitempty"`
 }
+
+// TrackObjLess represents object sent in a track call as TrackObj
+// but only an event name is mandatory field
+type TrackObjLess struct {
+	// This field is exported for serialization purposes and shouldn't be set by
+	// the application, its value is always overwritten by the library.
+	Track
+	Timestamp  *Time       `json:"timestamp,omitempty"`
+	Properties interface{} `json:"properties,omitempty"`
+}
+
+func (msg TrackObjLess) validate() error {
+	if len(msg.Event) == 0 {
+		return FieldError{
+			Type:  "analytics.Track",
+			Name:  "Event",
+			Value: msg.Event,
+		}
+	}
+
+	return nil
+}

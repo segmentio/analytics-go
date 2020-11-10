@@ -42,8 +42,33 @@ func TestTargetMessageMarshalling(t *testing.T) {
 	}
 	encoder.init()
 
-	_, err := encodeMessage(encoder, m, nil, func() Time { return Time{} })
+	client := s3Client{
+		client: &client{
+			Config: Config{
+				now: func() Time {
+					return Time{}
+				},
+				maxConcurrentRequests: 0,
+			},
+		},
+	}
+
+	_, err := client.encodeMessage(encoder, m)
 	require.NoError(t, err)
+
+	expected := `{"event":{"userId":"tuna","event":"FooBared","timestamp":0,"properties":{"index":1,"qwer":3424}},"sentAt":0,"receivedAt":0}` + "\n"
+	assertBuffer(t, encoder, expected)
+
+	client.config.S3.UnwrappedMessage = true
+
+	_, err = client.encodeMessage(encoder, m)
+	require.NoError(t, err)
+
+	expected = `{"userId":"tuna","event":"FooBared","timestamp":0,"properties":{"index":1,"qwer":3424}}` + "\n"
+	assertBuffer(t, encoder, expected)
+}
+
+func assertBuffer(t *testing.T, encoder *bufferedEncoder, expected string) {
 
 	buf, err := encoder.CommitBuffer()
 	require.NoError(t, err)
@@ -51,8 +76,6 @@ func TestTargetMessageMarshalling(t *testing.T) {
 	require.NoError(t, err)
 
 	result := readAndUngzip(t, reader)
-
-	expected := `{"event":{"userId":"tuna","event":"FooBared","timestamp":0,"properties":{"index":1,"qwer":3424}},"sentAt":0,"receivedAt":0}` + "\n"
 
 	require.Equal(t, expected, string(result))
 }
