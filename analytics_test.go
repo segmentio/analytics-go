@@ -67,12 +67,10 @@ func (l testLogger) Errorf(format string, args ...interface{}) {
 }
 
 var _ Message = (*testErrorMessage)(nil)
+
 // Instances of this type are used to force message validation errors in unit
 // tests.
 type testErrorMessage struct{}
-
-func (m testErrorMessage) internal() {
-}
 
 func (m testErrorMessage) Validate() error { return testError }
 
@@ -334,9 +332,6 @@ func TestEnqueue(t *testing.T) {
 var _ Message = (*customMessage)(nil)
 
 type customMessage struct {
-}
-
-func (c *customMessage) internal() {
 }
 
 func (c *customMessage) Validate() error {
