@@ -6,11 +6,17 @@ import (
 )
 
 var _ Message = (Event)(nil)
+var _ FieldGetter = (Event)(nil)
 
 type Event map[string]interface{}
 
 func (e Event) Validate() error {
 	return ValidateFields(e)
+}
+
+func (e Event) GetField(field string) (val interface{}, ok bool) {
+	val, ok = e[field]
+	return
 }
 
 func TestValidateFieldsMissingType(t *testing.T) {
@@ -73,7 +79,6 @@ func TestValidateFieldsAliasInvalid(t *testing.T) {
 		t.Error("validating an invalid generic message succeeded:", msg)
 	} else if e, ok := err.(FieldError); !ok {
 		t.Error("invalid error type returned when validating a generic message:", err)
-
 	} else if e != (FieldError{
 		Type:  "analytics.Alias",
 		Name:  "PreviousId",

@@ -1,13 +1,22 @@
 package analytics
 
-func getString(msg map[string]interface{}, field string) string {
-	val, _ := msg[field].(string)
-	return val
+type FieldGetter interface {
+	GetField(field string) (interface{}, bool)
 }
 
-func ValidateFields(msg map[string]interface{}) error {
-	if typ, ok := msg["type"].(string); ok {
-		switch typ {
+func getString(msg FieldGetter, field string) string {
+	if val, ok := msg.GetField(field); ok {
+		if str, ok := val.(string); ok {
+			return str
+		}
+	}
+	return ""
+}
+
+func ValidateFields(msg FieldGetter) error {
+	typ, _ := msg.GetField("type")
+	if str, ok := typ.(string); ok {
+		switch str {
 		case "alias":
 			return Alias{
 				Type:       "alias",
@@ -51,6 +60,6 @@ func ValidateFields(msg map[string]interface{}) error {
 	return FieldError{
 		Type:  "analytics.Event",
 		Name:  "Type",
-		Value: msg["type"],
+		Value: typ,
 	}
 }
