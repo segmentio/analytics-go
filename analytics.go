@@ -189,6 +189,9 @@ func (c *client) Enqueue(msg Message) (err error) {
 		m.MessageId = makeMessageID(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
+	case TrackObjLess:
+		m.Type = "track"
+		msg = m
 	}
 
 	defer func() {
