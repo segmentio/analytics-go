@@ -287,6 +287,7 @@ func ExampleTrackObjLess() {
 	//         "platform": "osx",
 	//         "version": "1.1.0"
 	//       },
+	//       "timestamp": 0,
 	//       "type": "track"
 	//     }
 	//   ],
