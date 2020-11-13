@@ -223,7 +223,10 @@ func (c *s3Client) setTagsIfExsist(m Message) {
 
 func (c *s3Client) encodeMessage(bw *bufferedEncoder, m Message) (ready bool, err error) {
 	if c.config.S3.UnwrappedMessage {
-		return bw.Push(m)
+		type unwrappedMessage struct {
+			Event Message `json:"event"`
+		}
+		return bw.Push(unwrappedMessage{Event: m})
 	}
 
 	ts := c.now()

@@ -64,7 +64,7 @@ func TestTargetMessageMarshalling(t *testing.T) {
 	_, err = client.encodeMessage(encoder, m)
 	require.NoError(t, err)
 
-	expected = `{"userId":"tuna","event":"FooBared","timestamp":0,"properties":{"index":1,"qwer":3424}}` + "\n"
+	expected = `{"event":{"userId":"tuna","event":"FooBared","timestamp":0,"properties":{"index":1,"qwer":3424}}}` + "\n"
 	assertBuffer(t, encoder, expected)
 }
 

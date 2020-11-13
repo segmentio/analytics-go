@@ -1,7 +1,6 @@
 package analytics
 
 import (
-	"encoding/json"
 	"strconv"
 	"time"
 )
@@ -11,11 +10,12 @@ type Time time.Time
 
 // MarshalJSON marshals time as unix milliseconds.
 func (t Time) MarshalJSON() ([]byte, error) {
-	if t == Time(time.Time{}) {
-		return json.Marshal(0)
+	var ts int64
+	if t != Time(time.Time{}) {
+		ts = time.Time(t).UnixNano() / int64(time.Millisecond)
 	}
-	millis := int64(time.Millisecond / time.Nanosecond)
-	return json.Marshal(time.Time(t).UnixNano() / millis)
+
+	return strconv.AppendInt(nil, ts, 10), nil
 }
 
 // UnmarshalJSON unmarshals milliseconds into Time.
