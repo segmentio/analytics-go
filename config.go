@@ -143,7 +143,7 @@ func makeConfig(c Config) Config {
 	}
 
 	if c.RetryAfter == nil {
-		c.RetryAfter = backo.DefaultBacko().Duration
+		c.RetryAfter = backo.NewBacko(time.Millisecond*100, 2, 1, time.Second*10).Duration
 	}
 
 	if c.uid == nil {
