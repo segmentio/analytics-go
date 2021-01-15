@@ -396,7 +396,6 @@ func (c *client) send(msgs []message) {
 				break
 			} else if err.Error() == "451" {
 				c.setNodeCount()
-				fmt.Println("Server is getting Scaled Up / Scaled Down")
 				newMsgs := c.getRevisedMsgs(nodePayload, k)
 				c.send(newMsgs)
 				return
@@ -419,7 +418,7 @@ func (c *client) send(msgs []message) {
 
 // Upload serialized batch message.
 func (c *client) upload(b []byte, targetNode string) error {
-	url := c.Endpoint + "/import"
+	url := c.Endpoint + "/v1/batch"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
 		c.errorf("creating request - %s", err)
@@ -448,7 +447,6 @@ func (c *client) upload(b []byte, targetNode string) error {
 // Report on response body.
 func (c *client) report(res *http.Response) (err error) {
 	var body []byte
-	fmt.Println(res.StatusCode)
 	if res.StatusCode < 300 {
 		c.debugf("response %s", res.Status)
 		return
