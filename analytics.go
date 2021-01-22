@@ -357,6 +357,7 @@ func (c *client) setNodeCount() {
 				c.totalNodes = int(gjson.GetBytes(body, "nodeCount").Int())
 				return
 			} else {
+				c.totalNodes = 1
 				res.Body.Close()
 			}
 		}
@@ -395,6 +396,10 @@ func (c *client) send(msgs []message) {
 				c.notifySuccess(b)
 				break
 			} else if err.Error() == "451" {
+				/*In case we have a scaleup/scaledown in the kubernetes nodes, We would recieve a status code of 451 from the Proxy server
+				We would then reset the node count by making a call to configure-info end point, then regenerate the payload at a node level
+				for only those nodes where we failed in sending the data and then recursively call the send function with the updated payload.
+				*/
 				c.setNodeCount()
 				newMsgs := c.getRevisedMsgs(nodePayload, k)
 				c.send(newMsgs)
