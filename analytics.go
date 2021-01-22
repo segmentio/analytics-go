@@ -320,6 +320,10 @@ func (c *client) getNodePayload(msgs []message) map[int][]message {
 	return nodePayload
 }
 
+/*In the nodepayload , we have sent the payloads till the nodeValue k,
+So we get the payloads for remaining nodes to recompuute the nodePayload
+based on the new targetNodes
+*/
 func (c *client) getRevisedMsgs(nodePayload map[int][]message, startFrom int) []message {
 	msgs := make([]message, 0)
 	for k, v := range nodePayload {
@@ -378,7 +382,7 @@ func (c *client) getMarshalled(msgs []message) ([]byte, error) {
 
 // Send batch request.
 func (c *client) send(msgs []message) {
-	const attempts = 20
+	const attempts = 10
 
 	nodePayload := c.getNodePayload(msgs)
 	for k, b := range nodePayload {
