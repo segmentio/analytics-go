@@ -95,7 +95,7 @@ func NewWithConfig(writeKey string, dataPlaneUrl string, config Config) (cli Cli
 		shutdown: make(chan struct{}),
 		http:     makeHttpClient(config.Transport),
 	}
-	c.setNodeCount()
+	go c.setNodeCount()
 	go c.loop()
 
 	cli = c
@@ -343,6 +343,7 @@ func (c *client) setNodeCount() {
 		req, err := http.NewRequest("GET", url, bytes.NewReader([]byte{}))
 		if err != nil {
 			c.errorf("creating request - %s", err)
+			time.Sleep(200 * time.Millisecond)
 			continue
 		}
 
@@ -353,19 +354,21 @@ func (c *client) setNodeCount() {
 
 		if err != nil {
 			c.errorf("sending request - %s", err)
+			time.Sleep(200 * time.Millisecond)
 			continue
 		}
 		if res.StatusCode == 200 {
 			body, err := ioutil.ReadAll(res.Body)
 			if err == nil {
 				c.totalNodes = int(gjson.GetBytes(body, "nodeCount").Int())
+				res.Body.Close()
 				return
 			} else {
 				c.totalNodes = 1
 				res.Body.Close()
+				time.Sleep(200 * time.Millisecond)
 			}
 		}
-		res.Body.Close()
 	}
 	return
 }
@@ -388,6 +391,9 @@ func (c *client) send(msgs []message) {
 	for k, b := range nodePayload {
 		for i := 0; i != attempts; i++ {
 			//Get Node Count from Client
+			if c.totalNodes == 0 {
+				continue
+			}
 			targetNode := strconv.Itoa(k % c.totalNodes)
 			marshalB, err := c.getMarshalled(b)
 			if err != nil {
