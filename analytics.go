@@ -392,6 +392,11 @@ func (c *client) send(msgs []message) {
 		for i := 0; i != attempts; i++ {
 			//Get Node Count from Client
 			if c.totalNodes == 0 {
+				/*
+					Since we are running the setNodeCount in a seperate goroutine from the main thread,  we should not send out any packets till
+					we have atleast one API call made and totalNodes are set to 1.If the proxy server takes more time to send the response
+					we skip this attempt and move to the next attempt.
+				*/
 				continue
 			}
 			targetNode := strconv.Itoa(k % c.totalNodes)
