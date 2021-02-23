@@ -13,7 +13,7 @@ import (
 )
 
 // Version of the client.
-const Version = "3.0.0"
+const Version = "3.1.0"
 const unimplementedError = "not implemented"
 
 // This interface is the main API exposed by the analytics package.
