@@ -78,6 +78,10 @@ type Config struct {
 	// This field is not exported and only exposed internally to let unit tests
 	// mock the current time.
 	maxConcurrentRequests int
+
+	//This variable will disable checking for the cluster-info end point and
+	//split the payload at node level for multi node setup
+	noProxySupport bool
 }
 
 // This constant sets the default endpoint to which client instances send
