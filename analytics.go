@@ -95,7 +95,7 @@ func NewWithConfig(writeKey string, dataPlaneUrl string, config Config) (cli Cli
 		shutdown: make(chan struct{}),
 		http:     makeHttpClient(config.Transport),
 	}
-	go c.setNodeCount()
+	c.totalNodes = 1
 	go c.loop()
 
 	cli = c
@@ -364,10 +364,11 @@ func (c *client) setNodeCount() {
 				res.Body.Close()
 				return
 			} else {
-				c.totalNodes = 1
 				res.Body.Close()
 				time.Sleep(200 * time.Millisecond)
 			}
+		} else {
+			time.Sleep(200 * time.Millisecond)
 		}
 	}
 	return
