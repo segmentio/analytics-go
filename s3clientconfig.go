@@ -2,9 +2,10 @@ package analytics
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws/session"
 )
 
 // MB is the number of bytes in one megabyte.
