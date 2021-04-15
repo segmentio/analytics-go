@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"strings"
 	"time"
 )
@@ -47,6 +48,14 @@ func makeS3ClientConfig(c S3ClientConfig) (S3ClientConfig, error) {
 				ts.Unix(),
 				uid(),
 			)
+		}
+	}
+
+	if c.S3.Session == nil {
+		var err error
+		c.S3.Session, err = session.NewSession()
+		if err != nil {
+			return c, fmt.Errorf("analytics: creating s3 client session failed: %w", err)
 		}
 	}
 
