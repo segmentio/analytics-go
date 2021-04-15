@@ -52,6 +52,8 @@ type S3 struct {
 	KeyConstructor func(now func() Time, uid func() string) string
 
 	UploaderOptions []func(*s3manager.Uploader)
+
+	Session *session.Session
 }
 
 // S3ClientConfig provides configuration for S3 Client.
@@ -75,8 +77,7 @@ func NewS3ClientWithConfig(config S3ClientConfig) (Client, error) {
 
 	client.msgs = make(chan Message, 1024) // overrite the buffer
 
-	sess := session.Must(session.NewSession())
-	uploader := s3manager.NewUploader(sess, cfg.S3.UploaderOptions...)
+	uploader := s3manager.NewUploader(cfg.S3.Session, cfg.S3.UploaderOptions...)
 
 	c := &s3Client{
 		client: client,
