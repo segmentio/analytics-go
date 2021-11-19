@@ -1,9 +1,9 @@
-module github.com/segmentio/analytics-go
+module github.com/segmentio/analytics-go/v3
 
-go 1.14
+go 1.17
 
 require (
-	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3
+	github.com/google/uuid v1.3.0
+	github.com/segmentio/backo-go v1.0.0
 	github.com/segmentio/conf v1.2.0
-	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c
 )
