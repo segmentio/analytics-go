@@ -167,18 +167,6 @@ func (dd *DatadogReporter) Flush() error {
 	dd.metrics = []datadog.Metric{}
 	dd.Unlock()
 
-	defer func() {
-		if r := recover(); r != nil {
-			// state is unknown
-			// log the error and kill the application
-			dd.logger.Errorf("panic in analytics (%d metrics): %#v", len(metrics), r)
-			for i, m := range metrics {
-				dd.logger.Errorf("%d: %#v", i, m)
-			}
-			os.Exit(1)
-		}
-	}()
-
 	err := retry.Do(
 		func() error {
 			return dd.Client.PostMetrics(metrics)
