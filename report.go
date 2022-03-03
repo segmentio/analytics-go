@@ -162,7 +162,11 @@ func (dd *DatadogReporter) AddTags(tags ...string) {
 
 // Flush flushes reported metrics.
 func (dd *DatadogReporter) Flush() error {
-	metrics := dd.metrics // we need a copy since we can do many retries
+	dd.Lock()
+	metrics := dd.metrics
+	dd.metrics = []datadog.Metric{}
+	dd.Unlock()
+
 	err := retry.Do(
 		func() error {
 			return dd.Client.PostMetrics(metrics)
@@ -178,10 +182,6 @@ func (dd *DatadogReporter) Flush() error {
 			return false
 		}),
 	)
-
-	dd.Lock()
-	dd.metrics = []datadog.Metric{}
-	dd.Unlock()
 
 	if err != nil {
 		return fmt.Errorf("submission metrics to DataDog failed for the last time, metrics are gone: %s", err)
