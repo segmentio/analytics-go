@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -126,7 +125,6 @@ func (c *s3Client) loop() {
 			c.flush(&bw, wg, ex)
 
 		case <-c.quit:
-			log.Println("exit requested – draining messages")
 			c.debugf("exit requested – draining messages")
 
 			// Drain the msg channel, we have to close it first so no more
