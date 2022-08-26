@@ -129,7 +129,6 @@ func newHTTPTransport() *http.Transport {
 func NewDatadogReporter(apiKey, appKey string, tags ...string) *DatadogReporter {
 	dr := DatadogReporter{
 		Client: datadog.NewClient(apiKey, appKey),
-		Mutex:  &sync.Mutex{},
 	}
 	dr.Client.HttpClient = &http.Client{
 		Timeout:   time.Second * 30,
@@ -152,11 +151,13 @@ type DatadogReporter struct {
 	logger  Logger
 	metrics []datadog.Metric
 	tags    []string
-	*sync.Mutex
+	sync.Mutex
 }
 
 // AddTags adds tags to be added to each metric reported.
 func (dd *DatadogReporter) AddTags(tags ...string) {
+	dd.Lock()
+	defer dd.Unlock()
 	dd.tags = append(dd.tags, tags...)
 }
 
