@@ -300,7 +300,6 @@ func (c *client) upload(b []byte) error {
 	res, err := c.http.Do(req)
 
 	if err != nil {
-		c.errorf("sending request - %s", err)
 		return err
 	}
 
