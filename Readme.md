@@ -11,7 +11,7 @@ versions of the library.
 
 To install it in the GOPATH:
 ```
-go get https://github.com/segmentio/analytics-go
+go get github.com/segmentio/analytics-go
 ```
 
 ## Documentation
@@ -30,9 +30,9 @@ use of the library and the Segment API:
 package main
 
 import (
-    "os"
-
     "github.com/segmentio/analytics-go"
+    "log"
+    "os"
 )
 
 func main() {
@@ -40,10 +40,14 @@ func main() {
     client := analytics.New(os.Getenv("SEGMENT_WRITE_KEY"))
 
     // Enqueues a track event that will be sent asynchronously.
-    client.Enqueue(analytics.Track{
+    err := client.Enqueue(analytics.Track{
         UserId: "test-user",
         Event:  "test-snippet",
     })
+    if err != nil {
+		  log.Println(err)
+      return
+    }
 
     // Flushes any queued messages and closes the client.
     client.Close()
