@@ -41,8 +41,8 @@ func main() {
 
     // Enqueues a track event that will be sent asynchronously.
     err := client.Enqueue(analytics.Track{
-      UserId: "test-user",
-      Event:  "test-snippet",
+        UserId: "test-user",
+        Event:  "test-snippet",
     })
     if err != nil {
 		  log.Println(err)
