@@ -22,6 +22,8 @@ func main() {
 	}
 	conf.Load(&config)
 
+	fmt.Println("config", config)
+
 	callback := callback(make(chan error, 1))
 
 	client, err := journify.NewWithConfig(config.WriteKey, journify.Config{
@@ -62,6 +64,8 @@ func main() {
 	if err := <-callback; err != nil {
 		os.Exit(1)
 	}
+
+	fmt.Println("message sent successfully")
 }
 
 // parseJSON parses a JSON formatted string into a map.
