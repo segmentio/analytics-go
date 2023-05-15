@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 // Version of the client.
 const Version = "3.0.0"
 
-// This interface is the main API exposed by the analytics package.
+// This interface is the main API exposed by the journify package.
 // Values that satsify this interface are returned by the client constructors
 // provided by the package and provide a way to send messages via the HTTP API.
 type Client interface {
@@ -27,9 +27,9 @@ type Client interface {
 	// This is the main method you'll be using, a typical flow would look like
 	// this:
 	//
-	//	client := analytics.New(writeKey)
+	//	client := journify.New(writeKey)
 	//	...
-	//	client.Enqueue(analytics.Track{ ... })
+	//	client.Enqueue(journify.Track{ ... })
 	//	...
 	//	client.Close()
 	//

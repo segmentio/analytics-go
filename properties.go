@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 // This type is used to represent properties in messages that support it.
 // It is a free-form object so the application can set any value it sees fit but
@@ -6,13 +6,12 @@ package analytics
 // common fields.
 // Here's a quick example of how this type is meant to be used:
 //
-//	analytics.Page{
+//	journify.Page{
 //		UserId: "0123456789",
-//		Properties: analytics.NewProperties()
+//		Properties: journify.NewProperties()
 //			.SetRevenue(10.0)
 //			.SetCurrency("USD"),
 //	}
-//
 type Properties map[string]interface{}
 
 func NewProperties() Properties {

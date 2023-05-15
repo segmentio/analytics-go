@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import (
 	"bytes"

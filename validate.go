@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 type FieldGetter interface {
 	GetField(field string) (interface{}, bool)
@@ -46,7 +46,7 @@ func ValidateFields(msg FieldGetter) error {
 		}
 	}
 	return FieldError{
-		Type:  "analytics.Event",
+		Type:  "journify.Event",
 		Name:  "Type",
 		Value: typ,
 	}

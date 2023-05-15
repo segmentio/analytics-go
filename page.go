@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import "time"
 
@@ -23,7 +23,7 @@ type Page struct {
 func (msg Page) Validate() error {
 	if len(msg.UserId) == 0 && len(msg.AnonymousId) == 0 {
 		return FieldError{
-			Type:  "analytics.Page",
+			Type:  "journify.Page",
 			Name:  "UserId",
 			Value: msg.UserId,
 		}

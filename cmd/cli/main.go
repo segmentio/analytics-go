@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/segmentio/analytics-go/v3"
+	journify "github.com/journifyio/journify-go-sdk"
 	"github.com/segmentio/conf"
 )
 
@@ -24,35 +24,35 @@ func main() {
 
 	callback := callback(make(chan error, 1))
 
-	client, err := analytics.NewWithConfig(config.WriteKey, analytics.Config{
+	client, err := journify.NewWithConfig(config.WriteKey, journify.Config{
 		BatchSize: 1,
 		Callback:  callback,
 	})
 	if err != nil {
-		fmt.Println("could not initialize analytics client", err)
+		fmt.Println("could not initialize journify client", err)
 		os.Exit(1)
 	}
 
 	switch config.Type {
 	case "track":
-		client.Enqueue(analytics.Track{
+		client.Enqueue(journify.Track{
 			UserId:     config.UserID,
 			Event:      config.Event,
 			Properties: parseJSON(config.Properties),
 		})
 	case "identify":
-		client.Enqueue(analytics.Identify{
+		client.Enqueue(journify.Identify{
 			UserId: config.UserID,
 			Traits: parseJSON(config.Traits),
 		})
 	case "group":
-		client.Enqueue(analytics.Group{
+		client.Enqueue(journify.Group{
 			UserId:  config.UserID,
 			GroupId: config.GroupID,
 			Traits:  parseJSON(config.Traits),
 		})
 	case "page":
-		client.Enqueue(analytics.Page{
+		client.Enqueue(journify.Page{
 			UserId:     config.UserID,
 			Name:       config.Name,
 			Properties: parseJSON(config.Properties),
@@ -76,15 +76,15 @@ func parseJSON(v string) map[string]interface{} {
 	return m
 }
 
-// callback implements the analytics.Callback interface. It is used by the CLI
+// callback implements the journify.Callback interface. It is used by the CLI
 // to wait for events to be uploaded before exiting.
 type callback chan error
 
-func (c callback) Failure(m analytics.Message, err error) {
+func (c callback) Failure(m journify.Message, err error) {
 	fmt.Printf("could not upload message %v due to %v\n", m, err)
 	c <- err
 }
 
-func (c callback) Success(_ analytics.Message) {
+func (c callback) Success(_ journify.Message) {
 	c <- nil
 }

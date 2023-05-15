@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import (
 	"bytes"
@@ -323,7 +323,7 @@ func TestEnqueuingCustomTypeFails(t *testing.T) {
 	client := New("0123456789")
 	err := client.Enqueue(&customMessage{})
 
-	if err.Error() != "messages with custom types cannot be enqueued: *analytics.customMessage" {
+	if err.Error() != "messages with custom types cannot be enqueued: *journify.customMessage" {
 		t.Errorf("invalid/missing error when queuing unsupported message: %v", err)
 	}
 }
