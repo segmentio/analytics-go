@@ -1,4 +1,4 @@
-Segment journify client for Go.
+Journify client for Go.
 
 ## Installation
 
@@ -15,7 +15,7 @@ go get https://github.com/journifyio/journify-go-sdk
 ## Documentation
 
 The links bellow should provide all the documentation needed to make the best
-use of the library and the Segment API:
+use of the library and the Journify API:
 
 - [Documentation](https://segment.com/docs/libraries/go/)
 - [godoc](https://godoc.org/gopkg.in/journifyio/journify-go-sdk)
@@ -34,8 +34,8 @@ import (
 )
 
 func main() {
-    // Instantiates a client to use send messages to the segment API.
-    client := journify.New(os.Getenv("SEGMENT_WRITE_KEY"))
+    // Instantiates a client to use send messages to the Journify API.
+    client := journify.New(os.Getenv("JOURNIFY_WRITE_KEY"))
 
     // Enqueues a track event that will be sent asynchronously.
     client.Enqueue(journify.Track{

@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	journify "github.com/journifyio/journify-go-sdk"
+	"github.com/journifyio/journify-go-sdk"
 	"github.com/segmentio/conf"
 )
 
 func main() {
 	var config struct {
-		WriteKey   string `conf:"writeKey"   help:"The Segment Write Key of the project to send data to"`
+		WriteKey   string `conf:"writeKey"   help:"The Journify Write Key of the project to send data to"`
 		Type       string `conf:"type"       help:"The type of the message to send"`
 		UserID     string `conf:"userId"     help:"Unique identifier for the user"`
 		GroupID    string `conf:"groupId"    help:"Unique identifier for the group"`

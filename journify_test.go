@@ -189,7 +189,7 @@ func ExampleTrack() {
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
-			"application": "Segment Desktop",
+			"application": "Journify Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
@@ -203,7 +203,7 @@ func ExampleTrack() {
 	//       "event": "Download",
 	//       "messageId": "I'm unique",
 	//       "properties": {
-	//         "application": "Segment Desktop",
+	//         "application": "Journify Desktop",
 	//         "platform": "osx",
 	//         "version": "1.1.0"
 	//       },
@@ -249,7 +249,7 @@ func TestEnqueue(t *testing.T) {
 				Event:  "Download",
 				UserId: "123456",
 				Properties: Properties{
-					"application": "Segment Desktop",
+					"application": "Journify Desktop",
 					"version":     "1.1.0",
 					"platform":    "osx",
 				},
@@ -277,7 +277,7 @@ func TestEnqueue(t *testing.T) {
 				Event:  "Download",
 				UserId: "123456",
 				Properties: Properties{
-					"application": "Segment Desktop",
+					"application": "Journify Desktop",
 					"version":     "1.1.0",
 					"platform":    "osx",
 				},
@@ -351,7 +351,7 @@ func TestTrackWithInterval(t *testing.T) {
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
-			"application": "Segment Desktop",
+			"application": "Journify Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
@@ -387,7 +387,7 @@ func TestTrackWithTimestamp(t *testing.T) {
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
-			"application": "Segment Desktop",
+			"application": "Journify Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
@@ -419,7 +419,7 @@ func TestTrackWithMessageId(t *testing.T) {
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
-			"application": "Segment Desktop",
+			"application": "Journify Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
@@ -451,7 +451,7 @@ func TestTrackWithContext(t *testing.T) {
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
-			"application": "Segment Desktop",
+			"application": "Journify Desktop",
 			"version":     "1.1.0",
 			"platform":    "osx",
 		},
@@ -483,7 +483,7 @@ func TestTrackMany(t *testing.T) {
 			Event:  "Download",
 			UserId: "123456",
 			Properties: Properties{
-				"application": "Segment Desktop",
+				"application": "Journify Desktop",
 				"version":     i,
 			},
 		})
