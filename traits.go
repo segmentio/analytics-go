@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import "time"
 
@@ -8,9 +8,9 @@ import "time"
 // common fields.
 // Here's a quick example of how this type is meant to be used:
 //
-//	analytics.Identify{
+//	journify.Identify{
 //		UserId: "0123456789",
-//		Traits: analytics.NewTraits()
+//		Traits: journify.NewTraits()
 //			.SetFirstName("Luke")
 //			.SetLastName("Skywalker")
 //			.Set("Role", "Jedi"),

@@ -1,11 +1,11 @@
-package analytics
+package journify
 
 import (
 	"encoding/json"
 	"time"
 )
 
-// Values implementing this interface are used by analytics clients to notify
+// Values implementing this interface are used by journify clients to notify
 // the application when a message send succeeded or failed.
 //
 // Callback methods are called by a client's internal goroutines, there are no
@@ -26,11 +26,11 @@ type Callback interface {
 	Failure(Message, error)
 }
 
-// This interface is used to represent analytics objects that can be sent via
+// This interface is used to represent journify objects that can be sent via
 // a client.
 //
-// Types like analytics.Track, analytics.Page, etc... implement this interface
-// and therefore can be passed to the analytics.Client.Send method.
+// Types like journify.Track, journify.Page, etc... implement this interface
+// and therefore can be passed to the journify.Client.Send method.
 type Message interface {
 
 	// Validate validates the internal structure of the message, the method must return

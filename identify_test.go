@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import "testing"
 
@@ -12,7 +12,7 @@ func TestIdentifyMissingUserId(t *testing.T) {
 		t.Error("invalid error type returned when validating identify:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Identify",
+		Type:  "journify.Identify",
 		Name:  "UserId",
 		Value: "",
 	}) {

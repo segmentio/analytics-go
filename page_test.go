@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import "testing"
 
@@ -12,7 +12,7 @@ func TestPageMissingUserId(t *testing.T) {
 		t.Error("invalid error type returned when validating page:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Page",
+		Type:  "journify.Page",
 		Name:  "UserId",
 		Value: "",
 	}) {

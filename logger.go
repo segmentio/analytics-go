@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import (
 	"log"
@@ -6,23 +6,23 @@ import (
 )
 
 // Instances of types implementing this interface can be used to define where
-// the analytics client logs are written.
+// the journify client logs are written.
 type Logger interface {
 
-	// Analytics clients call this method to log regular messages about the
+	// journify clients call this method to log regular messages about the
 	// operations they perform.
 	// Messages logged by this method are usually tagged with an `INFO` log
 	// level in common logging libraries.
 	Logf(format string, args ...interface{})
 
-	// Analytics clients call this method to log errors they encounter while
+	// journify clients call this method to log errors they encounter while
 	// sending events to the backend servers.
 	// Messages logged by this method are usually tagged with an `ERROR` log
 	// level in common logging libraries.
 	Errorf(format string, args ...interface{})
 }
 
-// This function instantiate an object that statisfies the analytics.Logger
+// This function instantiate an object that statisfies the journify.Logger
 // interface and send logs to standard logger passed as argument.
 func StdLogger(logger *log.Logger) Logger {
 	return stdLogger{

@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import (
 	"reflect"
@@ -30,7 +30,7 @@ func TestValidateFieldsMissingType(t *testing.T) {
 		t.Error("invalid error type returned when validating a generic message:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Event",
+		Type:  "journify.Event",
 		Name:  "Type",
 		Value: nil,
 	}) {
@@ -50,39 +50,9 @@ func TestValidateFieldsInvalidType(t *testing.T) {
 		t.Error("invalid error type returned when validating a generic message:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Event",
+		Type:  "journify.Event",
 		Name:  "Type",
 		Value: "invalid",
-	}) {
-		t.Error("invalid error type returned when validating a generic message:", err)
-	}
-}
-
-func TestValidateFieldsAlias(t *testing.T) {
-	msg := Event{
-		"type":       "alias",
-		"userId":     "user123",
-		"previousId": "user456",
-	}
-	if err := msg.Validate(); err != nil {
-		t.Error("error returned when validating a generic alias message:", err)
-	}
-}
-
-func TestValidateFieldsAliasInvalid(t *testing.T) {
-	msg := Event{
-		"type":   "alias",
-		"userId": "user123",
-	}
-
-	if err := msg.Validate(); err == nil {
-		t.Error("validating an invalid generic message succeeded:", msg)
-	} else if e, ok := err.(FieldError); !ok {
-		t.Error("invalid error type returned when validating a generic message:", err)
-	} else if e != (FieldError{
-		Type:  "analytics.Alias",
-		Name:  "PreviousId",
-		Value: "",
 	}) {
 		t.Error("invalid error type returned when validating a generic message:", err)
 	}
@@ -122,7 +92,7 @@ func TestValidateFieldsGroupInvalid(t *testing.T) {
 		t.Error("invalid error type returned when validating a generic message:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Group",
+		Type:  "journify.Group",
 		Name:  "GroupId",
 		Value: "",
 	}) {
@@ -161,7 +131,7 @@ func TestValidateFieldsIdentifyInvalid(t *testing.T) {
 		t.Error("invalid error type returned when validating a generic message:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Identify",
+		Type:  "journify.Identify",
 		Name:  "UserId",
 		Value: "",
 	}) {
@@ -200,46 +170,7 @@ func TestValidateFieldsPageInvalid(t *testing.T) {
 		t.Error("invalid error type returned when validating a generic message:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Page",
-		Name:  "UserId",
-		Value: "",
-	}) {
-		t.Error("invalid error type returned when validating a generic message:", err)
-	}
-}
-
-func TestValidateFieldsScreen(t *testing.T) {
-	msg := Event{
-		"type":   "screen",
-		"userId": "user123",
-	}
-	if err := msg.Validate(); err != nil {
-		t.Error("error returned when validating a generic screen message:", err)
-	}
-}
-
-func TestValidateFieldsScreenAnonymous(t *testing.T) {
-	msg := Event{
-		"type":        "screen",
-		"anonymousId": "user123",
-	}
-	if err := msg.Validate(); err != nil {
-		t.Error("error returned when validating a generic screen message:", err)
-	}
-}
-
-func TestValidateFieldsScreenInvalid(t *testing.T) {
-	msg := Event{
-		"type": "screen",
-	}
-
-	if err := msg.Validate(); err == nil {
-		t.Error("validating an invalid generic message succeeded:", msg)
-	} else if e, ok := err.(FieldError); !ok {
-		t.Error("invalid error type returned when validating a generic message:", err)
-
-	} else if e != (FieldError{
-		Type:  "analytics.Screen",
+		Type:  "journify.Page",
 		Name:  "UserId",
 		Value: "",
 	}) {
@@ -281,7 +212,7 @@ func TestValidateFieldsTrackInvalid(t *testing.T) {
 		t.Error("invalid error type returned when validating a generic message:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Track",
+		Type:  "journify.Track",
 		Name:  "Event",
 		Value: "",
 	}) {

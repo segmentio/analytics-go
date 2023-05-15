@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import "testing"
 
@@ -14,7 +14,7 @@ func TestGroupMissingGroupId(t *testing.T) {
 		t.Error("invalid error type returned when validating group:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Group",
+		Type:  "journify.Group",
 		Name:  "GroupId",
 		Value: "",
 	}) {
@@ -34,7 +34,7 @@ func TestGroupMissingUserId(t *testing.T) {
 		t.Error("invalid error type returned when validating group:", err)
 
 	} else if e != (FieldError{
-		Type:  "analytics.Group",
+		Type:  "journify.Group",
 		Name:  "UserId",
 		Value: "",
 	}) {

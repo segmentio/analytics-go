@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 // Version of the client.
 const Version = "3.0.0"
 
-// This interface is the main API exposed by the analytics package.
+// This interface is the main API exposed by the journify package.
 // Values that satsify this interface are returned by the client constructors
 // provided by the package and provide a way to send messages via the HTTP API.
 type Client interface {
@@ -27,9 +27,9 @@ type Client interface {
 	// This is the main method you'll be using, a typical flow would look like
 	// this:
 	//
-	//	client := analytics.New(writeKey)
+	//	client := journify.New(writeKey)
 	//	...
-	//	client.Enqueue(analytics.Track{ ... })
+	//	client.Enqueue(journify.Track{ ... })
 	//	...
 	//	client.Close()
 	//
@@ -107,11 +107,6 @@ func makeHttpClient(transport http.RoundTripper) http.Client {
 
 func dereferenceMessage(msg Message) Message {
 	switch m := msg.(type) {
-	case *Alias:
-		if m == nil {
-			return nil
-		}
-		return *m
 	case *Group:
 		if m == nil {
 			return nil
@@ -123,11 +118,6 @@ func dereferenceMessage(msg Message) Message {
 		}
 		return *m
 	case *Page:
-		if m == nil {
-			return nil
-		}
-		return *m
-	case *Screen:
 		if m == nil {
 			return nil
 		}
@@ -152,12 +142,6 @@ func (c *client) Enqueue(msg Message) (err error) {
 	var ts = c.now()
 
 	switch m := msg.(type) {
-	case Alias:
-		m.Type = "alias"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
 	case Group:
 		m.Type = "group"
 		m.MessageId = makeMessageId(m.MessageId, id)
@@ -172,12 +156,6 @@ func (c *client) Enqueue(msg Message) (err error) {
 
 	case Page:
 		m.Type = "page"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
-	case Screen:
-		m.Type = "screen"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
@@ -289,7 +267,6 @@ func (c *client) upload(b []byte) error {
 		return err
 	}
 
-	req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Content-Length", strconv.Itoa(len(b)))
 	req.SetBasicAuth(c.key, "")

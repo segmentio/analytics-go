@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import (
 	"bytes"
@@ -214,7 +214,7 @@ func ExampleTrack() {
 	//   ],
 	//   "context": {
 	//     "library": {
-	//       "name": "analytics-go",
+	//       "name": "journify-go-sdk",
 	//       "version": "3.0.0"
 	//     }
 	//   },
@@ -228,11 +228,6 @@ func TestEnqueue(t *testing.T) {
 		ref string
 		msg Message
 	}{
-		"alias": {
-			fixture("test-enqueue-alias.json"),
-			Alias{PreviousId: "A", UserId: "B"},
-		},
-
 		"group": {
 			fixture("test-enqueue-group.json"),
 			Group{GroupId: "A", UserId: "B"},
@@ -248,11 +243,6 @@ func TestEnqueue(t *testing.T) {
 			Page{Name: "A", UserId: "B"},
 		},
 
-		"screen": {
-			fixture("test-enqueue-screen.json"),
-			Screen{Name: "A", UserId: "B"},
-		},
-
 		"track": {
 			fixture("test-enqueue-track.json"),
 			Track{
@@ -264,10 +254,6 @@ func TestEnqueue(t *testing.T) {
 					"platform":    "osx",
 				},
 			},
-		},
-		"*alias": {
-			fixture("test-enqueue-alias.json"),
-			&Alias{PreviousId: "A", UserId: "B"},
 		},
 
 		"*group": {
@@ -283,11 +269,6 @@ func TestEnqueue(t *testing.T) {
 		"*page": {
 			fixture("test-enqueue-page.json"),
 			&Page{Name: "A", UserId: "B"},
-		},
-
-		"*screen": {
-			fixture("test-enqueue-screen.json"),
-			&Screen{Name: "A", UserId: "B"},
 		},
 
 		"*track": {
@@ -342,7 +323,7 @@ func TestEnqueuingCustomTypeFails(t *testing.T) {
 	client := New("0123456789")
 	err := client.Enqueue(&customMessage{})
 
-	if err.Error() != "messages with custom types cannot be enqueued: *analytics.customMessage" {
+	if err.Error() != "messages with custom types cannot be enqueued: *journify.customMessage" {
 		t.Errorf("invalid/missing error when queuing unsupported message: %v", err)
 	}
 }
@@ -512,42 +493,6 @@ func TestTrackMany(t *testing.T) {
 			},
 		})
 	}
-
-	if res := string(<-body); ref != res {
-		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
-	}
-}
-
-func TestTrackWithIntegrations(t *testing.T) {
-	var ref = fixture("test-integrations-track.json")
-
-	body, server := mockServer()
-	defer server.Close()
-
-	client, _ := NewWithConfig("h97jamjwbh", Config{
-		Endpoint:  server.URL,
-		Verbose:   true,
-		Logger:    t,
-		BatchSize: 1,
-		now:       mockTime,
-		uid:       mockId,
-	})
-	defer client.Close()
-
-	client.Enqueue(Track{
-		Event:  "Download",
-		UserId: "123456",
-		Properties: Properties{
-			"application": "Segment Desktop",
-			"version":     "1.1.0",
-			"platform":    "osx",
-		},
-		Integrations: Integrations{
-			"All":      true,
-			"Intercom": false,
-			"Mixpanel": true,
-		},
-	})
 
 	if res := string(<-body); ref != res {
 		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)

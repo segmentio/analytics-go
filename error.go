@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ type ConfigError struct {
 }
 
 func (e ConfigError) Error() string {
-	return fmt.Sprintf("analytics.NewWithConfig: %s (analytics.Config.%s: %#v)", e.Reason, e.Field, e.Value)
+	return fmt.Sprintf("journify.NewWithConfig: %s (journify.Config.%s: %#v)", e.Reason, e.Field, e.Value)
 }
 
 // Instances of this type are used to represent errors returned when a field was

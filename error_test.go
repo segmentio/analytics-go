@@ -1,4 +1,4 @@
-package analytics
+package journify
 
 import "testing"
 
@@ -9,7 +9,7 @@ func TestConfigError(t *testing.T) {
 		Value:  42,
 	}
 
-	if s := e.Error(); s != "analytics.NewWithConfig: testing (analytics.Config.Answer: 42)" {
+	if s := e.Error(); s != "journify.NewWithConfig: testing (journify.Config.Answer: 42)" {
 		t.Error("invalid error message returned by config error:", s)
 	}
 }

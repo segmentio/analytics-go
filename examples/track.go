@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 
-	"github.com/segmentio/analytics-go/v3"
+	journify "github.com/journifyio/journify-go-sdk"
 )
 import "time"
 
 func main() {
-	client, _ := analytics.NewWithConfig("h97jamjwbh", analytics.Config{
+	client, _ := journify.NewWithConfig("h97jamjwbh", journify.Config{
 		Interval:  30 * time.Second,
 		BatchSize: 100,
 		Verbose:   true,
@@ -25,11 +25,11 @@ func main() {
 			return
 
 		case <-tick:
-			if err := client.Enqueue(analytics.Track{
+			if err := client.Enqueue(journify.Track{
 				Event:  "Download",
 				UserId: "123456",
 				Properties: map[string]interface{}{
-					"application": "Segment Desktop",
+					"application": "Journify Desktop",
 					"version":     "1.1.0",
 					"platform":    "osx",
 				},
