@@ -60,10 +60,9 @@ func makeTimestamp(t time.Time, def time.Time) time.Time {
 // export this type because it's only meant to be used internally to send groups
 // of messages in one API call.
 type batch struct {
-	MessageId string    `json:"messageId"`
-	SentAt    time.Time `json:"sentAt"`
-	Messages  []message `json:"batch"`
-	Context   *Context  `json:"context"`
+	Messages []message `json:"batch"`
+	Context  *Context  `json:"context"`
+	WriteKey string    `json:"writeKey"`
 }
 
 type message struct {

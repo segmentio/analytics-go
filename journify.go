@@ -226,10 +226,9 @@ func (c *client) send(msgs []message) {
 	const attempts = 10
 
 	b, err := json.Marshal(batch{
-		MessageId: c.uid(),
-		SentAt:    c.now(),
-		Messages:  msgs,
-		Context:   c.DefaultContext,
+		Messages: msgs,
+		Context:  c.DefaultContext,
+		WriteKey: c.key,
 	})
 
 	if err != nil {
@@ -384,9 +383,8 @@ func (c *client) errorf(format string, args ...interface{}) {
 
 func (c *client) maxBatchBytes() int {
 	b, _ := json.Marshal(batch{
-		MessageId: c.uid(),
-		SentAt:    c.now(),
-		Context:   c.DefaultContext,
+		Context:  c.DefaultContext,
+		WriteKey: c.key,
 	})
 	return maxBatchBytes - len(b)
 }
