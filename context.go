@@ -18,7 +18,6 @@ type Context struct {
 	OS        OSInfo       `json:"os,omitempty"`
 	Page      PageInfo     `json:"page,omitempty"`
 	Referrer  ReferrerInfo `json:"referrer,omitempty"`
-	Screen    ScreenInfo   `json:"screen,omitempty"`
 	IP        net.IP       `json:"ip,omitempty"`
 	Direct    bool         `json:"direct,omitempty"`
 	Locale    string       `json:"locale,omitempty"`
@@ -116,14 +115,6 @@ type ReferrerInfo struct {
 	Name string `json:"name,omitempty"`
 	URL  string `json:"url,omitempty"`
 	Link string `json:"link,omitempty"`
-}
-
-// This type provides the representation of the `context.screen` object as
-// defined in https://segment.com/docs/spec/common/#context
-type ScreenInfo struct {
-	Density int `json:"density,omitempty"`
-	Width   int `json:"width,omitempty"`
-	Height  int `json:"height,omitempty"`
 }
 
 // Satisfy the `json.Marshaler` interface. We have to flatten out the `Extra`

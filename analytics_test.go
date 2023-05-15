@@ -228,11 +228,6 @@ func TestEnqueue(t *testing.T) {
 		ref string
 		msg Message
 	}{
-		"alias": {
-			fixture("test-enqueue-alias.json"),
-			Alias{PreviousId: "A", UserId: "B"},
-		},
-
 		"group": {
 			fixture("test-enqueue-group.json"),
 			Group{GroupId: "A", UserId: "B"},
@@ -248,11 +243,6 @@ func TestEnqueue(t *testing.T) {
 			Page{Name: "A", UserId: "B"},
 		},
 
-		"screen": {
-			fixture("test-enqueue-screen.json"),
-			Screen{Name: "A", UserId: "B"},
-		},
-
 		"track": {
 			fixture("test-enqueue-track.json"),
 			Track{
@@ -264,10 +254,6 @@ func TestEnqueue(t *testing.T) {
 					"platform":    "osx",
 				},
 			},
-		},
-		"*alias": {
-			fixture("test-enqueue-alias.json"),
-			&Alias{PreviousId: "A", UserId: "B"},
 		},
 
 		"*group": {
@@ -283,11 +269,6 @@ func TestEnqueue(t *testing.T) {
 		"*page": {
 			fixture("test-enqueue-page.json"),
 			&Page{Name: "A", UserId: "B"},
-		},
-
-		"*screen": {
-			fixture("test-enqueue-screen.json"),
-			&Screen{Name: "A", UserId: "B"},
 		},
 
 		"*track": {

@@ -58,36 +58,6 @@ func TestValidateFieldsInvalidType(t *testing.T) {
 	}
 }
 
-func TestValidateFieldsAlias(t *testing.T) {
-	msg := Event{
-		"type":       "alias",
-		"userId":     "user123",
-		"previousId": "user456",
-	}
-	if err := msg.Validate(); err != nil {
-		t.Error("error returned when validating a generic alias message:", err)
-	}
-}
-
-func TestValidateFieldsAliasInvalid(t *testing.T) {
-	msg := Event{
-		"type":   "alias",
-		"userId": "user123",
-	}
-
-	if err := msg.Validate(); err == nil {
-		t.Error("validating an invalid generic message succeeded:", msg)
-	} else if e, ok := err.(FieldError); !ok {
-		t.Error("invalid error type returned when validating a generic message:", err)
-	} else if e != (FieldError{
-		Type:  "analytics.Alias",
-		Name:  "PreviousId",
-		Value: "",
-	}) {
-		t.Error("invalid error type returned when validating a generic message:", err)
-	}
-}
-
 func TestValidateFieldsGroup(t *testing.T) {
 	msg := Event{
 		"type":    "group",
@@ -201,45 +171,6 @@ func TestValidateFieldsPageInvalid(t *testing.T) {
 
 	} else if e != (FieldError{
 		Type:  "analytics.Page",
-		Name:  "UserId",
-		Value: "",
-	}) {
-		t.Error("invalid error type returned when validating a generic message:", err)
-	}
-}
-
-func TestValidateFieldsScreen(t *testing.T) {
-	msg := Event{
-		"type":   "screen",
-		"userId": "user123",
-	}
-	if err := msg.Validate(); err != nil {
-		t.Error("error returned when validating a generic screen message:", err)
-	}
-}
-
-func TestValidateFieldsScreenAnonymous(t *testing.T) {
-	msg := Event{
-		"type":        "screen",
-		"anonymousId": "user123",
-	}
-	if err := msg.Validate(); err != nil {
-		t.Error("error returned when validating a generic screen message:", err)
-	}
-}
-
-func TestValidateFieldsScreenInvalid(t *testing.T) {
-	msg := Event{
-		"type": "screen",
-	}
-
-	if err := msg.Validate(); err == nil {
-		t.Error("validating an invalid generic message succeeded:", msg)
-	} else if e, ok := err.(FieldError); !ok {
-		t.Error("invalid error type returned when validating a generic message:", err)
-
-	} else if e != (FieldError{
-		Type:  "analytics.Screen",
 		Name:  "UserId",
 		Value: "",
 	}) {

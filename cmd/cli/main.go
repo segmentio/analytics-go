@@ -17,8 +17,8 @@ func main() {
 		GroupID    string `conf:"groupId"    help:"Unique identifier for the group"`
 		Traits     string `conf:"traits"     help:"Metadata associated with the user"`
 		Event      string `conf:"event"      help:"Name of the track event"`
-		Properties string `conf:"properties" help:"Metadata associated with an event, page or screen call"`
-		Name       string `conf:"name"       help:"Name of the page/screen"`
+		Properties string `conf:"properties" help:"Metadata associated with an event or page call"`
+		Name       string `conf:"name"       help:"Name of the page"`
 	}
 	conf.Load(&config)
 
@@ -53,12 +53,6 @@ func main() {
 		})
 	case "page":
 		client.Enqueue(analytics.Page{
-			UserId:     config.UserID,
-			Name:       config.Name,
-			Properties: parseJSON(config.Properties),
-		})
-	case "screen":
-		client.Enqueue(analytics.Screen{
 			UserId:     config.UserID,
 			Name:       config.Name,
 			Properties: parseJSON(config.Properties),

@@ -17,12 +17,6 @@ func ValidateFields(msg FieldGetter) error {
 	typ, _ := msg.GetField("type")
 	if str, ok := typ.(string); ok {
 		switch str {
-		case "alias":
-			return Alias{
-				Type:       "alias",
-				UserId:     getString(msg, "userId"),
-				PreviousId: getString(msg, "previousId"),
-			}.Validate()
 		case "group":
 			return Group{
 				Type:        "group",
@@ -39,12 +33,6 @@ func ValidateFields(msg FieldGetter) error {
 		case "page":
 			return Page{
 				Type:        "page",
-				UserId:      getString(msg, "userId"),
-				AnonymousId: getString(msg, "anonymousId"),
-			}.Validate()
-		case "screen":
-			return Screen{
-				Type:        "screen",
 				UserId:      getString(msg, "userId"),
 				AnonymousId: getString(msg, "anonymousId"),
 			}.Validate()

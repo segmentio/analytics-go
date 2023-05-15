@@ -107,11 +107,6 @@ func makeHttpClient(transport http.RoundTripper) http.Client {
 
 func dereferenceMessage(msg Message) Message {
 	switch m := msg.(type) {
-	case *Alias:
-		if m == nil {
-			return nil
-		}
-		return *m
 	case *Group:
 		if m == nil {
 			return nil
@@ -123,11 +118,6 @@ func dereferenceMessage(msg Message) Message {
 		}
 		return *m
 	case *Page:
-		if m == nil {
-			return nil
-		}
-		return *m
-	case *Screen:
 		if m == nil {
 			return nil
 		}
@@ -152,12 +142,6 @@ func (c *client) Enqueue(msg Message) (err error) {
 	var ts = c.now()
 
 	switch m := msg.(type) {
-	case Alias:
-		m.Type = "alias"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
 	case Group:
 		m.Type = "group"
 		m.MessageId = makeMessageId(m.MessageId, id)
@@ -172,12 +156,6 @@ func (c *client) Enqueue(msg Message) (err error) {
 
 	case Page:
 		m.Type = "page"
-		m.MessageId = makeMessageId(m.MessageId, id)
-		m.Timestamp = makeTimestamp(m.Timestamp, ts)
-		msg = m
-
-	case Screen:
-		m.Type = "screen"
 		m.MessageId = makeMessageId(m.MessageId, id)
 		m.Timestamp = makeTimestamp(m.Timestamp, ts)
 		msg = m
