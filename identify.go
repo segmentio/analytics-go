@@ -17,6 +17,7 @@ type Identify struct {
 	Timestamp   time.Time `json:"timestamp,omitempty"`
 	Context     *Context  `json:"context,omitempty"`
 	Traits      Traits    `json:"traits,omitempty"`
+	WriteKey    string    `json:"writeKey,omitempty"`
 }
 
 func (msg Identify) Validate() error {

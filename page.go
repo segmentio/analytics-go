@@ -18,6 +18,7 @@ type Page struct {
 	Timestamp   time.Time  `json:"timestamp,omitempty"`
 	Context     *Context   `json:"context,omitempty"`
 	Properties  Properties `json:"properties,omitempty"`
+	WriteKey    string     `json:"writeKey,omitempty"`
 }
 
 func (msg Page) Validate() error {
