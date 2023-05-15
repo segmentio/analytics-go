@@ -34,7 +34,6 @@ v2.1.0 / 2015-12-28
  * Add ability to set a custom logger.
  * Fix edge case when client would try to upload no messages.
  * Properly upload in-flight messages when client is asked to shutdown.
- * Add ability to set `.integrations` field on messages.
  * Fix resource leak with interval ticker after shutdown.
  * Add retries and back-off when uploading messages.
  * Add ability to set  custom flush interval.

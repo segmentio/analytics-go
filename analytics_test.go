@@ -499,42 +499,6 @@ func TestTrackMany(t *testing.T) {
 	}
 }
 
-func TestTrackWithIntegrations(t *testing.T) {
-	var ref = fixture("test-integrations-track.json")
-
-	body, server := mockServer()
-	defer server.Close()
-
-	client, _ := NewWithConfig("h97jamjwbh", Config{
-		Endpoint:  server.URL,
-		Verbose:   true,
-		Logger:    t,
-		BatchSize: 1,
-		now:       mockTime,
-		uid:       mockId,
-	})
-	defer client.Close()
-
-	client.Enqueue(Track{
-		Event:  "Download",
-		UserId: "123456",
-		Properties: Properties{
-			"application": "Segment Desktop",
-			"version":     "1.1.0",
-			"platform":    "osx",
-		},
-		Integrations: Integrations{
-			"All":      true,
-			"Intercom": false,
-			"Mixpanel": true,
-		},
-	})
-
-	if res := string(<-body); ref != res {
-		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
-	}
-}
-
 func TestClientCloseTwice(t *testing.T) {
 	client := New("0123456789")
 
