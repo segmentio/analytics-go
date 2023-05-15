@@ -1,9 +1,7 @@
 package journify
 
 import (
-	"encoding/json"
 	"net"
-	"reflect"
 )
 
 // This type provides the representation of the `context` object as defined in
@@ -24,12 +22,6 @@ type Context struct {
 	Timezone  string       `json:"timezone,omitempty"`
 	UserAgent string       `json:"userAgent,omitempty"`
 	Traits    Traits       `json:"traits,omitempty"`
-
-	// This map is used to allow extensions to the context specifications that
-	// may not be documented or could be introduced in the future.
-	// The fields of this map are inlined in the serialized context object,
-	// there is no actual "extra" field in the JSON representation.
-	Extra map[string]interface{} `json:"-"`
 }
 
 // This type provides the representation of the `context.app` object as defined
@@ -115,26 +107,4 @@ type ReferrerInfo struct {
 	Name string `json:"name,omitempty"`
 	URL  string `json:"url,omitempty"`
 	Link string `json:"link,omitempty"`
-}
-
-// Satisfy the `json.Marshaler` interface. We have to flatten out the `Extra`
-// field but the standard json package doesn't support it yet.
-// Implementing this interface allows us to override the default marshaling of
-// the context object and to the inlining ourselves.
-//
-// Related discussion: https://github.com/golang/go/issues/6213
-func (ctx Context) MarshalJSON() ([]byte, error) {
-	v := reflect.ValueOf(ctx)
-	n := v.NumField()
-	m := make(map[string]interface{}, n+len(ctx.Extra))
-
-	// Copy the `Extra` map into the map representation of the context, it is
-	// important to do this operation before going through the actual struct
-	// fields so the latter take precendence and override duplicated values
-	// that would be set in the extensions.
-	for name, value := range ctx.Extra {
-		m[name] = value
-	}
-
-	return json.Marshal(structToMap(v, m))
 }
