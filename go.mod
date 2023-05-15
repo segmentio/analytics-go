@@ -1,4 +1,4 @@
-module github.com/segmentio/analytics-go/v3
+module github.com/journifyio/journify-go-sdk
 
 go 1.17
 

@@ -214,7 +214,7 @@ func ExampleTrack() {
 	//   ],
 	//   "context": {
 	//     "library": {
-	//       "name": "analytics-go",
+	//       "name": "journify-go-sdk",
 	//       "version": "3.0.0"
 	//     }
 	//   },

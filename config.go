@@ -160,7 +160,7 @@ func makeConfig(c Config) Config {
 	// We always overwrite the 'library' field of the default context set on the
 	// client because we want this information to be accurate.
 	c.DefaultContext.Library = LibraryInfo{
-		Name:    "analytics-go",
+		Name:    "journify-go-sdk",
 		Version: Version,
 	}
 	return c
