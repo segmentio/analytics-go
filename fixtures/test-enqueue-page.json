@@ -5,7 +5,8 @@
       "name": "A",
       "timestamp": "2009-11-10T23:00:00Z",
       "type": "page",
-      "userId": "B"
+      "userId": "B",
+      "writeKey": "h97jamjwbh"
     }
   ],
   "context": {
@@ -14,6 +15,5 @@
       "version": "3.0.0"
     }
   },
-  "messageId": "I'm unique",
-  "sentAt": "2009-11-10T23:00:00Z"
+  "writeKey": "h97jamjwbh"
 }

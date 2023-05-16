@@ -1,7 +1,9 @@
 package journify
 
 import (
+	"encoding/json"
 	"net"
+	"reflect"
 )
 
 type Context struct {
@@ -87,4 +89,11 @@ type ReferrerInfo struct {
 	Name string `json:"name,omitempty"`
 	URL  string `json:"url,omitempty"`
 	Link string `json:"link,omitempty"`
+}
+
+func (ctx Context) MarshalJSON() ([]byte, error) {
+	v := reflect.ValueOf(ctx)
+	n := v.NumField()
+	m := make(map[string]interface{}, n)
+	return json.Marshal(structToMap(v, m))
 }

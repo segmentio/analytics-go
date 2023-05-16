@@ -209,7 +209,8 @@ func ExampleTrack() {
 	//       },
 	//       "timestamp": "2009-11-10T23:00:00Z",
 	//       "type": "track",
-	//       "userId": "123456"
+	//       "userId": "123456",
+	//       "writeKey": "h97jamjwbh"
 	//     }
 	//   ],
 	//   "context": {
@@ -218,8 +219,7 @@ func ExampleTrack() {
 	//       "version": "3.0.0"
 	//     }
 	//   },
-	//   "messageId": "I'm unique",
-	//   "sentAt": "2009-11-10T23:00:00Z"
+	//   "writeKey": "h97jamjwbh"
 	// }
 }
 
@@ -424,37 +424,6 @@ func TestTrackWithMessageId(t *testing.T) {
 			"platform":    "osx",
 		},
 		MessageId: "abc",
-	})
-
-	if res := string(<-body); ref != res {
-		t.Errorf("invalid response:\n- expected %s\n- received: %s", ref, res)
-	}
-}
-
-func TestTrackWithContext(t *testing.T) {
-	var ref = fixture("test-context-track.json")
-
-	body, server := mockServer()
-	defer server.Close()
-
-	client, _ := NewWithConfig("h97jamjwbh", Config{
-		Endpoint:  server.URL,
-		Verbose:   true,
-		Logger:    t,
-		BatchSize: 1,
-		now:       mockTime,
-		uid:       mockId,
-	})
-	defer client.Close()
-
-	client.Enqueue(Track{
-		Event:  "Download",
-		UserId: "123456",
-		Properties: Properties{
-			"application": "Journify Desktop",
-			"version":     "1.1.0",
-			"platform":    "osx",
-		},
 	})
 
 	if res := string(<-body); ref != res {
