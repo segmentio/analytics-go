@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -86,7 +85,7 @@ var (
 			Proto:      r.Proto,
 			ProtoMajor: r.ProtoMajor,
 			ProtoMinor: r.ProtoMinor,
-			Body:       ioutil.NopCloser(strings.NewReader("")),
+			Body:       io.NopCloser(strings.NewReader("")),
 			Request:    r,
 		}, nil
 	})
@@ -105,7 +104,7 @@ var (
 			Proto:      r.Proto,
 			ProtoMajor: r.ProtoMajor,
 			ProtoMinor: r.ProtoMinor,
-			Body:       ioutil.NopCloser(strings.NewReader("")),
+			Body:       io.NopCloser(strings.NewReader("")),
 			Request:    r,
 		}, nil
 	})
@@ -118,7 +117,7 @@ var (
 			Proto:      r.Proto,
 			ProtoMajor: r.ProtoMajor,
 			ProtoMinor: r.ProtoMinor,
-			Body:       ioutil.NopCloser(readFunc(func(b []byte) (int, error) { return 0, testError })),
+			Body:       io.NopCloser(readFunc(func(b []byte) (int, error) { return 0, testError })),
 			Request:    r,
 		}, nil
 	})
@@ -135,7 +134,7 @@ func fixture(name string) string {
 		panic(err)
 	}
 	defer f.Close()
-	b, err := ioutil.ReadAll(f)
+	b, err := io.ReadAll(f)
 	if err != nil {
 		panic(err)
 	}
@@ -154,7 +153,7 @@ func mockServer() (chan []byte, *httptest.Server) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		buf := bytes.NewBuffer(nil)
-		io.Copy(buf, r.Body)
+		_, _ = io.Copy(buf, r.Body)
 
 		var v interface{}
 		err := json.Unmarshal(buf.Bytes(), &v)
@@ -185,7 +184,7 @@ func ExampleTrack() {
 	})
 	defer client.Close()
 
-	client.Enqueue(Track{
+	_ = client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
@@ -347,7 +346,7 @@ func TestTrackWithInterval(t *testing.T) {
 	})
 	defer client.Close()
 
-	client.Enqueue(Track{
+	_ = client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
@@ -383,7 +382,7 @@ func TestTrackWithTimestamp(t *testing.T) {
 	})
 	defer client.Close()
 
-	client.Enqueue(Track{
+	_ = client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
@@ -415,7 +414,7 @@ func TestTrackWithMessageId(t *testing.T) {
 	})
 	defer client.Close()
 
-	client.Enqueue(Track{
+	_ = client.Enqueue(Track{
 		Event:  "Download",
 		UserId: "123456",
 		Properties: Properties{
@@ -448,7 +447,7 @@ func TestTrackMany(t *testing.T) {
 	defer client.Close()
 
 	for i := 0; i < 5; i++ {
-		client.Enqueue(Track{
+		_ = client.Enqueue(Track{
 			Event:  "Download",
 			UserId: "123456",
 			Properties: Properties{
@@ -520,7 +519,7 @@ func TestClientCallback(t *testing.T) {
 		Transport: testTransportOK,
 	})
 
-	client.Enqueue(Track{
+	_ = client.Enqueue(Track{
 		UserId: "A",
 		Event:  "B",
 	})
@@ -547,7 +546,7 @@ func TestClientMarshalMessageError(t *testing.T) {
 
 	// Functions cannot be serializable, this should break the JSON marshaling
 	// and trigger the failure callback.
-	client.Enqueue(Track{
+	_ = client.Enqueue(Track{
 		UserId:     "A",
 		Event:      "B",
 		Properties: Properties{"invalid": func() {}},
@@ -575,8 +574,8 @@ func TestClientNewRequestError(t *testing.T) {
 		Transport: testTransportOK,
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
-	client.Close()
+	_ = client.Enqueue(Track{UserId: "A", Event: "B"})
+	_ = client.Close()
 
 	if err := <-errchan; err == nil {
 		t.Error("failure callback not triggered for an invalid request")
@@ -595,8 +594,8 @@ func TestClientRoundTripperError(t *testing.T) {
 		Transport: testTransportError,
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
-	client.Close()
+	_ = client.Enqueue(Track{UserId: "A", Event: "B"})
+	_ = client.Close()
 
 	if err := <-errchan; err == nil {
 		t.Error("failure callback not triggered for an invalid request")
@@ -625,7 +624,7 @@ func TestClientRetryError(t *testing.T) {
 		RetryAfter: func(i int) time.Duration { return time.Millisecond },
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
+	_ = client.Enqueue(Track{UserId: "A", Event: "B"})
 
 	// Each retry should happen ~1 millisecond, this should give enough time to
 	// the test to trigger the failure callback.
@@ -657,8 +656,8 @@ func TestClientResponse400(t *testing.T) {
 		Transport: testTransportBadRequest,
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
-	client.Close()
+	_ = client.Enqueue(Track{UserId: "A", Event: "B"})
+	_ = client.Close()
 
 	if err := <-errchan; err == nil {
 		t.Error("failure callback not triggered for a 400 response")
@@ -678,8 +677,8 @@ func TestClientResponseBodyError(t *testing.T) {
 		Transport: testTransportBodyError,
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
-	client.Close()
+	_ = client.Enqueue(Track{UserId: "A", Event: "B"})
+	_ = client.Close()
 
 	if err := <-errchan; err == nil {
 		t.Error("failure callback not triggered for a 400 response")
@@ -706,9 +705,9 @@ func TestClientMaxConcurrentRequests(t *testing.T) {
 		maxConcurrentRequests: 1,
 	})
 
-	client.Enqueue(Track{UserId: "A", Event: "B"})
-	client.Enqueue(Track{UserId: "A", Event: "B"})
-	client.Close()
+	_ = client.Enqueue(Track{UserId: "A", Event: "B"})
+	_ = client.Enqueue(Track{UserId: "A", Event: "B"})
+	_ = client.Close()
 
 	if _, ok := <-reschan; !ok {
 		t.Error("one of the requests should have succeeded but the result channel was empty")

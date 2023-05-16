@@ -80,15 +80,15 @@ type Config struct {
 	maxConcurrentRequests int
 }
 
-// This constant sets the default endpoint to which client instances send
-// messages if none was explictly set.
+// DefaultEndpoint sets the default endpoint to which client instances send
+// messages if none was explicitly set.
 const DefaultEndpoint = "https://t.journify.io"
 
-// This constant sets the default flush interval used by client instances if
+// DefaultInterval sets the default flush interval used by client instances if
 // none was explicitly set.
 const DefaultInterval = 5 * time.Second
 
-// This constant sets the default batch size used by client instances if none
+// DefaultBatchSize sets the default batch size used by client instances if none
 // was explicitly set.
 const DefaultBatchSize = 250
 

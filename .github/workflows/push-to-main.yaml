@@ -1,0 +1,45 @@
+name: Merge on main
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  push-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.20
+          check-latest: true
+
+      - name: Install Taskfile
+        uses: arduino/setup-task@v1
+        with:
+          repo-token: ${{ secrets.GH_ACCESS_TOKEN }}
+
+      - name: Build Go code
+        run: task build
+
+#      - name: Lint Go code
+#        run: task lint
+
+      - name: Test Go code
+        run: task test
+
+      - name: Version
+        uses: paulhatch/semantic-version@v4.0.2
+        id: version
+        with:
+          tag_prefix: v
+
+      - name: Tag
+        uses: rickstaa/action-create-tag@v1
+        with:
+          tag: ${{ steps.version.outputs.version_tag }}

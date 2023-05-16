@@ -1,0 +1,23 @@
+version: 3
+tasks:
+  build:
+    desc: Build program
+    cmds:
+      - go build -o journify-go-sdk.out cmd/cli/*.go
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test -shuffle=on -race -cover ./...
+
+  lint:
+    desc: Lint
+    deps:
+      - task: install-golangci-lint
+    cmds:
+      - go mod tidy
+      - golangci-lint run ./...
+
+  install-golangci-lint:
+    cmds:
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.2

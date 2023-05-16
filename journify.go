@@ -3,7 +3,6 @@ package journify
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strconv"
 	"sync"
 
@@ -16,13 +15,13 @@ import (
 // Version of the client.
 const Version = "3.0.0"
 
-// This interface is the main API exposed by the journify package.
-// Values that satsify this interface are returned by the client constructors
+// Client is the main API exposed by the journify package.
+// Values that satisfy this interface are returned by the client constructors
 // provided by the package and provide a way to send messages via the HTTP API.
 type Client interface {
 	io.Closer
 
-	// Queues a message to be sent by the client when the conditions for a batch
+	// Enqueue queues a message to be sent by the client when the conditions for a batch
 	// upload are met.
 	// This is the main method you'll be using, a typical flow would look like
 	// this:
@@ -61,7 +60,7 @@ type client struct {
 	http http.Client
 }
 
-// Instantiate a new client that uses the write key passed as first argument to
+// New instantiate a new client that uses the write key passed as first argument to
 // send messages to the backend.
 // The client is created with the default configuration.
 func New(writeKey string) Client {
@@ -70,7 +69,7 @@ func New(writeKey string) Client {
 	return c
 }
 
-// Instantiate a new client that uses the write key and configuration passed as
+// NewWithConfig instantiate a new client that uses the write key and configuration passed as
 // arguments to send messages to the backend.
 // The function will return an error if the configuration contained impossible
 // values (like a negative flush interval for example).
@@ -294,7 +293,7 @@ func (c *client) report(res *http.Response) (err error) {
 		return
 	}
 
-	if body, err = ioutil.ReadAll(res.Body); err != nil {
+	if body, err = io.ReadAll(res.Body); err != nil {
 		c.errorf("response %d %s - %s", res.StatusCode, res.Status, err)
 		return
 	}

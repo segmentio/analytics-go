@@ -22,8 +22,6 @@ func main() {
 	}
 	conf.Load(&config)
 
-	fmt.Println("config", config)
-
 	callback := callback(make(chan error, 1))
 
 	client, err := journify.NewWithConfig(config.WriteKey, journify.Config{
@@ -37,24 +35,24 @@ func main() {
 
 	switch config.Type {
 	case "track":
-		client.Enqueue(journify.Track{
+		_ = client.Enqueue(journify.Track{
 			UserId:     config.UserID,
 			Event:      config.Event,
 			Properties: parseJSON(config.Properties),
 		})
 	case "identify":
-		client.Enqueue(journify.Identify{
+		_ = client.Enqueue(journify.Identify{
 			UserId: config.UserID,
 			Traits: parseJSON(config.Traits),
 		})
 	case "group":
-		client.Enqueue(journify.Group{
+		_ = client.Enqueue(journify.Group{
 			UserId:  config.UserID,
 			GroupId: config.GroupID,
 			Traits:  parseJSON(config.Traits),
 		})
 	case "page":
-		client.Enqueue(journify.Page{
+		_ = client.Enqueue(journify.Page{
 			UserId:     config.UserID,
 			Name:       config.Name,
 			Properties: parseJSON(config.Properties),
@@ -64,8 +62,6 @@ func main() {
 	if err := <-callback; err != nil {
 		os.Exit(1)
 	}
-
-	fmt.Println("message sent successfully")
 }
 
 // parseJSON parses a JSON formatted string into a map.

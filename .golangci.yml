@@ -1,0 +1,62 @@
+run:
+  timeout: 3m
+  issues-exit-code: 1
+  tests: true
+  skip-dirs:
+    - build
+    - mocks
+  skip-dirs-use-default: true
+
+linters-settings:
+  gocyclo:
+    min-complexity: 25
+  funlen:
+    lines: 100
+  goconst:
+    min-len: 2
+    min-occurrences: 4
+  errcheck:
+    check-blank: false
+  revive:
+    rules:
+      - name: exported
+        severity: error
+        disabled: false
+        arguments:
+          - "checkPrivateReceivers"
+          - "sayRepetitiveInsteadOfStutters"
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - dogsled
+    - errcheck
+    - goconst
+    - gocyclo
+    - gofmt
+    - goimports
+    - revive
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - unused
+    - whitespace
+
+issues:
+  include:
+    - EXC0012
+    - EXC0013
+    - EXC0014
+    - EXC0015

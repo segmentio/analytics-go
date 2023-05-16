@@ -9,13 +9,13 @@ func TestPropertiesSimple(t *testing.T) {
 	text := "ABC"
 	number := 0.5
 	products := []Product{
-		Product{
+		{
 			ID:    "1",
 			SKU:   "1",
 			Name:  "A",
 			Price: 42.0,
 		},
-		Product{
+		{
 			ID:    "2",
 			SKU:   "2",
 			Name:  "B",
