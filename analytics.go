@@ -21,6 +21,7 @@ const Version = "3.0.0"
 // provided by the package and provide a way to send messages via the HTTP API.
 type Client interface {
 	io.Closer
+    http.Flusher
 
 	// Queues a message to be sent by the client when the conditions for a batch
 	// upload are met.
@@ -59,6 +60,12 @@ type client struct {
 	// This HTTP client is used to send requests to the backend, it uses the
 	// HTTP transport provided in the configuration.
 	http http.Client
+
+    // Used by the Flush method to send requests to the backend synchronously.
+    mq *messageQueue
+
+    // We can only run flush once at a time, so we use this mutex to synchronize.
+    mu *sync.Mutex
 }
 
 // Instantiate a new client that uses the write key passed as first argument to
@@ -207,6 +214,16 @@ func (c *client) Enqueue(msg Message) (err error) {
 	return
 }
 
+// Flush flush metrics synchronously without closing the client.
+func (c *client) Flush() {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+	if msgs := c.mq.flush(); msgs != nil {
+		c.debugf("flushing %d messages synchronously", len(msgs))
+		c.send(msgs)
+	}
+}
+
 // Close and flush metrics.
 func (c *client) Close() (err error) {
 	defer func() {
@@ -340,6 +357,8 @@ func (c *client) loop() {
 		maxBatchSize:  c.BatchSize,
 		maxBatchBytes: c.maxBatchBytes(),
 	}
+    c.mq = &mq
+    c.mu = &sync.Mutex{}
 
 	for {
 		select {
@@ -385,6 +404,8 @@ func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup, ex *execut
 }
 
 func (c *client) flush(q *messageQueue, wg *sync.WaitGroup, ex *executor) {
+    c.mu.Lock()
+    defer c.mu.Unlock()
 	if msgs := q.flush(); msgs != nil {
 		c.debugf("flushing %d messages", len(msgs))
 		c.sendAsync(msgs, wg, ex)
