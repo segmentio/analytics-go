@@ -21,7 +21,7 @@ const Version = "3.0.0"
 // provided by the package and provide a way to send messages via the HTTP API.
 type Client interface {
 	io.Closer
-    http.Flusher
+	http.Flusher
 
 	// Queues a message to be sent by the client when the conditions for a batch
 	// upload are met.
@@ -38,6 +38,7 @@ type Client interface {
 	// happens if the client was already closed at the time the method was
 	// called or if the message was malformed.
 	Enqueue(Message) error
+	EnqueueSync(Message) error
 }
 
 type client struct {
@@ -61,11 +62,11 @@ type client struct {
 	// HTTP transport provided in the configuration.
 	http http.Client
 
-    // Used by the Flush method to send requests to the backend synchronously.
-    mq *messageQueue
+	// Used by the Flush method to send requests to the backend synchronously.
+	mq *messageQueue
 
-    // We can only run flush once at a time, so we use this mutex to synchronize.
-    mu *sync.Mutex
+	// We can only run flush once at a time, so we use this mutex to synchronize.
+	mu *sync.Mutex
 }
 
 // Instantiate a new client that uses the write key passed as first argument to
@@ -150,6 +151,12 @@ func dereferenceMessage(msg Message) Message {
 }
 
 func (c *client) Enqueue(msg Message) (err error) {
+	return c.enqueue(msg, true)
+}
+func (c *client) EnqueueSync(msg Message) (err error) {
+	return c.enqueue(msg, false)
+}
+func (c *client) enqueue(msg Message, async bool) (err error) {
 	msg = dereferenceMessage(msg)
 	if err = msg.Validate(); err != nil {
 		return
@@ -210,14 +217,18 @@ func (c *client) Enqueue(msg Message) (err error) {
 		}
 	}()
 
-	c.msgs <- msg
+	if async {
+		c.msgs <- msg
+	} else {
+		c.push(c.mq, msg, nil, nil)
+	}
 	return
 }
 
 // Flush flush metrics synchronously without closing the client.
 func (c *client) Flush() {
-    c.mu.Lock()
-    defer c.mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if msgs := c.mq.flush(); msgs != nil {
 		c.debugf("flushing %d messages synchronously", len(msgs))
 		c.send(msgs)
@@ -357,8 +368,8 @@ func (c *client) loop() {
 		maxBatchSize:  c.BatchSize,
 		maxBatchBytes: c.maxBatchBytes(),
 	}
-    c.mq = &mq
-    c.mu = &sync.Mutex{}
+	c.mq = &mq
+	c.mu = &sync.Mutex{}
 
 	for {
 		select {
@@ -399,13 +410,15 @@ func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup, ex *execut
 
 	if msgs := q.push(msg); msgs != nil {
 		c.debugf("exceeded messages batch limit with batch of %d messages – flushing", len(msgs))
-		c.sendAsync(msgs, wg, ex)
+		if wg != nil && ex != nil {
+			c.sendAsync(msgs, wg, ex)
+		}
 	}
 }
 
 func (c *client) flush(q *messageQueue, wg *sync.WaitGroup, ex *executor) {
-    c.mu.Lock()
-    defer c.mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if msgs := q.flush(); msgs != nil {
 		c.debugf("flushing %d messages", len(msgs))
 		c.sendAsync(msgs, wg, ex)
