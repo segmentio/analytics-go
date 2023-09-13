@@ -25,6 +25,7 @@ type Context struct {
 	Timezone  string       `json:"timezone,omitempty"`
 	UserAgent string       `json:"userAgent,omitempty"`
 	Traits    Traits       `json:"traits,omitempty"`
+	Consent   Consent      `json:"traits,omitempty"`
 
 	// This map is used to allow extensions to the context specifications that
 	// may not be documented or could be introduced in the future.
@@ -41,6 +42,15 @@ type AppInfo struct {
 	Build     string `json:"build,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 }
+
+// This type provides the representation of the `context.consent` object as defined
+// in https://segment.com/docs/spec/common/#context
+type Consent struct {
+	CategoryPreferences CategoryPreferences `json:"categoryPreferences,omitempty"`
+}
+
+// The specifications can be found at https://segment.com/docs/spec/identify/#traits
+type CategoryPreferences map[string]bool
 
 // This type provides the representation of the `context.campaign` object as
 // defined in https://segment.com/docs/spec/common/#context
