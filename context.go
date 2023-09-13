@@ -25,7 +25,7 @@ type Context struct {
 	Timezone  string       `json:"timezone,omitempty"`
 	UserAgent string       `json:"userAgent,omitempty"`
 	Traits    Traits       `json:"traits,omitempty"`
-	Consent   Consent      `json:"traits,omitempty"`
+	Consent   Consent      `json:"consent,omitempty"`
 
 	// This map is used to allow extensions to the context specifications that
 	// may not be documented or could be introduced in the future.
