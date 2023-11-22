@@ -11,7 +11,7 @@ versions of the library.
 
 To install it in the GOPATH:
 ```
-go get https://github.com/segmentio/analytics-go
+go get github.com/segmentio/analytics-go
 ```
 
 ## Documentation
