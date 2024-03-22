@@ -311,6 +311,10 @@ func (c *client) report(res *http.Response) (err error) {
 
 	if res.StatusCode < 300 {
 		c.debugf("response %s", res.Status)
+		// http.Do expectes us to not only close but also fully read the response
+		// otherwise the Client's underlying RoundTripper may not be able to re-use a persistent TCP
+		// connection to the server for a subsequent "keep-alive" request.
+                ioutil.ReadAll(res.Body)
 		return
 	}
 
