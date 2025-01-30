@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -86,7 +85,7 @@ var (
 			Proto:      r.Proto,
 			ProtoMajor: r.ProtoMajor,
 			ProtoMinor: r.ProtoMinor,
-			Body:       ioutil.NopCloser(strings.NewReader("")),
+			Body:       io.NopCloser(strings.NewReader("")),
 			Request:    r,
 		}, nil
 	})
@@ -105,7 +104,7 @@ var (
 			Proto:      r.Proto,
 			ProtoMajor: r.ProtoMajor,
 			ProtoMinor: r.ProtoMinor,
-			Body:       ioutil.NopCloser(strings.NewReader("")),
+			Body:       io.NopCloser(strings.NewReader("")),
 			Request:    r,
 		}, nil
 	})
@@ -118,7 +117,7 @@ var (
 			Proto:      r.Proto,
 			ProtoMajor: r.ProtoMajor,
 			ProtoMinor: r.ProtoMinor,
-			Body:       ioutil.NopCloser(readFunc(func(b []byte) (int, error) { return 0, testError })),
+			Body:       io.NopCloser(readFunc(func(b []byte) (int, error) { return 0, testError })),
 			Request:    r,
 		}, nil
 	})
@@ -135,7 +134,7 @@ func fixture(name string) string {
 		panic(err)
 	}
 	defer f.Close()
-	b, err := ioutil.ReadAll(f)
+	b, err := io.ReadAll(f)
 	if err != nil {
 		panic(err)
 	}

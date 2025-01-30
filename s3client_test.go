@@ -4,15 +4,17 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -85,7 +87,7 @@ func readAndUngzip(t *testing.T, r io.Reader) []byte {
 	require.NoError(t, err)
 	defer q.Close()
 
-	d, err := ioutil.ReadAll(q)
+	d, err := io.ReadAll(q)
 	require.NoError(t, err)
 	return d
 }
@@ -131,7 +133,7 @@ func writeAndReadBuffer(t *testing.T, buf encodedBuffer, expected string) {
 	reader, err := buf.Reader()
 	require.NoError(t, err)
 
-	result, err := ioutil.ReadAll(reader)
+	result, err := io.ReadAll(reader)
 	require.NoError(t, err)
 
 	require.Equal(t, expected, string(result))
@@ -236,7 +238,7 @@ func Test_MemoryLimit(t *testing.T) {
 func checkNoFilesLeft(t *testing.T, path string) {
 	t.Helper()
 	dir, fn := filepath.Split(path)
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	require.NoError(t, err)
 
 	for _, file := range files {
@@ -334,8 +336,8 @@ type uploadMock struct {
 	resultChan chan []byte
 }
 
-func (u *uploadMock) Upload(input *s3manager.UploadInput, options ...func(*s3manager.Uploader)) (*s3manager.UploadOutput, error) {
-	data, err := ioutil.ReadAll(input.Body)
+func (u *uploadMock) Upload(ctx context.Context, input *s3.PutObjectInput, options ...func(*manager.Uploader)) (*manager.UploadOutput, error) {
+	data, err := io.ReadAll(input.Body)
 	if err != nil {
 		return nil, err
 	}

@@ -4,21 +4,22 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 type uploader interface {
-	Upload(input *s3manager.UploadInput, options ...func(*s3manager.Uploader)) (*s3manager.UploadOutput, error)
+	Upload(ctx context.Context, input *s3.PutObjectInput, options ...func(*manager.Uploader)) (*manager.UploadOutput, error)
 }
 
 type s3Client struct {
@@ -50,9 +51,9 @@ type S3 struct {
 
 	KeyConstructor func(now func() Time, uid func() string) string
 
-	UploaderOptions []func(*s3manager.Uploader)
+	UploaderOptions []func(*manager.Uploader)
 
-	Session *session.Session
+	Cfg *aws.Config
 }
 
 // S3ClientConfig provides configuration for S3 Client.
@@ -76,7 +77,7 @@ func NewS3ClientWithConfig(config S3ClientConfig) (Client, error) {
 
 	client.msgs = make(chan Message, 1024) // overrite the buffer
 
-	uploader := s3manager.NewUploader(cfg.S3.Session, cfg.S3.UploaderOptions...)
+	uploader := manager.NewUploader(s3.NewFromConfig(*cfg.S3.Cfg), cfg.S3.UploaderOptions...)
 
 	c := &s3Client{
 		client: client,
@@ -317,13 +318,13 @@ func (c *s3Client) upload(r io.Reader) error {
 	key := c.config.S3.KeyConstructor(c.now, uid)
 	c.debugf("uploading to s3://%s/%s", c.config.S3.Bucket, key)
 
-	input := &s3manager.UploadInput{
+	input := &s3.PutObjectInput{
 		Body:   r,
 		Bucket: aws.String(c.config.S3.Bucket),
-		ACL:    aws.String("public-read"),
+		ACL:    types.ObjectCannedACLPublicRead,
 		Key:    aws.String(key),
 	}
-	_, err := c.uploader.Upload(input)
+	_, err := c.uploader.Upload(context.Background(), input)
 	return err
 }
 
@@ -436,7 +437,7 @@ type fileBuffer struct {
 func newFileBuffer(path string) (*fileBuffer, error) {
 	dir, file := filepath.Split(path)
 
-	fd, err := ioutil.TempFile(dir, file)
+	fd, err := os.CreateTemp(dir, file)
 	if err != nil {
 		return nil, err
 	}

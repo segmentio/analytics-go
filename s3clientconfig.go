@@ -1,11 +1,12 @@
 package analytics
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/config"
 )
 
 // MB is the number of bytes in one megabyte.
@@ -52,12 +53,12 @@ func makeS3ClientConfig(c S3ClientConfig) (S3ClientConfig, error) {
 		}
 	}
 
-	if c.S3.Session == nil {
-		var err error
-		c.S3.Session, err = session.NewSession()
+	if c.S3.Cfg == nil {
+		awsCfg, err := config.LoadDefaultConfig(context.Background())
 		if err != nil {
-			return c, fmt.Errorf("analytics: creating s3 client session failed: %w", err)
+			return c, fmt.Errorf("analytics: loading default aws config failed: %w", err)
 		}
+		c.S3.Cfg = &awsCfg
 	}
 
 	return c, nil
