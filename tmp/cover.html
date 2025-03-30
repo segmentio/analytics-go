@@ -1,0 +1,1863 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>v3: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/segmentio/analytics-go/v3/alias.go (100.0%)</option>
+				
+				<option value="file1">github.com/segmentio/analytics-go/v3/analytics.go (95.9%)</option>
+				
+				<option value="file2">github.com/segmentio/analytics-go/v3/config.go (100.0%)</option>
+				
+				<option value="file3">github.com/segmentio/analytics-go/v3/context.go (100.0%)</option>
+				
+				<option value="file4">github.com/segmentio/analytics-go/v3/error.go (100.0%)</option>
+				
+				<option value="file5">github.com/segmentio/analytics-go/v3/executor.go (100.0%)</option>
+				
+				<option value="file6">github.com/segmentio/analytics-go/v3/group.go (100.0%)</option>
+				
+				<option value="file7">github.com/segmentio/analytics-go/v3/identify.go (100.0%)</option>
+				
+				<option value="file8">github.com/segmentio/analytics-go/v3/integrations.go (100.0%)</option>
+				
+				<option value="file9">github.com/segmentio/analytics-go/v3/json.go (100.0%)</option>
+				
+				<option value="file10">github.com/segmentio/analytics-go/v3/logger.go (100.0%)</option>
+				
+				<option value="file11">github.com/segmentio/analytics-go/v3/message.go (100.0%)</option>
+				
+				<option value="file12">github.com/segmentio/analytics-go/v3/page.go (100.0%)</option>
+				
+				<option value="file13">github.com/segmentio/analytics-go/v3/properties.go (100.0%)</option>
+				
+				<option value="file14">github.com/segmentio/analytics-go/v3/screen.go (100.0%)</option>
+				
+				<option value="file15">github.com/segmentio/analytics-go/v3/timeout_16.go (100.0%)</option>
+				
+				<option value="file16">github.com/segmentio/analytics-go/v3/track.go (100.0%)</option>
+				
+				<option value="file17">github.com/segmentio/analytics-go/v3/traits.go (100.0%)</option>
+				
+				<option value="file18">github.com/segmentio/analytics-go/v3/validate.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package analytics
+
+import "time"
+
+var _ Message = (*Alias)(nil)
+
+// This type represents object sent in a alias call as described in
+// https://segment.com/docs/libraries/http/#alias
+type Alias struct {
+        // This field is exported for serialization purposes and shouldn't be set by
+        // the application, its value is always overwritten by the library.
+        Type string `json:"type,omitempty"`
+
+        MessageId    string       `json:"messageId,omitempty"`
+        PreviousId   string       `json:"previousId"`
+        UserId       string       `json:"userId"`
+        Timestamp    time.Time    `json:"timestamp,omitempty"`
+        Context      *Context     `json:"context,omitempty"`
+        Integrations Integrations `json:"integrations,omitempty"`
+}
+
+func (msg Alias) Validate() error <span class="cov10" title="7">{
+        if len(msg.UserId) == 0 </span><span class="cov1" title="1">{
+                return FieldError{
+                        Type:  "analytics.Alias",
+                        Name:  "UserId",
+                        Value: msg.UserId,
+                }
+        }</span>
+
+        <span class="cov9" title="6">if len(msg.PreviousId) == 0 </span><span class="cov4" title="2">{
+                return FieldError{
+                        Type:  "analytics.Alias",
+                        Name:  "PreviousId",
+                        Value: msg.PreviousId,
+                }
+        }</span>
+
+        <span class="cov7" title="4">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package analytics
+
+import (
+        "fmt"
+        "io"
+        "io/ioutil"
+        "strconv"
+        "sync"
+
+        "bytes"
+        "encoding/json"
+        "net/http"
+        "time"
+)
+
+// Version of the client.
+const Version = "3.0.0"
+
+// This interface is the main API exposed by the analytics package.
+// Values that satsify this interface are returned by the client constructors
+// provided by the package and provide a way to send messages via the HTTP API.
+type Client interface {
+        io.Closer
+
+        // Queues a message to be sent by the client when the conditions for a batch
+        // upload are met.
+        // This is the main method you'll be using, a typical flow would look like
+        // this:
+        //
+        //        client := analytics.New(writeKey)
+        //        ...
+        //        client.Enqueue(analytics.Track{ ... })
+        //        ...
+        //        client.Close()
+        //
+        // The method returns an error if the message queue not be queued, which
+        // happens if the client was already closed at the time the method was
+        // called or if the message was malformed.
+        Enqueue(Message) error
+}
+
+type client struct {
+        Config
+        key string
+
+        // This channel is where the `Enqueue` method writes messages so they can be
+        // picked up and pushed by the backend goroutine taking care of applying the
+        // batching rules.
+        msgs chan Message
+
+        // These two channels are used to synchronize the client shutting down when
+        // `Close` is called.
+        // The first channel is closed to signal the backend goroutine that it has
+        // to stop, then the second one is closed by the backend goroutine to signal
+        // that it has finished flushing all queued messages.
+        quit     chan struct{}
+        shutdown chan struct{}
+
+        // This HTTP client is used to send requests to the backend, it uses the
+        // HTTP transport provided in the configuration.
+        http http.Client
+}
+
+// Instantiate a new client that uses the write key passed as first argument to
+// send messages to the backend.
+// The client is created with the default configuration.
+func New(writeKey string) Client <span class="cov3" title="3">{
+        // Here we can ignore the error because the default config is always valid.
+        c, _ := NewWithConfig(writeKey, Config{})
+        return c
+}</span>
+
+// Instantiate a new client that uses the write key and configuration passed as
+// arguments to send messages to the backend.
+// The function will return an error if the configuration contained impossible
+// values (like a negative flush interval for example).
+// When the function returns an error the returned client will always be nil.
+func NewWithConfig(writeKey string, config Config) (cli Client, err error) <span class="cov6" title="21">{
+        if err = config.validate(); err != nil </span><span class="cov1" title="1">{
+                return
+        }</span>
+
+        <span class="cov6" title="20">c := &amp;client{
+                Config:   makeConfig(config),
+                key:      writeKey,
+                msgs:     make(chan Message, 100),
+                quit:     make(chan struct{}),
+                shutdown: make(chan struct{}),
+                http:     makeHttpClient(config.Transport),
+        }
+
+        go c.loop()
+
+        cli = c
+        return</span>
+}
+
+func makeHttpClient(transport http.RoundTripper) http.Client <span class="cov6" title="20">{
+        httpClient := http.Client{
+                Transport: transport,
+        }
+        if supportsTimeout(transport) </span><span class="cov6" title="20">{
+                httpClient.Timeout = 10 * time.Second
+        }</span>
+        <span class="cov6" title="20">return httpClient</span>
+}
+
+func dereferenceMessage(msg Message) Message <span class="cov7" title="36">{
+        switch m := msg.(type) </span>{
+        case *Alias:<span class="cov1" title="1">
+                if m == nil </span><span class="cov0" title="0">{
+                        return nil
+                }</span>
+                <span class="cov1" title="1">return *m</span>
+        case *Group:<span class="cov1" title="1">
+                if m == nil </span><span class="cov0" title="0">{
+                        return nil
+                }</span>
+                <span class="cov1" title="1">return *m</span>
+        case *Identify:<span class="cov1" title="1">
+                if m == nil </span><span class="cov0" title="0">{
+                        return nil
+                }</span>
+                <span class="cov1" title="1">return *m</span>
+        case *Page:<span class="cov1" title="1">
+                if m == nil </span><span class="cov0" title="0">{
+                        return nil
+                }</span>
+                <span class="cov1" title="1">return *m</span>
+        case *Screen:<span class="cov1" title="1">
+                if m == nil </span><span class="cov0" title="0">{
+                        return nil
+                }</span>
+                <span class="cov1" title="1">return *m</span>
+        case *Track:<span class="cov1" title="1">
+                if m == nil </span><span class="cov0" title="0">{
+                        return nil
+                }</span>
+                <span class="cov1" title="1">return *m</span>
+        }
+
+        <span class="cov7" title="30">return msg</span>
+}
+
+func (c *client) Enqueue(msg Message) (err error) <span class="cov7" title="36">{
+        msg = dereferenceMessage(msg)
+        if err = msg.Validate(); err != nil </span><span class="cov1" title="1">{
+                return
+        }</span>
+
+        <span class="cov7" title="35">var id = c.uid()
+        var ts = c.now()
+
+        switch m := msg.(type) </span>{
+        case Alias:<span class="cov2" title="2">
+                m.Type = "alias"
+                m.MessageId = makeMessageId(m.MessageId, id)
+                m.Timestamp = makeTimestamp(m.Timestamp, ts)
+                msg = m</span>
+
+        case Group:<span class="cov2" title="2">
+                m.Type = "group"
+                m.MessageId = makeMessageId(m.MessageId, id)
+                m.Timestamp = makeTimestamp(m.Timestamp, ts)
+                msg = m</span>
+
+        case Identify:<span class="cov2" title="2">
+                m.Type = "identify"
+                m.MessageId = makeMessageId(m.MessageId, id)
+                m.Timestamp = makeTimestamp(m.Timestamp, ts)
+                msg = m</span>
+
+        case Page:<span class="cov2" title="2">
+                m.Type = "page"
+                m.MessageId = makeMessageId(m.MessageId, id)
+                m.Timestamp = makeTimestamp(m.Timestamp, ts)
+                msg = m</span>
+
+        case Screen:<span class="cov2" title="2">
+                m.Type = "screen"
+                m.MessageId = makeMessageId(m.MessageId, id)
+                m.Timestamp = makeTimestamp(m.Timestamp, ts)
+                msg = m</span>
+
+        case Track:<span class="cov6" title="24">
+                m.Type = "track"
+                m.MessageId = makeMessageId(m.MessageId, id)
+                m.Timestamp = makeTimestamp(m.Timestamp, ts)
+                msg = m</span>
+
+        default:<span class="cov1" title="1">
+                err = fmt.Errorf("messages with custom types cannot be enqueued: %T", msg)
+                return</span>
+        }
+
+        <span class="cov7" title="34">defer func() </span><span class="cov7" title="34">{
+                // When the `msgs` channel is closed writing to it will trigger a panic.
+                // To avoid letting the panic propagate to the caller we recover from it
+                // and instead report that the client has been closed and shouldn't be
+                // used anymore.
+                if recover() != nil </span><span class="cov1" title="1">{
+                        err = ErrClosed
+                }</span>
+        }()
+
+        <span class="cov7" title="34">c.msgs &lt;- msg
+        return</span>
+}
+
+// Close and flush metrics.
+func (c *client) Close() (err error) <span class="cov6" title="20">{
+        defer func() </span><span class="cov6" title="20">{
+                // Always recover, a panic could be raised if `c`.quit was closed which
+                // means the method was called more than once.
+                if recover() != nil </span><span class="cov1" title="1">{
+                        err = ErrClosed
+                }</span>
+        }()
+        <span class="cov6" title="20">close(c.quit)
+        &lt;-c.shutdown
+        return</span>
+}
+
+// Asychronously send a batched requests.
+func (c *client) sendAsync(msgs []message, wg *sync.WaitGroup, ex *executor) <span class="cov7" title="29">{
+        wg.Add(1)
+
+        if !ex.do(func() </span><span class="cov7" title="28">{
+                defer wg.Done()
+                defer func() </span><span class="cov7" title="28">{
+                        // In case a bug is introduced in the send function that triggers
+                        // a panic, we don't want this to ever crash the application so we
+                        // catch it here and log it instead.
+                        if err := recover(); err != nil </span><span class="cov0" title="0">{
+                                c.errorf("panic - %s", err)
+                        }</span>
+                }()
+                <span class="cov7" title="28">c.send(msgs)</span>
+        }) <span class="cov1" title="1">{
+                wg.Done()
+                c.errorf("sending messages failed - %s", ErrTooManyRequests)
+                c.notifyFailure(msgs, ErrTooManyRequests)
+        }</span>
+}
+
+// Send batch request.
+func (c *client) send(msgs []message) <span class="cov7" title="28">{
+        const attempts = 10
+
+        b, err := json.Marshal(batch{
+                MessageId: c.uid(),
+                SentAt:    c.now(),
+                Messages:  msgs,
+                Context:   c.DefaultContext,
+        })
+
+        if err != nil </span><span class="cov1" title="1">{
+                c.errorf("marshalling messages - %s", err)
+                c.notifyFailure(msgs, err)
+                return
+        }</span>
+
+        <span class="cov7" title="27">for i := 0; i != attempts; i++ </span><span class="cov7" title="36">{
+                if err = c.upload(b); err == nil </span><span class="cov6" title="22">{
+                        c.notifySuccess(msgs)
+                        return
+                }</span>
+
+                // Wait for either a retry timeout or the client to be closed.
+                <span class="cov5" title="14">select </span>{
+                case &lt;-time.After(c.RetryAfter(i)):<span class="cov5" title="10"></span>
+                case &lt;-c.quit:<span class="cov3" title="4">
+                        c.errorf("%d messages dropped because they failed to be sent and the client was closed", len(msgs))
+                        c.notifyFailure(msgs, err)
+                        return</span>
+                }
+        }
+
+        <span class="cov1" title="1">c.errorf("%d messages dropped because they failed to be sent after %d attempts", len(msgs), attempts)
+        c.notifyFailure(msgs, err)</span>
+}
+
+// Upload serialized batch message.
+func (c *client) upload(b []byte) error <span class="cov7" title="36">{
+        url := c.Endpoint + "/v1/batch"
+        req, err := http.NewRequest("POST", url, bytes.NewReader(b))
+        if err != nil </span><span class="cov1" title="1">{
+                c.errorf("creating request - %s", err)
+                return err
+        }</span>
+
+        <span class="cov7" title="35">req.Header.Add("User-Agent", "analytics-go (version: "+Version+")")
+        req.Header.Add("Content-Type", "application/json")
+        req.Header.Add("Content-Length", strconv.Itoa(len(b)))
+        req.SetBasicAuth(c.key, "")
+
+        res, err := c.http.Do(req)
+
+        if err != nil </span><span class="cov5" title="11">{
+                c.errorf("sending request - %s", err)
+                return err
+        }</span>
+
+        <span class="cov6" title="24">defer res.Body.Close()
+        return c.report(res)</span>
+}
+
+// Report on response body.
+func (c *client) report(res *http.Response) (err error) <span class="cov6" title="24">{
+        var body []byte
+
+        if res.StatusCode &lt; 300 </span><span class="cov6" title="22">{
+                c.debugf("response %s", res.Status)
+                return
+        }</span>
+
+        <span class="cov2" title="2">if body, err = ioutil.ReadAll(res.Body); err != nil </span><span class="cov1" title="1">{
+                c.errorf("response %d %s - %s", res.StatusCode, res.Status, err)
+                return
+        }</span>
+
+        <span class="cov1" title="1">c.logf("response %d %s – %s", res.StatusCode, res.Status, string(body))
+        return fmt.Errorf("%d %s", res.StatusCode, res.Status)</span>
+}
+
+// Batch loop.
+func (c *client) loop() <span class="cov6" title="20">{
+        defer close(c.shutdown)
+
+        wg := &amp;sync.WaitGroup{}
+        defer wg.Wait()
+
+        tick := time.NewTicker(c.Interval)
+        defer tick.Stop()
+
+        ex := newExecutor(c.maxConcurrentRequests)
+        defer ex.close()
+
+        mq := messageQueue{
+                maxBatchSize:  c.BatchSize,
+                maxBatchBytes: c.maxBatchBytes(),
+        }
+
+        for </span><span class="cov8" title="50">{
+                select </span>{
+                case msg := &lt;-c.msgs:<span class="cov7" title="29">
+                        c.push(&amp;mq, msg, wg, ex)</span>
+
+                case &lt;-tick.C:<span class="cov1" title="1">
+                        c.flush(&amp;mq, wg, ex)</span>
+
+                case &lt;-c.quit:<span class="cov6" title="19">
+                        c.debugf("exit requested – draining messages")
+
+                        // Drain the msg channel, we have to close it first so no more
+                        // messages can be pushed and otherwise the loop would never end.
+                        close(c.msgs)
+                        for msg := range c.msgs </span><span class="cov3" title="4">{
+                                c.push(&amp;mq, msg, wg, ex)
+                        }</span>
+
+                        <span class="cov6" title="19">c.flush(&amp;mq, wg, ex)
+                        c.debugf("exit")
+                        return</span>
+                }
+        }
+}
+
+func (c *client) push(q *messageQueue, m Message, wg *sync.WaitGroup, ex *executor) <span class="cov7" title="33">{
+        var msg message
+        var err error
+
+        if msg, err = makeMessage(m, maxMessageBytes); err != nil </span><span class="cov1" title="1">{
+                c.errorf("%s - %v", err, m)
+                c.notifyFailure([]message{{m, nil}}, err)
+                return
+        }</span>
+
+        <span class="cov7" title="32">c.debugf("buffer (%d/%d) %v", len(q.pending), c.BatchSize, m)
+
+        if msgs := q.push(msg); msgs != nil </span><span class="cov6" title="21">{
+                c.debugf("exceeded messages batch limit with batch of %d messages – flushing", len(msgs))
+                c.sendAsync(msgs, wg, ex)
+        }</span>
+}
+
+func (c *client) flush(q *messageQueue, wg *sync.WaitGroup, ex *executor) <span class="cov6" title="20">{
+        if msgs := q.flush(); msgs != nil </span><span class="cov4" title="8">{
+                c.debugf("flushing %d messages", len(msgs))
+                c.sendAsync(msgs, wg, ex)
+        }</span>
+}
+
+func (c *client) debugf(format string, args ...interface{}) <span class="cov10" title="121">{
+        if c.Verbose </span><span class="cov9" title="74">{
+                c.logf(format, args...)
+        }</span>
+}
+
+func (c *client) logf(format string, args ...interface{}) <span class="cov9" title="75">{
+        c.Logger.Logf(format, args...)
+}</span>
+
+func (c *client) errorf(format string, args ...interface{}) <span class="cov6" title="21">{
+        c.Logger.Errorf(format, args...)
+}</span>
+
+func (c *client) maxBatchBytes() int <span class="cov6" title="20">{
+        b, _ := json.Marshal(batch{
+                MessageId: c.uid(),
+                SentAt:    c.now(),
+                Context:   c.DefaultContext,
+        })
+        return maxBatchBytes - len(b)
+}</span>
+
+func (c *client) notifySuccess(msgs []message) <span class="cov6" title="22">{
+        if c.Callback != nil </span><span class="cov2" title="2">{
+                for _, m := range msgs </span><span class="cov2" title="2">{
+                        c.Callback.Success(m.msg)
+                }</span>
+        }
+}
+
+func (c *client) notifyFailure(msgs []message, err error) <span class="cov4" title="8">{
+        if c.Callback != nil </span><span class="cov4" title="8">{
+                for _, m := range msgs </span><span class="cov4" title="8">{
+                        c.Callback.Failure(m.msg, err)
+                }</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package analytics
+
+import (
+        "net/http"
+        "time"
+
+        "github.com/google/uuid"
+        "github.com/segmentio/backo-go"
+)
+
+// Instances of this type carry the different configuration options that may
+// be set when instantiating a client.
+//
+// Each field's zero-value is either meaningful or interpreted as using the
+// default value defined by the library.
+type Config struct {
+
+        // The endpoint to which the client connect and send their messages, set to
+        // `DefaultEndpoint` by default.
+        Endpoint string
+
+        // The flushing interval of the client. Messages will be sent when they've
+        // been queued up to the maximum batch size or when the flushing interval
+        // timer triggers.
+        Interval time.Duration
+
+        // The HTTP transport used by the client, this allows an application to
+        // redefine how requests are being sent at the HTTP level (for example,
+        // to change the connection pooling policy).
+        // If none is specified the client uses `http.DefaultTransport`.
+        Transport http.RoundTripper
+
+        // The logger used by the client to output info or error messages when that
+        // are generated by background operations.
+        // If none is specified the client uses a standard logger that outputs to
+        // `os.Stderr`.
+        Logger Logger
+
+        // The callback object that will be used by the client to notify the
+        // application when messages sends to the backend API succeeded or failed.
+        Callback Callback
+
+        // The maximum number of messages that will be sent in one API call.
+        // Messages will be sent when they've been queued up to the maximum batch
+        // size or when the flushing interval timer triggers.
+        // Note that the API will still enforce a 500KB limit on each HTTP request
+        // which is independent from the number of embedded messages.
+        BatchSize int
+
+        // When set to true the client will send more frequent and detailed messages
+        // to its logger.
+        Verbose bool
+
+        // The default context set on each message sent by the client.
+        DefaultContext *Context
+
+        // The retry policy used by the client to resend requests that have failed.
+        // The function is called with how many times the operation has been retried
+        // and is expected to return how long the client should wait before trying
+        // again.
+        // If not set the client will fallback to use a default retry policy.
+        RetryAfter func(int) time.Duration
+
+        // A function called by the client to generate unique message identifiers.
+        // The client uses a UUID generator if none is provided.
+        // This field is not exported and only exposed internally to let unit tests
+        // mock the id generation.
+        uid func() string
+
+        // A function called by the client to get the current time, `time.Now` is
+        // used by default.
+        // This field is not exported and only exposed internally to let unit tests
+        // mock the current time.
+        now func() time.Time
+
+        // The maximum number of goroutines that will be spawned by a client to send
+        // requests to the backend API.
+        // This field is not exported and only exposed internally to let unit tests
+        // mock the current time.
+        maxConcurrentRequests int
+}
+
+// This constant sets the default endpoint to which client instances send
+// messages if none was explictly set.
+const DefaultEndpoint = "https://api.segment.io"
+
+// This constant sets the default flush interval used by client instances if
+// none was explicitly set.
+const DefaultInterval = 5 * time.Second
+
+// This constant sets the default batch size used by client instances if none
+// was explicitly set.
+const DefaultBatchSize = 250
+
+// Verifies that fields that don't have zero-values are set to valid values,
+// returns an error describing the problem if a field was invalid.
+func (c *Config) validate() error <span class="cov9" title="24">{
+        if c.Interval &lt; 0 </span><span class="cov2" title="2">{
+                return ConfigError{
+                        Reason: "negative time intervals are not supported",
+                        Field:  "Interval",
+                        Value:  c.Interval,
+                }
+        }</span>
+
+        <span class="cov9" title="22">if c.BatchSize &lt; 0 </span><span class="cov1" title="1">{
+                return ConfigError{
+                        Reason: "negative batch sizes are not supported",
+                        Field:  "BatchSize",
+                        Value:  c.BatchSize,
+                }
+        }</span>
+
+        <span class="cov8" title="21">return nil</span>
+}
+
+// Given a config object as argument the function will set all zero-values to
+// their defaults and return the modified object.
+func makeConfig(c Config) Config <span class="cov8" title="20">{
+        if len(c.Endpoint) == 0 </span><span class="cov7" title="11">{
+                c.Endpoint = DefaultEndpoint
+        }</span>
+
+        <span class="cov8" title="20">if c.Interval == 0 </span><span class="cov8" title="19">{
+                c.Interval = DefaultInterval
+        }</span>
+
+        <span class="cov8" title="20">if c.Transport == nil </span><span class="cov7" title="11">{
+                c.Transport = http.DefaultTransport
+        }</span>
+
+        <span class="cov8" title="20">if c.Logger == nil </span><span class="cov4" title="4">{
+                c.Logger = newDefaultLogger()
+        }</span>
+
+        <span class="cov8" title="20">if c.BatchSize == 0 </span><span class="cov7" title="11">{
+                c.BatchSize = DefaultBatchSize
+        }</span>
+
+        <span class="cov8" title="20">if c.DefaultContext == nil </span><span class="cov8" title="19">{
+                c.DefaultContext = &amp;Context{}
+        }</span>
+
+        <span class="cov8" title="20">if c.RetryAfter == nil </span><span class="cov8" title="19">{
+                c.RetryAfter = backo.DefaultBacko().Duration
+        }</span>
+
+        <span class="cov8" title="20">if c.uid == nil </span><span class="cov7" title="12">{
+                c.uid = uid
+        }</span>
+
+        <span class="cov8" title="20">if c.now == nil </span><span class="cov7" title="12">{
+                c.now = time.Now
+        }</span>
+
+        <span class="cov8" title="20">if c.maxConcurrentRequests == 0 </span><span class="cov8" title="19">{
+                c.maxConcurrentRequests = 1000
+        }</span>
+
+        // We always overwrite the 'library' field of the default context set on the
+        // client because we want this information to be accurate.
+        <span class="cov8" title="20">c.DefaultContext.Library = LibraryInfo{
+                Name:    "analytics-go",
+                Version: Version,
+        }
+        return c</span>
+}
+
+// This function returns a string representation of a UUID, it's the default
+// function used for generating unique IDs.
+func uid() string <span class="cov10" title="32">{
+        return uuid.NewString()
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package analytics
+
+import (
+        "encoding/json"
+        "net"
+        "reflect"
+)
+
+// This type provides the representation of the `context` object as defined in
+// https://segment.com/docs/spec/common/#context
+type Context struct {
+        App       AppInfo      `json:"app,omitempty"`
+        Campaign  CampaignInfo `json:"campaign,omitempty"`
+        Device    DeviceInfo   `json:"device,omitempty"`
+        Library   LibraryInfo  `json:"library,omitempty"`
+        Location  LocationInfo `json:"location,omitempty"`
+        Network   NetworkInfo  `json:"network,omitempty"`
+        OS        OSInfo       `json:"os,omitempty"`
+        Page      PageInfo     `json:"page,omitempty"`
+        Referrer  ReferrerInfo `json:"referrer,omitempty"`
+        Screen    ScreenInfo   `json:"screen,omitempty"`
+        IP        net.IP       `json:"ip,omitempty"`
+        Direct    bool         `json:"direct,omitempty"`
+        Locale    string       `json:"locale,omitempty"`
+        GroupID   string       `json:"groupId,omitempty"`
+        Timezone  string       `json:"timezone,omitempty"`
+        UserAgent string       `json:"userAgent,omitempty"`
+        Traits    Traits       `json:"traits,omitempty"`
+
+        // This map is used to allow extensions to the context specifications that
+        // may not be documented or could be introduced in the future.
+        // The fields of this map are inlined in the serialized context object,
+        // there is no actual "extra" field in the JSON representation.
+        Extra map[string]interface{} `json:"-"`
+}
+
+// This type provides the representation of the `context.app` object as defined
+// in https://segment.com/docs/spec/common/#context
+type AppInfo struct {
+        Name      string `json:"name,omitempty"`
+        Version   string `json:"version,omitempty"`
+        Build     string `json:"build,omitempty"`
+        Namespace string `json:"namespace,omitempty"`
+}
+
+// This type provides the representation of the `context.campaign` object as
+// defined in https://segment.com/docs/spec/common/#context
+type CampaignInfo struct {
+        Name    string `json:"name,omitempty"`
+        Source  string `json:"source,omitempty"`
+        Medium  string `json:"medium,omitempty"`
+        Term    string `json:"term,omitempty"`
+        Content string `json:"content,omitempty"`
+}
+
+// This type provides the representation of the `context.device` object as
+// defined in https://segment.com/docs/spec/common/#context
+type DeviceInfo struct {
+        Id            string `json:"id,omitempty"`
+        Manufacturer  string `json:"manufacturer,omitempty"`
+        Model         string `json:"model,omitempty"`
+        Name          string `json:"name,omitempty"`
+        Type          string `json:"type,omitempty"`
+        Version       string `json:"version,omitempty"`
+        AdvertisingID string `json:"advertisingId,omitempty"`
+}
+
+// This type provides the representation of the `context.library` object as
+// defined in https://segment.com/docs/spec/common/#context
+type LibraryInfo struct {
+        Name    string `json:"name,omitempty"`
+        Version string `json:"version,omitempty"`
+}
+
+// This type provides the representation of the `context.location` object as
+// defined in https://segment.com/docs/spec/common/#context
+type LocationInfo struct {
+        City      string  `json:"city,omitempty"`
+        Country   string  `json:"country,omitempty"`
+        Region    string  `json:"region,omitempty"`
+        Latitude  float64 `json:"latitude,omitempty"`
+        Longitude float64 `json:"longitude,omitempty"`
+        Speed     float64 `json:"speed,omitempty"`
+}
+
+// This type provides the representation of the `context.network` object as
+// defined in https://segment.com/docs/spec/common/#context
+type NetworkInfo struct {
+        Bluetooth bool   `json:"bluetooth,omitempty"`
+        Cellular  bool   `json:"cellular,omitempty"`
+        WIFI      bool   `json:"wifi,omitempty"`
+        Carrier   string `json:"carrier,omitempty"`
+}
+
+// This type provides the representation of the `context.os` object as defined
+// in https://segment.com/docs/spec/common/#context
+type OSInfo struct {
+        Name    string `json:"name,omitempty"`
+        Version string `json:"version,omitempty"`
+}
+
+// This type provides the representation of the `context.page` object as
+// defined in https://segment.com/docs/spec/common/#context
+type PageInfo struct {
+        Hash     string `json:"hash,omitempty"`
+        Path     string `json:"path,omitempty"`
+        Referrer string `json:"referrer,omitempty"`
+        Search   string `json:"search,omitempty"`
+        Title    string `json:"title,omitempty"`
+        URL      string `json:"url,omitempty"`
+}
+
+// This type provides the representation of the `context.referrer` object as
+// defined in https://segment.com/docs/spec/common/#context
+type ReferrerInfo struct {
+        Type string `json:"type,omitempty"`
+        Name string `json:"name,omitempty"`
+        URL  string `json:"url,omitempty"`
+        Link string `json:"link,omitempty"`
+}
+
+// This type provides the representation of the `context.screen` object as
+// defined in https://segment.com/docs/spec/common/#context
+type ScreenInfo struct {
+        Density int `json:"density,omitempty"`
+        Width   int `json:"width,omitempty"`
+        Height  int `json:"height,omitempty"`
+}
+
+// Satisfy the `json.Marshaler` interface. We have to flatten out the `Extra`
+// field but the standard json package doesn't support it yet.
+// Implementing this interface allows us to override the default marshaling of
+// the context object and to the inlining ourselves.
+//
+// Related discussion: https://github.com/golang/go/issues/6213
+func (ctx Context) MarshalJSON() ([]byte, error) <span class="cov10" title="51">{
+        v := reflect.ValueOf(ctx)
+        n := v.NumField()
+        m := make(map[string]interface{}, n+len(ctx.Extra))
+
+        // Copy the `Extra` map into the map representation of the context, it is
+        // important to do this operation before going through the actual struct
+        // fields so the latter take precendence and override duplicated values
+        // that would be set in the extensions.
+        for name, value := range ctx.Extra </span><span class="cov4" title="4">{
+                m[name] = value
+        }</span>
+
+        <span class="cov10" title="51">return json.Marshal(structToMap(v, m))</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package analytics
+
+import (
+        "errors"
+        "fmt"
+)
+
+// Returned by the `NewWithConfig` function when the one of the configuration
+// fields was set to an impossible value (like a negative duration).
+type ConfigError struct {
+
+        // A human-readable message explaining why the configuration field's value
+        // is invalid.
+        Reason string
+
+        // The name of the configuration field that was carrying an invalid value.
+        Field string
+
+        // The value of the configuration field that caused the error.
+        Value interface{}
+}
+
+func (e ConfigError) Error() string <span class="cov8" title="1">{
+        return fmt.Sprintf("analytics.NewWithConfig: %s (analytics.Config.%s: %#v)", e.Reason, e.Field, e.Value)
+}</span>
+
+// Instances of this type are used to represent errors returned when a field was
+// no initialize properly in a structure passed as argument to one of the
+// functions of this package.
+type FieldError struct {
+
+        // The human-readable representation of the type of structure that wasn't
+        // initialized properly.
+        Type string
+
+        // The name of the field that wasn't properly initialized.
+        Name string
+
+        // The value of the field that wasn't properly initialized.
+        Value interface{}
+}
+
+func (e FieldError) Error() string <span class="cov8" title="1">{
+        return fmt.Sprintf("%s.%s: invalid field value: %#v", e.Type, e.Name, e.Value)
+}</span>
+
+var (
+        // This error is returned by methods of the `Client` interface when they are
+        // called after the client was already closed.
+        ErrClosed = errors.New("the client was already closed")
+
+        // This error is used to notify the application that too many requests are
+        // already being sent and no more messages can be accepted.
+        ErrTooManyRequests = errors.New("too many requests are already in-flight")
+
+        // This error is used to notify the client callbacks that a message send
+        // failed because the JSON representation of a message exceeded the upper
+        // limit.
+        ErrMessageTooBig = errors.New("the message exceeds the maximum allowed size")
+)
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package analytics
+
+import "sync"
+
+type executor struct {
+        queue chan func()
+        mutex sync.Mutex
+        size  int
+        cap   int
+}
+
+func newExecutor(cap int) *executor <span class="cov9" title="23">{
+        e := &amp;executor{
+                queue: make(chan func(), 1),
+                cap:   cap,
+        }
+        go e.loop()
+        return e
+}</span>
+
+func (e *executor) do(task func()) (ok bool) <span class="cov10" title="34">{
+        e.mutex.Lock()
+
+        if e.size != e.cap </span><span class="cov9" title="32">{
+                e.queue &lt;- task
+                e.size++
+                ok = true
+        }</span>
+
+        <span class="cov10" title="34">e.mutex.Unlock()
+        return</span>
+}
+
+func (e *executor) close() <span class="cov8" title="22">{
+        close(e.queue)
+}</span>
+
+func (e *executor) loop() <span class="cov9" title="23">{
+        for task := range e.queue </span><span class="cov9" title="32">{
+                go e.run(task)
+        }</span>
+}
+
+func (e *executor) run(task func()) <span class="cov9" title="32">{
+        defer e.done()
+        task()
+}</span>
+
+func (e *executor) done() <span class="cov9" title="32">{
+        e.mutex.Lock()
+        e.size--
+        e.mutex.Unlock()
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package analytics
+
+import "time"
+
+var _ Message = (*Group)(nil)
+
+// This type represents object sent in a group call as described in
+// https://segment.com/docs/libraries/http/#group
+type Group struct {
+        // This field is exported for serialization purposes and shouldn't be set by
+        // the application, its value is always overwritten by the library.
+        Type string `json:"type,omitempty"`
+
+        MessageId    string       `json:"messageId,omitempty"`
+        AnonymousId  string       `json:"anonymousId,omitempty"`
+        UserId       string       `json:"userId,omitempty"`
+        GroupId      string       `json:"groupId"`
+        Timestamp    time.Time    `json:"timestamp,omitempty"`
+        Context      *Context     `json:"context,omitempty"`
+        Traits       Traits       `json:"traits,omitempty"`
+        Integrations Integrations `json:"integrations,omitempty"`
+}
+
+func (msg Group) Validate() error <span class="cov10" title="9">{
+        if len(msg.GroupId) == 0 </span><span class="cov3" title="2">{
+                return FieldError{
+                        Type:  "analytics.Group",
+                        Name:  "GroupId",
+                        Value: msg.GroupId,
+                }
+        }</span>
+
+        <span class="cov8" title="7">if len(msg.UserId) == 0 &amp;&amp; len(msg.AnonymousId) == 0 </span><span class="cov1" title="1">{
+                return FieldError{
+                        Type:  "analytics.Group",
+                        Name:  "UserId",
+                        Value: msg.UserId,
+                }
+        }</span>
+
+        <span class="cov8" title="6">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package analytics
+
+import "time"
+
+var _ Message = (*Identify)(nil)
+
+// This type represents object sent in an identify call as described in
+// https://segment.com/docs/libraries/http/#identify
+type Identify struct {
+        // This field is exported for serialization purposes and shouldn't be set by
+        // the application, its value is always overwritten by the library.
+        Type string `json:"type,omitempty"`
+
+        MessageId    string       `json:"messageId,omitempty"`
+        AnonymousId  string       `json:"anonymousId,omitempty"`
+        UserId       string       `json:"userId,omitempty"`
+        Timestamp    time.Time    `json:"timestamp,omitempty"`
+        Context      *Context     `json:"context,omitempty"`
+        Traits       Traits       `json:"traits,omitempty"`
+        Integrations Integrations `json:"integrations,omitempty"`
+}
+
+func (msg Identify) Validate() error <span class="cov10" title="8">{
+        if len(msg.UserId) == 0 &amp;&amp; len(msg.AnonymousId) == 0 </span><span class="cov4" title="2">{
+                return FieldError{
+                        Type:  "analytics.Identify",
+                        Name:  "UserId",
+                        Value: msg.UserId,
+                }
+        }</span>
+
+        <span class="cov8" title="6">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package analytics
+
+// This type is used to represent integrations in messages that support it.
+// It is a free-form where values are most often booleans that enable or
+// disable integrations.
+// Here's a quick example of how this type is meant to be used:
+//
+//        analytics.Track{
+//                UserId:       "0123456789",
+//                Integrations: analytics.NewIntegrations()
+//                        .EnableAll()
+//                        .Disable("Salesforce")
+//                        .Disable("Marketo"),
+//        }
+//
+// The specifications can be found at https://segment.com/docs/spec/common/#integrations
+type Integrations map[string]interface{}
+
+func NewIntegrations() Integrations <span class="cov10" title="2">{
+        return make(Integrations, 10)
+}</span>
+
+func (i Integrations) EnableAll() Integrations <span class="cov1" title="1">{
+        return i.Enable("all")
+}</span>
+
+func (i Integrations) DisableAll() Integrations <span class="cov1" title="1">{
+        return i.Disable("all")
+}</span>
+
+func (i Integrations) Enable(name string) Integrations <span class="cov1" title="1">{
+        return i.Set(name, true)
+}</span>
+
+func (i Integrations) Disable(name string) Integrations <span class="cov1" title="1">{
+        return i.Set(name, false)
+}</span>
+
+// Sets an integration named by the first argument to the specified value, any
+// value other than `false` will be interpreted as enabling the integration.
+func (i Integrations) Set(name string, value interface{}) Integrations <span class="cov10" title="2">{
+        i[name] = value
+        return i
+}</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package analytics
+
+import (
+        "reflect"
+        "strings"
+)
+
+// Imitate what what the JSON package would do when serializing a struct value,
+// the only difference is we we don't serialize zero-value struct fields as well.
+// Note that this function doesn't recursively convert structures to maps, only
+// the value passed as argument is transformed.
+func structToMap(v reflect.Value, m map[string]interface{}) map[string]interface{} <span class="cov5" title="52">{
+        t := v.Type()
+        n := t.NumField()
+
+        if m == nil </span><span class="cov1" title="1">{
+                m = make(map[string]interface{}, n)
+        }</span>
+
+        <span class="cov5" title="52">for i := 0; i != n; i++ </span><span class="cov8" title="921">{
+                field := t.Field(i)
+                value := v.Field(i)
+                name, omitempty := parseJsonTag(field.Tag.Get("json"), field.Name)
+
+                if name != "-" &amp;&amp; !(omitempty &amp;&amp; isZeroValue(value)) </span><span class="cov5" title="51">{
+                        m[name] = value.Interface()
+                }</span>
+        }
+
+        <span class="cov5" title="52">return m</span>
+}
+
+// Parses a JSON tag the way the json package would do it, returing the expected
+// name of the field once serialized and if empty values should be omitted.
+func parseJsonTag(tag string, defName string) (name string, omitempty bool) <span class="cov8" title="925">{
+        args := strings.Split(tag, ",")
+
+        if len(args) == 0 || len(args[0]) == 0 </span><span class="cov2" title="3">{
+                name = defName
+        }</span> else<span class="cov8" title="922"> {
+                name = args[0]
+        }</span>
+
+        <span class="cov8" title="925">if len(args) &gt; 1 &amp;&amp; args[1] == "omitempty" </span><span class="cov8" title="870">{
+                omitempty = true
+        }</span>
+
+        <span class="cov8" title="925">return</span>
+}
+
+// Checks if the value given as argument is a zero-value, it is based on the
+// isEmptyValue function in https://golang.org/src/encoding/json/encode.go
+// but also checks struct types recursively.
+func isZeroValue(v reflect.Value) bool <span class="cov10" title="3036">{
+        switch v.Kind() </span>{
+        case reflect.Array, reflect.Map, reflect.Slice, reflect.String:<span class="cov9" title="1999">
+                return v.Len() == 0</span>
+
+        case reflect.Bool:<span class="cov6" title="208">
+                return !v.Bool()</span>
+
+        case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:<span class="cov6" title="156">
+                return v.Int() == 0</span>
+
+        case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:<span class="cov1" title="2">
+                return v.Uint() == 0</span>
+
+        case reflect.Float32, reflect.Float64:<span class="cov6" title="155">
+                return v.Float() == 0</span>
+
+        case reflect.Interface, reflect.Ptr:<span class="cov1" title="2">
+                return v.IsNil()</span>
+
+        case reflect.Struct:<span class="cov8" title="512">
+                for i, n := 0, v.NumField(); i != n; i++ </span><span class="cov9" title="2148">{
+                        if !isZeroValue(v.Field(i)) </span><span class="cov5" title="50">{
+                                return false
+                        }</span>
+                }
+                <span class="cov7" title="462">return true</span>
+
+        case reflect.Invalid:<span class="cov1" title="1">
+                return true</span>
+        }
+
+        <span class="cov1" title="1">return false</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package analytics
+
+import (
+        "log"
+        "os"
+)
+
+// Instances of types implementing this interface can be used to define where
+// the analytics client logs are written.
+type Logger interface {
+
+        // Analytics clients call this method to log regular messages about the
+        // operations they perform.
+        // Messages logged by this method are usually tagged with an `INFO` log
+        // level in common logging libraries.
+        Logf(format string, args ...interface{})
+
+        // Analytics clients call this method to log errors they encounter while
+        // sending events to the backend servers.
+        // Messages logged by this method are usually tagged with an `ERROR` log
+        // level in common logging libraries.
+        Errorf(format string, args ...interface{})
+}
+
+// This function instantiate an object that statisfies the analytics.Logger
+// interface and send logs to standard logger passed as argument.
+func StdLogger(logger *log.Logger) Logger <span class="cov10" title="5">{
+        return stdLogger{
+                logger: logger,
+        }
+}</span>
+
+type stdLogger struct {
+        logger *log.Logger
+}
+
+func (l stdLogger) Logf(format string, args ...interface{}) <span class="cov4" title="2">{
+        l.logger.Printf("INFO: "+format, args...)
+}</span>
+
+func (l stdLogger) Errorf(format string, args ...interface{}) <span class="cov1" title="1">{
+        l.logger.Printf("ERROR: "+format, args...)
+}</span>
+
+func newDefaultLogger() Logger <span class="cov8" title="4">{
+        return StdLogger(log.New(os.Stderr, "segment ", log.LstdFlags))
+}</span>
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package analytics
+
+import (
+        "encoding/json"
+        "time"
+)
+
+// Values implementing this interface are used by analytics clients to notify
+// the application when a message send succeeded or failed.
+//
+// Callback methods are called by a client's internal goroutines, there are no
+// guarantees on which goroutine will trigger the callbacks, the calls can be
+// made sequentially or in parallel, the order doesn't depend on the order of
+// messages were queued to the client.
+//
+// Callback methods must return quickly and not cause long blocking operations
+// to avoid interferring with the client's internal work flow.
+type Callback interface {
+
+        // This method is called for every message that was successfully sent to
+        // the API.
+        Success(Message)
+
+        // This method is called for every message that failed to be sent to the
+        // API and will be discarded by the client.
+        Failure(Message, error)
+}
+
+// This interface is used to represent analytics objects that can be sent via
+// a client.
+//
+// Types like analytics.Track, analytics.Page, etc... implement this interface
+// and therefore can be passed to the analytics.Client.Send method.
+type Message interface {
+
+        // Validate validates the internal structure of the message, the method must return
+        // nil if the message is valid, or an error describing what went wrong.
+        Validate() error
+}
+
+// Takes a message id as first argument and returns it, unless it's the zero-
+// value, in that case the default id passed as second argument is returned.
+func makeMessageId(id string, def string) string <span class="cov9" title="36">{
+        if len(id) == 0 </span><span class="cov9" title="34">{
+                return def
+        }</span>
+        <span class="cov2" title="2">return id</span>
+}
+
+// Returns the time value passed as first argument, unless it's the zero-value,
+// in that case the default value passed as second argument is returned.
+func makeTimestamp(t time.Time, def time.Time) time.Time <span class="cov9" title="34">{
+        if t == (time.Time{}) </span><span class="cov9" title="33">{
+                return def
+        }</span>
+        <span class="cov1" title="1">return t</span>
+}
+
+// This structure represents objects sent to the /v1/batch endpoint. We don't
+// export this type because it's only meant to be used internally to send groups
+// of messages in one API call.
+type batch struct {
+        MessageId string    `json:"messageId"`
+        SentAt    time.Time `json:"sentAt"`
+        Messages  []message `json:"batch"`
+        Context   *Context  `json:"context"`
+}
+
+type message struct {
+        msg  Message
+        json []byte
+}
+
+func makeMessage(m Message, maxBytes int) (msg message, err error) <span class="cov9" title="43">{
+        if msg.json, err = json.Marshal(m); err == nil </span><span class="cov9" title="42">{
+                if len(msg.json) &gt; maxBytes </span><span class="cov1" title="1">{
+                        err = ErrMessageTooBig
+                }</span> else<span class="cov9" title="41"> {
+                        msg.msg = m
+                }</span>
+        }
+        <span class="cov9" title="43">return</span>
+}
+
+func (m message) MarshalJSON() ([]byte, error) <span class="cov9" title="31">{
+        return m.json, nil
+}</span>
+
+func (m message) size() int <span class="cov9" title="40">{
+        // The `+ 1` is for the comma that sits between each items of a JSON array.
+        return len(m.json) + 1
+}</span>
+
+type messageQueue struct {
+        pending       []message
+        bytes         int
+        maxBatchSize  int
+        maxBatchBytes int
+}
+
+func (q *messageQueue) push(m message) (b []message) <span class="cov9" title="40">{
+        if (q.bytes + m.size()) &gt; q.maxBatchBytes </span><span class="cov2" title="2">{
+                b = q.flush()
+        }</span>
+
+        <span class="cov9" title="40">if q.pending == nil </span><span class="cov9" title="35">{
+                q.pending = make([]message, 0, q.maxBatchSize)
+        }</span>
+
+        <span class="cov9" title="40">q.pending = append(q.pending, m)
+        q.bytes += len(m.json)
+
+        if b == nil &amp;&amp; len(q.pending) == q.maxBatchSize </span><span class="cov8" title="23">{
+                b = q.flush()
+        }</span>
+
+        <span class="cov9" title="40">return</span>
+}
+
+func (q *messageQueue) flush() (msgs []message) <span class="cov10" title="45">{
+        msgs, q.pending, q.bytes = q.pending, nil, 0
+        return
+}</span>
+
+const (
+        maxBatchBytes   = 500000
+        maxMessageBytes = 32000
+)
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package analytics
+
+import "time"
+
+var _ Message = (*Page)(nil)
+
+// This type represents object sent in a page call as described in
+// https://segment.com/docs/libraries/http/#page
+type Page struct {
+        // This field is exported for serialization purposes and shouldn't be set by
+        // the application, its value is always overwritten by the library.
+        Type string `json:"type,omitempty"`
+
+        MessageId    string       `json:"messageId,omitempty"`
+        AnonymousId  string       `json:"anonymousId,omitempty"`
+        UserId       string       `json:"userId,omitempty"`
+        Name         string       `json:"name,omitempty"`
+        Timestamp    time.Time    `json:"timestamp,omitempty"`
+        Context      *Context     `json:"context,omitempty"`
+        Properties   Properties   `json:"properties,omitempty"`
+        Integrations Integrations `json:"integrations,omitempty"`
+}
+
+func (msg Page) Validate() error <span class="cov10" title="8">{
+        if len(msg.UserId) == 0 &amp;&amp; len(msg.AnonymousId) == 0 </span><span class="cov4" title="2">{
+                return FieldError{
+                        Type:  "analytics.Page",
+                        Name:  "UserId",
+                        Value: msg.UserId,
+                }
+        }</span>
+
+        <span class="cov8" title="6">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package analytics
+
+// This type is used to represent properties in messages that support it.
+// It is a free-form object so the application can set any value it sees fit but
+// a few helper method are defined to make it easier to instantiate properties with
+// common fields.
+// Here's a quick example of how this type is meant to be used:
+//
+//        analytics.Page{
+//                UserId: "0123456789",
+//                Properties: analytics.NewProperties()
+//                        .SetRevenue(10.0)
+//                        .SetCurrency("USD"),
+//        }
+//
+type Properties map[string]interface{}
+
+func NewProperties() Properties <span class="cov9" title="22">{
+        return make(Properties, 10)
+}</span>
+
+func (p Properties) SetRevenue(revenue float64) Properties <span class="cov1" title="1">{
+        return p.Set("revenue", revenue)
+}</span>
+
+func (p Properties) SetCurrency(currency string) Properties <span class="cov1" title="1">{
+        return p.Set("currency", currency)
+}</span>
+
+func (p Properties) SetValue(value float64) Properties <span class="cov2" title="2">{
+        return p.Set("value", value)
+}</span>
+
+func (p Properties) SetPath(path string) Properties <span class="cov1" title="1">{
+        return p.Set("path", path)
+}</span>
+
+func (p Properties) SetReferrer(referrer string) Properties <span class="cov1" title="1">{
+        return p.Set("referrer", referrer)
+}</span>
+
+func (p Properties) SetTitle(title string) Properties <span class="cov2" title="2">{
+        return p.Set("title", title)
+}</span>
+
+func (p Properties) SetURL(url string) Properties <span class="cov1" title="1">{
+        return p.Set("url", url)
+}</span>
+
+func (p Properties) SetName(name string) Properties <span class="cov1" title="1">{
+        return p.Set("name", name)
+}</span>
+
+func (p Properties) SetCategory(category string) Properties <span class="cov1" title="1">{
+        return p.Set("category", category)
+}</span>
+
+func (p Properties) SetSKU(sku string) Properties <span class="cov1" title="1">{
+        return p.Set("sku", sku)
+}</span>
+
+func (p Properties) SetPrice(price float64) Properties <span class="cov1" title="1">{
+        return p.Set("price", price)
+}</span>
+
+func (p Properties) SetProductId(id string) Properties <span class="cov1" title="1">{
+        return p.Set("id", id)
+}</span>
+
+func (p Properties) SetOrderId(id string) Properties <span class="cov1" title="1">{
+        return p.Set("orderId", id)
+}</span>
+
+func (p Properties) SetTotal(total float64) Properties <span class="cov1" title="1">{
+        return p.Set("total", total)
+}</span>
+
+func (p Properties) SetSubtotal(subtotal float64) Properties <span class="cov1" title="1">{
+        return p.Set("subtotal", subtotal)
+}</span>
+
+func (p Properties) SetShipping(shipping float64) Properties <span class="cov1" title="1">{
+        return p.Set("shipping", shipping)
+}</span>
+
+func (p Properties) SetTax(tax float64) Properties <span class="cov1" title="1">{
+        return p.Set("tax", tax)
+}</span>
+
+func (p Properties) SetDiscount(discount float64) Properties <span class="cov1" title="1">{
+        return p.Set("discount", discount)
+}</span>
+
+func (p Properties) SetCoupon(coupon string) Properties <span class="cov1" title="1">{
+        return p.Set("coupon", coupon)
+}</span>
+
+func (p Properties) SetProducts(products ...Product) Properties <span class="cov1" title="1">{
+        return p.Set("products", products)
+}</span>
+
+func (p Properties) SetRepeat(repeat bool) Properties <span class="cov1" title="1">{
+        return p.Set("repeat", repeat)
+}</span>
+
+func (p Properties) Set(name string, value interface{}) Properties <span class="cov10" title="23">{
+        p[name] = value
+        return p
+}</span>
+
+// This type represents products in the E-commerce API.
+type Product struct {
+        ID    string  `json:"id,omitempty"`
+        SKU   string  `json:"sky,omitempty"`
+        Name  string  `json:"name,omitempty"`
+        Price float64 `json:"price"`
+}
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package analytics
+
+import "time"
+
+var _ Message = (*Screen)(nil)
+
+// This type represents object sent in a screen call as described in
+// https://segment.com/docs/libraries/http/#screen
+type Screen struct {
+        // This field is exported for serialization purposes and shouldn't be set by
+        // the application, its value is always overwritten by the library.
+        Type string `json:"type,omitempty"`
+
+        MessageId    string       `json:"messageId,omitempty"`
+        AnonymousId  string       `json:"anonymousId,omitempty"`
+        UserId       string       `json:"userId,omitempty"`
+        Name         string       `json:"name,omitempty"`
+        Timestamp    time.Time    `json:"timestamp,omitempty"`
+        Context      *Context     `json:"context,omitempty"`
+        Properties   Properties   `json:"properties,omitempty"`
+        Integrations Integrations `json:"integrations,omitempty"`
+}
+
+func (msg Screen) Validate() error <span class="cov10" title="8">{
+        if len(msg.UserId) == 0 &amp;&amp; len(msg.AnonymousId) == 0 </span><span class="cov4" title="2">{
+                return FieldError{
+                        Type:  "analytics.Screen",
+                        Name:  "UserId",
+                        Value: msg.UserId,
+                }
+        }</span>
+
+        <span class="cov8" title="6">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">// +build go1.6
+
+package analytics
+
+import "net/http"
+
+// http clients on versions of go after 1.6 always support timeout.
+func supportsTimeout(transport http.RoundTripper) bool <span class="cov10" title="20">{
+        return true
+}</span>
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">package analytics
+
+import "time"
+
+var _ Message = (*Track)(nil)
+
+// This type represents object sent in a track call as described in
+// https://segment.com/docs/libraries/http/#track
+type Track struct {
+        // This field is exported for serialization purposes and shouldn't be set by
+        // the application, its value is always overwritten by the library.
+        Type string `json:"type,omitempty"`
+
+        MessageId    string       `json:"messageId,omitempty"`
+        AnonymousId  string       `json:"anonymousId,omitempty"`
+        UserId       string       `json:"userId,omitempty"`
+        Event        string       `json:"event"`
+        Timestamp    time.Time    `json:"timestamp,omitempty"`
+        Context      *Context     `json:"context,omitempty"`
+        Properties   Properties   `json:"properties,omitempty"`
+        Integrations Integrations `json:"integrations,omitempty"`
+}
+
+func (msg Track) Validate() error <span class="cov10" title="31">{
+        if len(msg.Event) == 0 </span><span class="cov2" title="2">{
+                return FieldError{
+                        Type:  "analytics.Track",
+                        Name:  "Event",
+                        Value: msg.Event,
+                }
+        }</span>
+
+        <span class="cov9" title="29">if len(msg.UserId) == 0 &amp;&amp; len(msg.AnonymousId) == 0 </span><span class="cov1" title="1">{
+                return FieldError{
+                        Type:  "analytics.Track",
+                        Name:  "UserId",
+                        Value: msg.UserId,
+                }
+        }</span>
+
+        <span class="cov9" title="28">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">package analytics
+
+import "time"
+
+// This type is used to represent traits in messages that support it.
+// It is a free-form object so the application can set any value it sees fit but
+// a few helper method are defined to make it easier to instantiate traits with
+// common fields.
+// Here's a quick example of how this type is meant to be used:
+//
+//        analytics.Identify{
+//                UserId: "0123456789",
+//                Traits: analytics.NewTraits()
+//                        .SetFirstName("Luke")
+//                        .SetLastName("Skywalker")
+//                        .Set("Role", "Jedi"),
+//        }
+//
+// The specifications can be found at https://segment.com/docs/spec/identify/#traits
+type Traits map[string]interface{}
+
+func NewTraits() Traits <span class="cov9" title="16">{
+        return make(Traits, 10)
+}</span>
+
+func (t Traits) SetAddress(address string) Traits <span class="cov1" title="1">{
+        return t.Set("address", address)
+}</span>
+
+func (t Traits) SetAge(age int) Traits <span class="cov1" title="1">{
+        return t.Set("age", age)
+}</span>
+
+func (t Traits) SetAvatar(url string) Traits <span class="cov1" title="1">{
+        return t.Set("avatar", url)
+}</span>
+
+func (t Traits) SetBirthday(date time.Time) Traits <span class="cov1" title="1">{
+        return t.Set("birthday", date)
+}</span>
+
+func (t Traits) SetCreatedAt(date time.Time) Traits <span class="cov1" title="1">{
+        return t.Set("createdAt", date)
+}</span>
+
+func (t Traits) SetDescription(desc string) Traits <span class="cov1" title="1">{
+        return t.Set("description", desc)
+}</span>
+
+func (t Traits) SetEmail(email string) Traits <span class="cov1" title="1">{
+        return t.Set("email", email)
+}</span>
+
+func (t Traits) SetFirstName(firstName string) Traits <span class="cov3" title="2">{
+        return t.Set("firstName", firstName)
+}</span>
+
+func (t Traits) SetGender(gender string) Traits <span class="cov1" title="1">{
+        return t.Set("gender", gender)
+}</span>
+
+func (t Traits) SetLastName(lastName string) Traits <span class="cov3" title="2">{
+        return t.Set("lastName", lastName)
+}</span>
+
+func (t Traits) SetName(name string) Traits <span class="cov1" title="1">{
+        return t.Set("name", name)
+}</span>
+
+func (t Traits) SetPhone(phone string) Traits <span class="cov1" title="1">{
+        return t.Set("phone", phone)
+}</span>
+
+func (t Traits) SetTitle(title string) Traits <span class="cov1" title="1">{
+        return t.Set("title", title)
+}</span>
+
+func (t Traits) SetUsername(username string) Traits <span class="cov1" title="1">{
+        return t.Set("username", username)
+}</span>
+
+func (t Traits) SetWebsite(url string) Traits <span class="cov1" title="1">{
+        return t.Set("website", url)
+}</span>
+
+func (t Traits) Set(field string, value interface{}) Traits <span class="cov10" title="17">{
+        t[field] = value
+        return t
+}</span>
+</pre>
+		
+		<pre class="file" id="file18" style="display: none">package analytics
+
+type FieldGetter interface {
+        GetField(field string) (interface{}, bool)
+}
+
+func getString(msg FieldGetter, field string) string <span class="cov10" title="40">{
+        if val, ok := msg.GetField(field); ok </span><span class="cov8" title="19">{
+                if str, ok := val.(string); ok </span><span class="cov8" title="19">{
+                        return str
+                }</span>
+        }
+        <span class="cov8" title="21">return ""</span>
+}
+
+func ValidateFields(msg FieldGetter) error <span class="cov8" title="19">{
+        typ, _ := msg.GetField("type")
+        if str, ok := typ.(string); ok </span><span class="cov8" title="18">{
+                switch str </span>{
+                case "alias":<span class="cov2" title="2">
+                        return Alias{
+                                Type:       "alias",
+                                UserId:     getString(msg, "userId"),
+                                PreviousId: getString(msg, "previousId"),
+                        }.Validate()</span>
+                case "group":<span class="cov3" title="3">
+                        return Group{
+                                Type:        "group",
+                                UserId:      getString(msg, "userId"),
+                                AnonymousId: getString(msg, "anonymousId"),
+                                GroupId:     getString(msg, "groupId"),
+                        }.Validate()</span>
+                case "identify":<span class="cov3" title="3">
+                        return Identify{
+                                Type:        "identify",
+                                UserId:      getString(msg, "userId"),
+                                AnonymousId: getString(msg, "anonymousId"),
+                        }.Validate()</span>
+                case "page":<span class="cov3" title="3">
+                        return Page{
+                                Type:        "page",
+                                UserId:      getString(msg, "userId"),
+                                AnonymousId: getString(msg, "anonymousId"),
+                        }.Validate()</span>
+                case "screen":<span class="cov3" title="3">
+                        return Screen{
+                                Type:        "screen",
+                                UserId:      getString(msg, "userId"),
+                                AnonymousId: getString(msg, "anonymousId"),
+                        }.Validate()</span>
+                case "track":<span class="cov3" title="3">
+                        return Track{
+                                Type:        "track",
+                                UserId:      getString(msg, "userId"),
+                                AnonymousId: getString(msg, "anonymousId"),
+                                Event:       getString(msg, "event"),
+                        }.Validate()</span>
+                }
+        }
+        <span class="cov2" title="2">return FieldError{
+                Type:  "analytics.Event",
+                Name:  "Type",
+                Value: typ,
+        }</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
