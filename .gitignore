@@ -5,3 +5,4 @@
 cpu.pprof
 dataformats.test
 mem.pprof
+tmp/
