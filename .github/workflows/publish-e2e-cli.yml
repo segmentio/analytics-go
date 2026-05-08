@@ -1,0 +1,36 @@
+name: Publish E2E CLI
+
+on:
+  push:
+    branches: [v3.0]
+    paths:
+      - 'e2e-cli/**'
+      - '*.go'
+      - 'go.mod'
+      - 'go.sum'
+  schedule:
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout SDK
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build e2e-cli
+        working-directory: e2e-cli
+        run: go build -o e2e-cli-bin ./...
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-cli-go
+          path: e2e-cli/e2e-cli-bin
+          retention-days: 90
