@@ -1,0 +1,7 @@
+{
+  "sdk": "go",
+  "test_suites": "basic",
+  "auto_settings": false,
+  "patch": null,
+  "env": {}
+}
