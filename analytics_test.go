@@ -139,7 +139,7 @@ func fixture(name string) string {
 	if err != nil {
 		panic(err)
 	}
-	return string(b)
+	return strings.ReplaceAll(string(b), `"__VERSION__"`, `"`+Version+`"`)
 }
 
 func mockId() string { return "I'm unique" }
@@ -195,32 +195,9 @@ func ExampleTrack() {
 		},
 	})
 
-	fmt.Printf("%s\n", <-body)
-	// Output:
-	// {
-	//   "batch": [
-	//     {
-	//       "event": "Download",
-	//       "messageId": "I'm unique",
-	//       "properties": {
-	//         "application": "Segment Desktop",
-	//         "platform": "osx",
-	//         "version": "1.1.0"
-	//       },
-	//       "timestamp": "2009-11-10T23:00:00Z",
-	//       "type": "track",
-	//       "userId": "123456"
-	//     }
-	//   ],
-	//   "context": {
-	//     "library": {
-	//       "name": "analytics-go",
-	//       "version": "3.0.0"
-	//     }
-	//   },
-	//   "messageId": "I'm unique",
-	//   "sentAt": "2009-11-10T23:00:00Z"
-	// }
+	if res := string(<-body); res != fixture("test-enqueue-track.json") {
+		fmt.Printf("unexpected output:\n%s\n", res)
+	}
 }
 
 func TestEnqueue(t *testing.T) {
