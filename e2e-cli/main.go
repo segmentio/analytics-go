@@ -219,6 +219,10 @@ func run(input Input) Output {
 		cfg.BatchSize = input.Config.FlushAt
 	}
 
+	if input.Config.MaxRetries > 0 {
+		cfg.MaxRetries = input.Config.MaxRetries
+	}
+
 	client, err := analytics.NewWithConfig(input.WriteKey, cfg)
 	if err != nil {
 		return Output{

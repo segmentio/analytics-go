@@ -61,6 +61,15 @@ type Config struct {
 	// If not set the client will fallback to use a default retry policy.
 	RetryAfter func(int) time.Duration
 
+	// Maximum number of counted backoff retries. Defaults to DefaultMaxRetries.
+	MaxRetries int
+
+	// Wall-clock cap on total time spent in backoff retries. Defaults to DefaultMaxTotalBackoffDuration.
+	MaxTotalBackoffDuration time.Duration
+
+	// Wall-clock cap on total time spent retrying after 429 Retry-After responses. Defaults to DefaultMaxRateLimitDuration.
+	MaxRateLimitDuration time.Duration
+
 	// A function called by the client to generate unique message identifiers.
 	// The client uses a UUID generator if none is provided.
 	// This field is not exported and only exposed internally to let unit tests
@@ -91,6 +100,18 @@ const DefaultInterval = 5 * time.Second
 // This constant sets the default batch size used by client instances if none
 // was explicitly set.
 const DefaultBatchSize = 250
+
+// DefaultMaxRetries is the default number of counted backoff retries.
+const DefaultMaxRetries = 10
+
+// DefaultMaxTotalBackoffDuration is the default wall-clock cap on total backoff time.
+const DefaultMaxTotalBackoffDuration = 12 * time.Hour
+
+// DefaultMaxRateLimitDuration is the default wall-clock cap on 429 Retry-After retries.
+const DefaultMaxRateLimitDuration = 12 * time.Hour
+
+// maxRetryAfterSeconds is the cap applied to Retry-After header values.
+const maxRetryAfterSeconds = int64(300)
 
 // Verifies that fields that don't have zero-values are set to valid values,
 // returns an error describing the problem if a field was invalid.
@@ -142,7 +163,19 @@ func makeConfig(c Config) Config {
 	}
 
 	if c.RetryAfter == nil {
-		c.RetryAfter = backo.DefaultBacko().Duration
+		c.RetryAfter = backo.NewBacko(500*time.Millisecond, 2, 0, 60*time.Second).Duration
+	}
+
+	if c.MaxRetries == 0 {
+		c.MaxRetries = DefaultMaxRetries
+	}
+
+	if c.MaxTotalBackoffDuration == 0 {
+		c.MaxTotalBackoffDuration = DefaultMaxTotalBackoffDuration
+	}
+
+	if c.MaxRateLimitDuration == 0 {
+		c.MaxRateLimitDuration = DefaultMaxRateLimitDuration
 	}
 
 	if c.uid == nil {
