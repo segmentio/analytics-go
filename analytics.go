@@ -375,7 +375,13 @@ func (c *client) report(res *http.Response) error {
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		c.errorf("response %d %s - %s", res.StatusCode, res.Status, err)
-		return err
+		retryable, isRL := retryableStatus(res.StatusCode)
+		return &httpError{
+			StatusCode:  res.StatusCode,
+			Retryable:   retryable,
+			IsRateLimit: isRL,
+			Body:        err.Error(),
+		}
 	}
 
 	c.logf("response %d %s – %s", res.StatusCode, res.Status, string(body))
