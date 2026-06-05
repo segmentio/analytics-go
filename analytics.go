@@ -269,70 +269,107 @@ func (c *client) send(msgs []message) {
 		return
 	}
 
-	var (
-		totalAttempts      int
-		backoffAttempts    int
-		firstFailureTime   time.Time
-		rateLimitStartTime time.Time
-		lastErr            error
-	)
-
+	retry := retryState{client: c, msgs: msgs}
 	for {
-		totalAttempts++
-		uploadErr := c.upload(b, totalAttempts)
+		retry.totalAttempts++
 
+		uploadErr := c.upload(b, retry.totalAttempts)
 		if uploadErr == nil {
 			c.notifySuccess(msgs)
 			return
 		}
 
-		lastErr = uploadErr
-
-		httpErr, ok := uploadErr.(*httpError)
-		if !ok {
-			// Network-level error — treat as retryable backoff
-			httpErr = &httpError{Retryable: true}
-		}
-
-		if !httpErr.Retryable {
-			c.errorf("messages dropped due to non-retryable error - %s", uploadErr)
-			c.notifyFailure(msgs, uploadErr)
+		action := retry.classify(uploadErr)
+		switch action {
+		case retryActionDrop:
 			return
+		case retryActionRateLimit:
+			time.Sleep(retry.rateLimitDelay)
+		case retryActionBackoff:
+			time.Sleep(c.RetryAfter(retry.backoffAttempts - 1))
 		}
-
-		if httpErr.IsRateLimit && httpErr.RetryAfter > 0 {
-			// Retry-After present — sleep without consuming retry budget
-			if rateLimitStartTime.IsZero() {
-				rateLimitStartTime = c.now()
-			}
-			if c.now().Sub(rateLimitStartTime) > c.MaxRateLimitDuration {
-				c.errorf("messages dropped - %s", ErrRateLimitBudgetExceeded)
-				c.notifyFailure(msgs, ErrRateLimitBudgetExceeded)
-				return
-			}
-			time.Sleep(time.Duration(httpErr.RetryAfter) * time.Second)
-			continue
-		}
-
-		// Counted backoff retry
-		if firstFailureTime.IsZero() {
-			firstFailureTime = c.now()
-		}
-		if c.now().Sub(firstFailureTime) > c.MaxTotalBackoffDuration {
-			c.errorf("messages dropped - %s", ErrBackoffBudgetExceeded)
-			c.notifyFailure(msgs, ErrBackoffBudgetExceeded)
-			return
-		}
-
-		backoffAttempts++
-		if backoffAttempts > c.MaxRetries {
-			c.errorf("%d messages dropped after %d attempts", len(msgs), totalAttempts)
-			c.notifyFailure(msgs, lastErr)
-			return
-		}
-
-		time.Sleep(c.RetryAfter(backoffAttempts - 1))
 	}
+}
+
+type retryAction int
+
+const (
+	retryActionBackoff    retryAction = iota
+	retryActionRateLimit  retryAction = iota
+	retryActionDrop       retryAction = iota
+)
+
+// retryState tracks state across attempts within a single send call.
+type retryState struct {
+	client             *client
+	msgs               []message
+	totalAttempts      int
+	backoffAttempts    int
+	firstFailureTime   time.Time
+	rateLimitStartTime time.Time
+	rateLimitDelay     time.Duration
+}
+
+// classify determines what to do after a failed upload. It updates internal
+// counters, logs/notifies on terminal failures, and returns the action the
+// caller should take.
+func (r *retryState) classify(uploadErr error) retryAction {
+	c := r.client
+
+	httpErr, ok := uploadErr.(*httpError)
+	if !ok {
+		httpErr = &httpError{Retryable: true}
+	}
+
+	if !httpErr.Retryable {
+		c.errorf("messages dropped due to non-retryable error - %s", uploadErr)
+		c.notifyFailure(r.msgs, uploadErr)
+		return retryActionDrop
+	}
+
+	if httpErr.IsRateLimit && httpErr.RetryAfter > 0 {
+		return r.handleRateLimit(httpErr)
+	}
+
+	return r.handleBackoff(uploadErr)
+}
+
+func (r *retryState) handleRateLimit(httpErr *httpError) retryAction {
+	c := r.client
+
+	if r.rateLimitStartTime.IsZero() {
+		r.rateLimitStartTime = c.now()
+	}
+	if c.now().Sub(r.rateLimitStartTime) > c.MaxRateLimitDuration {
+		c.errorf("messages dropped - %s", ErrRateLimitBudgetExceeded)
+		c.notifyFailure(r.msgs, ErrRateLimitBudgetExceeded)
+		return retryActionDrop
+	}
+
+	r.rateLimitDelay = time.Duration(httpErr.RetryAfter) * time.Second
+	return retryActionRateLimit
+}
+
+func (r *retryState) handleBackoff(lastErr error) retryAction {
+	c := r.client
+
+	if r.firstFailureTime.IsZero() {
+		r.firstFailureTime = c.now()
+	}
+	if c.now().Sub(r.firstFailureTime) > c.MaxTotalBackoffDuration {
+		c.errorf("messages dropped - %s", ErrBackoffBudgetExceeded)
+		c.notifyFailure(r.msgs, ErrBackoffBudgetExceeded)
+		return retryActionDrop
+	}
+
+	r.backoffAttempts++
+	if r.backoffAttempts > c.MaxRetries {
+		c.errorf("%d messages dropped after %d attempts", len(r.msgs), r.totalAttempts)
+		c.notifyFailure(r.msgs, lastErr)
+		return retryActionDrop
+	}
+
+	return retryActionBackoff
 }
 
 // Upload serialized batch message. attempt is 1-based (1 = first attempt).

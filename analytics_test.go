@@ -781,8 +781,10 @@ func TestClientResponseBodyError(t *testing.T) {
 	if err := <-errchan; err == nil {
 		t.Error("failure callback not triggered for a 400 response")
 
-	} else if err != testError {
-		t.Errorf("invalid error returned by erroring response body: %T: %s", err, err)
+	} else if httpErr, ok := err.(*httpError); !ok {
+		t.Errorf("expected *httpError, got %T: %s", err, err)
+	} else if httpErr.StatusCode != 400 {
+		t.Errorf("expected status 400, got %d", httpErr.StatusCode)
 	}
 }
 
