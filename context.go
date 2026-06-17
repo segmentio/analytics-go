@@ -57,6 +57,7 @@ type CampaignInfo struct {
 // defined in https://segment.com/docs/spec/common/#context
 type DeviceInfo struct {
 	Id            string `json:"id,omitempty"`
+	Token         string `json:"token,omitempty"`
 	Manufacturer  string `json:"manufacturer,omitempty"`
 	Model         string `json:"model,omitempty"`
 	Name          string `json:"name,omitempty"`
