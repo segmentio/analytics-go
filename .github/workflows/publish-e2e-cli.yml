@@ -12,17 +12,27 @@ on:
     - cron: '0 0 1 * *'
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARTIFACTORY_URL: ${{ vars.ARTIFACTORY_URL }}
+
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-x64
     steps:
       - name: Checkout SDK
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
         with:
           go-version-file: go.mod
+
+      - name: Authenticate to Artifactory
+        uses: ./.github/actions/artifactory-oidc
 
       - name: Build e2e-cli
         working-directory: e2e-cli
