@@ -12,27 +12,33 @@ on:
         required: false
         default: 'main'
 
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARTIFACTORY_URL: ${{ vars.ARTIFACTORY_URL }}
+
 jobs:
   e2e-tests:
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.head.repo.fork }}
+    runs-on: ubuntu-x64
 
     steps:
       - name: Checkout SDK
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           path: sdk
 
       - name: Checkout sdk-e2e-tests
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           repository: segmentio/sdk-e2e-tests
           ref: ${{ inputs.e2e_tests_ref || 'main' }}
-          token: ${{ secrets.E2E_TESTS_TOKEN }}
           path: sdk-e2e-tests
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
         with:
           go-version-file: sdk/go.mod
 
@@ -40,6 +46,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Authenticate to Artifactory
+        uses: ./sdk/.github/actions/artifactory-oidc
 
       - name: Build e2e-cli
         working-directory: sdk/e2e-cli
