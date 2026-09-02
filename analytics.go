@@ -243,11 +243,10 @@ func (c *client) sendAsync(msgs []message, wg *sync.WaitGroup, ex *executor) {
 
 // httpError is returned by report() for non-2xx/3xx responses.
 type httpError struct {
-	StatusCode  int
-	Retryable   bool
-	IsRateLimit bool
-	RetryAfter  int64 // seconds from Retry-After header; 0 if absent
-	Body        string
+	StatusCode int
+	Retryable  bool
+	RetryAfter int64 // seconds from Retry-After header; 0 if absent
+	Body       string
 }
 
 func (e *httpError) Error() string {
@@ -327,7 +326,7 @@ func (r *retryState) classify(uploadErr error) retryAction {
 		return retryActionDrop
 	}
 
-	if httpErr.IsRateLimit && httpErr.RetryAfter > 0 {
+	if httpErr.RetryAfter > 0 {
 		return r.handleRateLimit(httpErr)
 	}
 
@@ -412,29 +411,26 @@ func (c *client) report(res *http.Response) error {
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		c.errorf("response %d %s - %s", res.StatusCode, res.Status, err)
-		retryable, isRL := retryableStatus(res.StatusCode)
 		return &httpError{
-			StatusCode:  res.StatusCode,
-			Retryable:   retryable,
-			IsRateLimit: isRL,
-			Body:        err.Error(),
+			StatusCode: res.StatusCode,
+			Retryable:  retryableStatus(res.StatusCode),
+			Body:       err.Error(),
 		}
 	}
 
 	c.logf("response %d %s – %s", res.StatusCode, res.Status, string(body))
 
-	retryable, isRateLimit := retryableStatus(res.StatusCode)
+	retryable := retryableStatus(res.StatusCode)
 	var retryAfterSecs int64
-	if isRateLimit {
+	if retryable {
 		retryAfterSecs = parseRetryAfter(res.Header.Get("Retry-After"), maxRetryAfterSeconds)
 	}
 
 	return &httpError{
-		StatusCode:  res.StatusCode,
-		Retryable:   retryable,
-		IsRateLimit: isRateLimit,
-		RetryAfter:  retryAfterSecs,
-		Body:        string(body),
+		StatusCode: res.StatusCode,
+		Retryable:  retryable,
+		RetryAfter: retryAfterSecs,
+		Body:       string(body),
 	}
 }
 

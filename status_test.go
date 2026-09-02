@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -23,30 +24,28 @@ func TestRetryableStatus(t *testing.T) {
 	cases := []struct {
 		status    int
 		retryable bool
-		rateLimit bool
 	}{
-		{408, true, false},
-		{410, true, false},
-		{429, true, true},
-		{460, true, false},
-		{500, true, false},
-		{502, true, false},
-		{503, true, false},
-		{504, true, false},
-		{508, true, false},
-		{501, false, false},
-		{505, false, false},
-		{511, false, false},
-		{400, false, false},
-		{401, false, false},
-		{403, false, false},
-		{413, false, false},
-		{200, false, false},
+		{408, true},
+		{410, true},
+		{429, true},
+		{460, true},
+		{500, true},
+		{502, true},
+		{503, true},
+		{504, true},
+		{508, true},
+		{529, true},
+		{501, false},
+		{505, false},
+		{511, false},
+		{400, false},
+		{401, false},
+		{403, false},
+		{413, false},
+		{200, false},
 	}
 	for _, tc := range cases {
-		r, rl := retryableStatus(tc.status)
-		assert.Equal(t, tc.retryable, r, "retryable for status %d", tc.status)
-		assert.Equal(t, tc.rateLimit, rl, "isRateLimit for status %d", tc.status)
+		assert.Equal(t, tc.retryable, retryableStatus(tc.status), "retryable for status %d", tc.status)
 	}
 }
 
@@ -56,7 +55,20 @@ func TestParseRetryAfter(t *testing.T) {
 	assert.Equal(t, int64(0), parseRetryAfter("0", 300))
 	assert.Equal(t, int64(0), parseRetryAfter("-1", 300))
 	assert.Equal(t, int64(0), parseRetryAfter("", 300))
-	assert.Equal(t, int64(0), parseRetryAfter("Wed, 07 May 2026 12:00:00 GMT", 300))
 	assert.Equal(t, int64(1), parseRetryAfter("1", 300))
 	assert.Equal(t, int64(300), parseRetryAfter("300", 300))
+}
+
+func TestParseRetryAfterHTTPDate(t *testing.T) {
+	// Date ~2 seconds in the future should return ~2
+	future := time.Now().Add(2 * time.Second).UTC().Format(time.RFC1123)
+	result := parseRetryAfter(future, 300)
+	assert.True(t, result >= 1 && result <= 3, "expected ~2 seconds, got %d", result)
+
+	// Date in the past should return 0
+	past := time.Now().Add(-10 * time.Second).UTC().Format(time.RFC1123)
+	assert.Equal(t, int64(0), parseRetryAfter(past, 300))
+
+	// Garbage string should return 0
+	assert.Equal(t, int64(0), parseRetryAfter("not-a-date-or-number", 300))
 }
