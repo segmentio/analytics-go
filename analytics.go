@@ -269,6 +269,7 @@ func (c *client) send(msgs []message) {
 	}
 
 	retry := retryState{client: c, msgs: msgs}
+	var shutdownDeadline time.Time
 	for {
 		retry.totalAttempts++
 
@@ -279,13 +280,36 @@ func (c *client) send(msgs []message) {
 		}
 
 		action := retry.classify(uploadErr)
+		var delay time.Duration
 		switch action {
 		case retryActionDrop:
 			return
 		case retryActionRateLimit:
-			time.Sleep(retry.rateLimitDelay)
+			delay = retry.rateLimitDelay
 		case retryActionBackoff:
-			time.Sleep(c.RetryAfter(retry.backoffAttempts - 1))
+			delay = c.RetryAfter(retry.backoffAttempts - 1)
+		}
+
+		select {
+		case <-time.After(delay):
+		case <-c.quit:
+			// Closing. Keep retrying so a shutdown does not discard a batch the
+			// server asked us to resend, but bound the wait: without this, a
+			// server that keeps returning Retry-After holds Close open for up to
+			// MaxRateLimitDuration (12h by default).
+			if shutdownDeadline.IsZero() {
+				shutdownDeadline = time.Now().Add(c.ShutdownTimeout)
+			}
+			remaining := time.Until(shutdownDeadline)
+			if remaining <= 0 {
+				c.errorf("%d messages dropped because they failed to be sent and the client was closed", len(msgs))
+				c.notifyFailure(msgs, uploadErr)
+				return
+			}
+			if delay > remaining {
+				delay = remaining
+			}
+			time.Sleep(delay)
 		}
 	}
 }
@@ -293,9 +317,9 @@ func (c *client) send(msgs []message) {
 type retryAction int
 
 const (
-	retryActionBackoff    retryAction = iota
-	retryActionRateLimit  retryAction = iota
-	retryActionDrop       retryAction = iota
+	retryActionBackoff   retryAction = iota
+	retryActionRateLimit retryAction = iota
+	retryActionDrop      retryAction = iota
 )
 
 // retryState tracks state across attempts within a single send call.
