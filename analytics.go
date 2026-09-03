@@ -279,25 +279,13 @@ func (c *client) send(msgs []message) {
 		}
 
 		action := retry.classify(uploadErr)
-		var delay time.Duration
 		switch action {
 		case retryActionDrop:
 			return
 		case retryActionRateLimit:
-			delay = retry.rateLimitDelay
+			time.Sleep(retry.rateLimitDelay)
 		case retryActionBackoff:
-			delay = c.RetryAfter(retry.backoffAttempts - 1)
-		}
-
-		// Wait for either the retry delay or the client to be closed. Without the
-		// second case Close() cannot interrupt an in-flight retry schedule, so
-		// shutdown blocks for up to MaxRateLimitDuration (12h by default).
-		select {
-		case <-time.After(delay):
-		case <-c.quit:
-			c.errorf("%d messages dropped because they failed to be sent and the client was closed", len(msgs))
-			c.notifyFailure(msgs, uploadErr)
-			return
+			time.Sleep(c.RetryAfter(retry.backoffAttempts - 1))
 		}
 	}
 }
@@ -305,9 +293,9 @@ func (c *client) send(msgs []message) {
 type retryAction int
 
 const (
-	retryActionBackoff   retryAction = iota
-	retryActionRateLimit retryAction = iota
-	retryActionDrop      retryAction = iota
+	retryActionBackoff    retryAction = iota
+	retryActionRateLimit  retryAction = iota
+	retryActionDrop       retryAction = iota
 )
 
 // retryState tracks state across attempts within a single send call.
