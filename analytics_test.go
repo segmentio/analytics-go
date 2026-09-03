@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -887,15 +888,20 @@ func TestRetry529WithoutRetryAfterUsesExponentialBackoff(t *testing.T) {
 // TestRetryAfterOnRetryableStatusUsesRateLimitSleep verifies that a retryable
 // status with Retry-After uses the rate-limit path and eventually succeeds.
 func TestRetryAfterOnRetryableStatusUsesRateLimitSleep(t *testing.T) {
-	sleeps := make([]time.Duration, 0, 4)
-
-	// Transport: fail twice with 503+Retry-After:2, then succeed.
+	var mu sync.Mutex
+	backoffCalls := 0
 	attempt := 0
+
+	// Fail twice with 503 + Retry-After: 1, then succeed.
 	transport := roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		mu.Lock()
 		attempt++
-		if attempt <= 2 {
+		n := attempt
+		mu.Unlock()
+
+		if n <= 2 {
 			hdr := http.Header{}
-			hdr.Set("Retry-After", "2")
+			hdr.Set("Retry-After", "1")
 			return &http.Response{
 				Status:     "503 Service Unavailable",
 				StatusCode: 503,
@@ -928,23 +934,34 @@ func TestRetryAfterOnRetryableStatusUsesRateLimitSleep(t *testing.T) {
 		},
 		Transport: transport,
 		BatchSize: 1,
-		// Use a stub sleep tracker via RetryAfter to catch any exponential call.
-		// The real sleep is in the send loop — we just verify success here.
+		// Counting call sites proves which path ran: the rate-limit path sleeps
+		// retry.rateLimitDelay and must never consult the backoff function.
 		RetryAfter: func(i int) time.Duration {
-			d := time.Millisecond // fast for test
-			sleeps = append(sleeps, d)
-			return d
+			mu.Lock()
+			backoffCalls++
+			mu.Unlock()
+			return time.Millisecond
 		},
 	})
 
 	client.Enqueue(Track{UserId: "A", Event: "B"})
-	client.Close()
 
+	// Wait for delivery before closing — Close() now interrupts retries.
 	select {
 	case <-reschan:
-		// success — the message eventually went through
-	case <-time.After(5 * time.Second):
+	case <-time.After(20 * time.Second):
 		t.Fatal("timed out waiting for success callback")
 	}
-	_ = sleeps // collected but not asserted; we just care that it succeeded
+	client.Close()
+
+	mu.Lock()
+	gotBackoff, gotAttempts := backoffCalls, attempt
+	mu.Unlock()
+
+	if gotBackoff != 0 {
+		t.Errorf("Retry-After responses must use the rate-limit path, but the backoff function was called %d time(s)", gotBackoff)
+	}
+	if gotAttempts != 3 {
+		t.Errorf("expected 3 upload attempts (2 rate-limited retries then success), got %d", gotAttempts)
+	}
 }
