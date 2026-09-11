@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -663,8 +664,11 @@ func TestClientNewRequestError(t *testing.T) {
 	errchan := make(chan error, 1)
 
 	client, _ := NewWithConfig("0123456789", Config{
-		Endpoint: "://localhost:80", // Malformed endpoint URL.
-		Logger:   testLogger{t.Logf, t.Logf},
+		// These assert only that the failure callback fires; no need to sit
+		// through the shutdown grace period.
+		ShutdownTimeout: 100 * time.Millisecond,
+		Endpoint:        "://localhost:80", // Malformed endpoint URL.
+		Logger:          testLogger{t.Logf, t.Logf},
 		Callback: testCallback{
 			nil,
 			func(m Message, e error) { errchan <- e },
@@ -684,7 +688,10 @@ func TestClientRoundTripperError(t *testing.T) {
 	errchan := make(chan error, 1)
 
 	client, _ := NewWithConfig("0123456789", Config{
-		Logger: testLogger{t.Logf, t.Logf},
+		// These assert only that the failure callback fires; no need to sit
+		// through the shutdown grace period.
+		ShutdownTimeout: 100 * time.Millisecond,
+		Logger:          testLogger{t.Logf, t.Logf},
 		Callback: testCallback{
 			nil,
 			func(m Message, e error) { errchan <- e },
@@ -781,8 +788,10 @@ func TestClientResponseBodyError(t *testing.T) {
 	if err := <-errchan; err == nil {
 		t.Error("failure callback not triggered for a 400 response")
 
-	} else if err != testError {
-		t.Errorf("invalid error returned by erroring response body: %T: %s", err, err)
+	} else if httpErr, ok := err.(*httpError); !ok {
+		t.Errorf("expected *httpError, got %T: %s", err, err)
+	} else if httpErr.StatusCode != 400 {
+		t.Errorf("expected status 400, got %d", httpErr.StatusCode)
 	}
 }
 
@@ -816,5 +825,195 @@ func TestClientMaxConcurrentRequests(t *testing.T) {
 
 	} else if err != ErrTooManyRequests {
 		t.Errorf("invalid error returned by erroring response body: %T: %s", err, err)
+	}
+}
+
+// makeRetryStateForTest constructs a retryState backed by a minimal client
+// with the supplied config defaults filled in.
+func makeRetryStateForTest(cfg Config) *retryState {
+	c := &client{Config: makeConfig(cfg)}
+	return &retryState{client: c}
+}
+
+// TestRetry503WithRetryAfterUsesRateLimitPath verifies that a 503 response
+// with a Retry-After header routes through handleRateLimit (not backoff).
+func TestRetry503WithRetryAfterUsesRateLimitPath(t *testing.T) {
+	r := makeRetryStateForTest(Config{})
+
+	err := &httpError{
+		StatusCode: 503,
+		Retryable:  true,
+		RetryAfter: 2,
+	}
+
+	action := r.classify(err)
+	if action != retryActionRateLimit {
+		t.Fatalf("expected retryActionRateLimit, got %v", action)
+	}
+	if r.rateLimitDelay != 2*time.Second {
+		t.Errorf("expected rateLimitDelay=2s, got %v", r.rateLimitDelay)
+	}
+}
+
+// TestRetry529WithRetryAfterUsesRateLimitPath verifies the same for 529.
+func TestRetry529WithRetryAfterUsesRateLimitPath(t *testing.T) {
+	r := makeRetryStateForTest(Config{})
+
+	err := &httpError{
+		StatusCode: 529,
+		Retryable:  true,
+		RetryAfter: 1,
+	}
+
+	action := r.classify(err)
+	if action != retryActionRateLimit {
+		t.Fatalf("expected retryActionRateLimit, got %v", action)
+	}
+	if r.rateLimitDelay != 1*time.Second {
+		t.Errorf("expected rateLimitDelay=1s, got %v", r.rateLimitDelay)
+	}
+}
+
+// TestRetry529WithoutRetryAfterUsesExponentialBackoff verifies that a 529
+// without a Retry-After header goes through the backoff path.
+func TestRetry529WithoutRetryAfterUsesExponentialBackoff(t *testing.T) {
+	r := makeRetryStateForTest(Config{})
+
+	err := &httpError{
+		StatusCode: 529,
+		Retryable:  true,
+		RetryAfter: 0,
+	}
+
+	action := r.classify(err)
+	if action != retryActionBackoff {
+		t.Fatalf("expected retryActionBackoff, got %v", action)
+	}
+}
+
+// TestRetryAfterOnRetryableStatusUsesRateLimitSleep verifies that a retryable
+// status with Retry-After uses the rate-limit path and eventually succeeds.
+func TestRetryAfterOnRetryableStatusUsesRateLimitSleep(t *testing.T) {
+	var mu sync.Mutex
+	backoffCalls := 0
+	attempt := 0
+
+	// Fail twice with 503 + Retry-After: 1, then succeed.
+	transport := roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		mu.Lock()
+		attempt++
+		n := attempt
+		mu.Unlock()
+
+		if n <= 2 {
+			hdr := http.Header{}
+			hdr.Set("Retry-After", "1")
+			return &http.Response{
+				Status:     "503 Service Unavailable",
+				StatusCode: 503,
+				Proto:      r.Proto,
+				ProtoMajor: r.ProtoMajor,
+				ProtoMinor: r.ProtoMinor,
+				Header:     hdr,
+				Body:       ioutil.NopCloser(strings.NewReader("overloaded")),
+				Request:    r,
+			}, nil
+		}
+		return &http.Response{
+			Status:     "200 OK",
+			StatusCode: 200,
+			Proto:      r.Proto,
+			ProtoMajor: r.ProtoMajor,
+			ProtoMinor: r.ProtoMinor,
+			Body:       ioutil.NopCloser(strings.NewReader("")),
+			Request:    r,
+		}, nil
+	})
+
+	reschan := make(chan bool, 1)
+
+	client, _ := NewWithConfig("0123456789", Config{
+		Logger: testLogger{t.Logf, t.Logf},
+		Callback: testCallback{
+			func(m Message) { reschan <- true },
+			nil,
+		},
+		Transport: transport,
+		BatchSize: 1,
+		// Counting call sites proves which path ran: the rate-limit path sleeps
+		// retry.rateLimitDelay and must never consult the backoff function.
+		RetryAfter: func(i int) time.Duration {
+			mu.Lock()
+			backoffCalls++
+			mu.Unlock()
+			return time.Millisecond
+		},
+	})
+
+	client.Enqueue(Track{UserId: "A", Event: "B"})
+
+	select {
+	case <-reschan:
+	case <-time.After(20 * time.Second):
+		t.Fatal("timed out waiting for success callback")
+	}
+	client.Close()
+
+	mu.Lock()
+	gotBackoff, gotAttempts := backoffCalls, attempt
+	mu.Unlock()
+
+	if gotBackoff != 0 {
+		t.Errorf("Retry-After responses must use the rate-limit path, but the backoff function was called %d time(s)", gotBackoff)
+	}
+	if gotAttempts != 3 {
+		t.Errorf("expected 3 upload attempts (2 rate-limited retries then success), got %d", gotAttempts)
+	}
+}
+
+func TestCloseIsBoundedByShutdownTimeout(t *testing.T) {
+	// Server never stops rate-limiting, so without a bound Close would wait for
+	// MaxRateLimitDuration.
+	transport := roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		hdr := http.Header{}
+		hdr.Set("Retry-After", "5")
+		return &http.Response{
+			Status:     "429 Too Many Requests",
+			StatusCode: 429,
+			Proto:      r.Proto,
+			ProtoMajor: r.ProtoMajor,
+			ProtoMinor: r.ProtoMinor,
+			Header:     hdr,
+			Body:       ioutil.NopCloser(strings.NewReader("slow down")),
+			Request:    r,
+		}, nil
+	})
+
+	failures := make(chan bool, 1)
+
+	client, _ := NewWithConfig("0123456789", Config{
+		Logger:               testLogger{t.Logf, t.Logf},
+		Callback:             testCallback{nil, func(m Message, e error) { failures <- true }},
+		Transport:            transport,
+		BatchSize:            1,
+		ShutdownTimeout:      1 * time.Second,
+		MaxRateLimitDuration: 12 * time.Hour,
+	})
+
+	client.Enqueue(Track{UserId: "A", Event: "B"})
+	time.Sleep(50 * time.Millisecond) // let the first upload start
+
+	start := time.Now()
+	client.Close()
+	elapsed := time.Since(start)
+
+	if elapsed > 8*time.Second {
+		t.Errorf("Close() took %s; ShutdownTimeout of 1s should have bounded it", elapsed)
+	}
+
+	select {
+	case <-failures:
+	case <-time.After(2 * time.Second):
+		t.Error("expected a failure callback for the batch dropped at shutdown")
 	}
 }
