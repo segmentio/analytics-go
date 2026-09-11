@@ -70,10 +70,9 @@ type Config struct {
 	// Wall-clock cap on total time spent retrying after 429 Retry-After responses. Defaults to DefaultMaxRateLimitDuration.
 	MaxRateLimitDuration time.Duration
 
-	// ShutdownTimeout bounds how long Close will wait for in-flight retries to
-	// finish before dropping their batches. Without it a client closing while a
-	// server keeps returning Retry-After blocks for up to MaxRateLimitDuration.
-	// Mirrors analytics-java's NETWORK_TERMINATION_TIMEOUT_S.
+	// ShutdownTimeout bounds how long Close waits for in-flight retries before
+	// dropping their batches. Mirrors analytics-java's
+	// NETWORK_TERMINATION_TIMEOUT_S.
 	ShutdownTimeout time.Duration
 
 	// A function called by the client to generate unique message identifiers.
@@ -101,8 +100,8 @@ const DefaultEndpoint = "https://api.segment.io"
 
 // This constant sets the default flush interval used by client instances if
 // none was explicitly set.
-// DefaultShutdownTimeout is how long Close waits for in-flight retries by
-// default, matching analytics-java's 75s network-executor termination timeout.
+// DefaultShutdownTimeout matches analytics-java's 75s network-executor
+// termination timeout.
 const DefaultShutdownTimeout = 75 * time.Second
 
 const DefaultInterval = 5 * time.Second

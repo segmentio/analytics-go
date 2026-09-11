@@ -293,10 +293,9 @@ func (c *client) send(msgs []message) {
 		select {
 		case <-time.After(delay):
 		case <-c.quit:
-			// Closing. Keep retrying so a shutdown does not discard a batch the
-			// server asked us to resend, but bound the wait: without this, a
-			// server that keeps returning Retry-After holds Close open for up to
-			// MaxRateLimitDuration (12h by default).
+			// Closing: finish the retry schedule so shutdown does not discard a
+			// batch the server asked us to resend, bounded by ShutdownTimeout
+			// rather than the much longer MaxRateLimitDuration.
 			if shutdownDeadline.IsZero() {
 				shutdownDeadline = time.Now().Add(c.ShutdownTimeout)
 			}
