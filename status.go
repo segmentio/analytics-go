@@ -6,9 +6,13 @@ import (
 	"time"
 )
 
-// isSuccess returns true for 2xx and 3xx responses (spec item 1).
+// isSuccess reports whether the upload was accepted. Only 2xx counts: net/http
+// follows any redirect it can, so a 3xx reaching us means it declined to (no
+// Location, a 300, or a 304) and nothing was uploaded. Treating those as success
+// would drop the batch silently. The TAPI endpoint does not emit 3xx at all;
+// this matters when host points at a customer's proxy or redirector.
 func isSuccess(status int) bool {
-	return status >= 200 && status < 400
+	return status >= 200 && status < 300
 }
 
 // retryableStatus returns whether the given HTTP status code is retryable.

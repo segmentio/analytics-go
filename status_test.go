@@ -12,7 +12,10 @@ func TestIsSuccess(t *testing.T) {
 		status int
 		want   bool
 	}{
-		{200, true}, {201, true}, {204, true}, {301, true}, {302, true},
+		{200, true}, {201, true}, {204, true},
+		// Only 2xx is success: a 3xx means net/http declined to follow it, so
+		// nothing was uploaded.
+		{300, false}, {301, false}, {302, false}, {304, false},
 		{400, false}, {429, false}, {500, false}, {0, false}, {199, false},
 	}
 	for _, tc := range cases {
