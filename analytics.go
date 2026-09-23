@@ -425,7 +425,6 @@ func (c *client) upload(b []byte, attempt int) error {
 
 // Report on response body.
 func (c *client) report(res *http.Response) error {
-	// Spec item 1: 2xx and 3xx are success
 	if isSuccess(res.StatusCode) {
 		c.debugf("response %s", res.Status)
 		return nil

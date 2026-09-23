@@ -1,11 +1,13 @@
 package analytics
 
 import (
+	"math"
+	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/segmentio/backo-go"
 )
 
 // Instances of this type carry the different configuration options that may
@@ -176,7 +178,7 @@ func makeConfig(c Config) Config {
 	}
 
 	if c.RetryAfter == nil {
-		c.RetryAfter = backo.NewBacko(500*time.Millisecond, 2, 0, 60*time.Second).Duration
+		c.RetryAfter = defaultRetryAfter
 	}
 
 	if c.MaxRetries == 0 {
@@ -216,4 +218,41 @@ func makeConfig(c Config) Config {
 // function used for generating unique IDs.
 func uid() string {
 	return uuid.NewString()
+}
+
+// Jitter needs its own source: math/rand's global source is seeded
+// deterministically before Go 1.20, so every process would draw the same
+// sequence and stay in step with every other process anyway.
+var (
+	jitterMu   sync.Mutex
+	jitterRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+)
+
+func jitterFraction() float64 {
+	jitterMu.Lock()
+	defer jitterMu.Unlock()
+	return jitterRand.Float64()
+}
+
+// defaultRetryAfter returns how long to wait before counted backoff attempt n:
+// 500ms doubling to a 60s ceiling, then reduced by up to 50% at random.
+//
+// The jitter is applied after the clamp and only ever subtracts, so the ceiling
+// holds and clients that started backing off together spread out instead of
+// retrying in lockstep. Applying it before the clamp — which is what
+// backo-go does, and why it is no longer used here — collapses back to exactly
+// the cap once the exponential passes it, putting the whole fleet back in step
+// at the point the endpoint can least afford it.
+func defaultRetryAfter(attempt int) time.Duration {
+	const (
+		base    = float64(500 * time.Millisecond)
+		ceiling = float64(60 * time.Second)
+		jitter  = 0.5
+	)
+
+	delay := base * math.Pow(2, float64(attempt))
+	if delay > ceiling {
+		delay = ceiling
+	}
+	return time.Duration(delay - jitterFraction()*delay*jitter)
 }
