@@ -15,7 +15,7 @@ sent the write key as HTTP Basic credentials.
 * Rate-limited retries are bounded by elapsed time rather than counted against the retry limit, so a long `Retry-After` no longer exhausts the budget.
 * New `Config.MaxTotalBackoffDuration` and `Config.MaxRateLimitDuration` (default 12 hours each) bound the two waits, reported as `ErrBackoffBudgetExceeded` and `ErrRateLimitBudgetExceeded`.
 * New `Config.ShutdownTimeout` (default 75s) bounds how long `Close` waits for in-flight retries, so shutdown neither discards a batch the server asked us to resend nor blocks for the full rate-limit budget.
-* Only 2xx responses count as a successful upload. A 3xx is now logged and retried rather than silently treated as delivered; the Segment endpoint does not redirect, so this only affects custom `Endpoint` values.
+* Only 2xx responses count as a successful upload. A 3xx is now reported as a failed upload rather than silently treated as delivered. It is not retried: a redirect `net/http` already declined to follow will not succeed on a retry. The Segment endpoint does not redirect, so this only affects custom `Endpoint` values.
 
 v3.3.0 / 2023-10-31
 ===================
