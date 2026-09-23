@@ -63,7 +63,9 @@ type Config struct {
 	// If not set the client will fallback to use a default retry policy.
 	RetryAfter func(int) time.Duration
 
-	// Maximum number of counted backoff retries. Defaults to DefaultMaxRetries.
+	// Maximum number of counted backoff retries. Zero means use
+	// DefaultMaxRetries, per the zero-value convention above; there is no way to
+	// ask for no retries at all. Negative values are rejected.
 	MaxRetries int
 
 	// Wall-clock cap on total time spent in backoff retries. Defaults to DefaultMaxTotalBackoffDuration.
@@ -73,8 +75,9 @@ type Config struct {
 	MaxRateLimitDuration time.Duration
 
 	// ShutdownTimeout bounds how long Close waits for in-flight retries before
-	// dropping their batches. Mirrors analytics-java's
-	// NETWORK_TERMINATION_TIMEOUT_S.
+	// dropping their batches. It covers the whole remaining retry schedule,
+	// including the final request, which is issued with this as its deadline.
+	// Mirrors analytics-java's NETWORK_TERMINATION_TIMEOUT_S.
 	ShutdownTimeout time.Duration
 
 	// A function called by the client to generate unique message identifiers.
@@ -140,6 +143,41 @@ func (c *Config) validate() error {
 			Reason: "negative batch sizes are not supported",
 			Field:  "BatchSize",
 			Value:  c.BatchSize,
+		}
+	}
+
+	// Zero means "use the default" for these, per the zero-value convention above.
+	// Negatives used to survive into the retry loop, where they dropped every batch
+	// after its first failure instead of failing here.
+	if c.MaxRetries < 0 {
+		return ConfigError{
+			Reason: "negative retry counts are not supported",
+			Field:  "MaxRetries",
+			Value:  c.MaxRetries,
+		}
+	}
+
+	if c.MaxTotalBackoffDuration < 0 {
+		return ConfigError{
+			Reason: "negative backoff durations are not supported",
+			Field:  "MaxTotalBackoffDuration",
+			Value:  c.MaxTotalBackoffDuration,
+		}
+	}
+
+	if c.MaxRateLimitDuration < 0 {
+		return ConfigError{
+			Reason: "negative rate limit durations are not supported",
+			Field:  "MaxRateLimitDuration",
+			Value:  c.MaxRateLimitDuration,
+		}
+	}
+
+	if c.ShutdownTimeout < 0 {
+		return ConfigError{
+			Reason: "negative shutdown timeouts are not supported",
+			Field:  "ShutdownTimeout",
+			Value:  c.ShutdownTimeout,
 		}
 	}
 

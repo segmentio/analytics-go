@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -273,7 +274,7 @@ func (c *client) send(msgs []message) {
 	for {
 		retry.totalAttempts++
 
-		uploadErr := c.upload(b, retry.totalAttempts)
+		uploadErr := c.upload(b, retry.totalAttempts, shutdownDeadline)
 		if uploadErr == nil {
 			c.notifySuccess(msgs)
 			return
@@ -395,7 +396,10 @@ func (r *retryState) handleBackoff(lastErr error) retryAction {
 }
 
 // Upload serialized batch message. attempt is 1-based (1 = first attempt).
-func (c *client) upload(b []byte, attempt int) error {
+// upload sends one attempt. A non-zero deadline bounds the request itself, so
+// Close cannot overrun ShutdownTimeout by a whole HTTP round trip while waiting
+// on a final attempt.
+func (c *client) upload(b []byte, attempt int, deadline time.Time) error {
 	url := c.Endpoint + "/v1/batch"
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 	if err != nil {
@@ -411,6 +415,12 @@ func (c *client) upload(b []byte, attempt int) error {
 	// Spec item 7: omit on first attempt, send 1-based count on retries
 	if attempt > 1 {
 		req.Header.Add("X-Retry-Count", strconv.Itoa(attempt-1))
+	}
+
+	if !deadline.IsZero() {
+		ctx, cancel := context.WithDeadline(req.Context(), deadline)
+		defer cancel()
+		req = req.WithContext(ctx)
 	}
 
 	res, err := c.http.Do(req)
@@ -430,23 +440,27 @@ func (c *client) report(res *http.Response) error {
 		return nil
 	}
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		c.errorf("response %d %s - %s", res.StatusCode, res.Status, err)
-		return &httpError{
-			StatusCode: res.StatusCode,
-			Retryable:  retryableStatus(res.StatusCode),
-			Body:       err.Error(),
-		}
-	}
-
-	c.logf("response %d %s – %s", res.StatusCode, res.Status, string(body))
-
+	// Read before the body: a mid-read I/O error must not lose the server's
+	// Retry-After and route this attempt onto the counted-backoff budget instead
+	// of the rate-limit one.
 	retryable := retryableStatus(res.StatusCode)
 	var retryAfterSecs int64
 	if retryable {
 		retryAfterSecs = parseRetryAfter(res.Header.Get("Retry-After"), maxRetryAfterSeconds)
 	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		c.errorf("response %d %s - %s", res.StatusCode, res.Status, err)
+		return &httpError{
+			StatusCode: res.StatusCode,
+			Retryable:  retryable,
+			RetryAfter: retryAfterSecs,
+			Body:       err.Error(),
+		}
+	}
+
+	c.logf("response %d %s – %s", res.StatusCode, res.Status, string(body))
 
 	return &httpError{
 		StatusCode: res.StatusCode,

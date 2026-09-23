@@ -75,3 +75,38 @@ func TestDefaultRetryAfterJittersAtTheCeiling(t *testing.T) {
 		t.Errorf("jitter should subtract at most 50%%, but saw %s", min)
 	}
 }
+
+func TestConfigRejectsNegativeRetryFields(t *testing.T) {
+	// These used to survive validate() and reach the retry loop, where a negative
+	// MaxRetries dropped every batch after its first failure instead of erroring here.
+	for _, test := range []struct {
+		field  string
+		config Config
+	}{
+		{"MaxRetries", Config{MaxRetries: -1}},
+		{"MaxTotalBackoffDuration", Config{MaxTotalBackoffDuration: -1 * time.Second}},
+		{"MaxRateLimitDuration", Config{MaxRateLimitDuration: -1 * time.Second}},
+		{"ShutdownTimeout", Config{ShutdownTimeout: -1 * time.Second}},
+	} {
+		if err := test.config.validate(); err == nil {
+			t.Errorf("negative %s should be rejected", test.field)
+		}
+	}
+}
+
+func TestConfigZeroRetryFieldsTakeDefaults(t *testing.T) {
+	// Zero means "use the default" for these, per Config's zero-value convention.
+	// There is deliberately no way to ask for no retries at all.
+	c := Config{}
+	if err := c.validate(); err != nil {
+		t.Fatalf("zero values should be valid: %s", err)
+	}
+
+	c = makeConfig(c)
+	if c.MaxRetries != DefaultMaxRetries {
+		t.Errorf("MaxRetries = %d, want the default %d", c.MaxRetries, DefaultMaxRetries)
+	}
+	if c.ShutdownTimeout != DefaultShutdownTimeout {
+		t.Errorf("ShutdownTimeout = %s, want the default %s", c.ShutdownTimeout, DefaultShutdownTimeout)
+	}
+}

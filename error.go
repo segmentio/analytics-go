@@ -65,7 +65,4 @@ var (
 	// ErrRateLimitBudgetExceeded is returned when the maximum rate-limit
 	// (429 Retry-After) duration is exceeded.
 	ErrRateLimitBudgetExceeded = errors.New("max rate limit duration exceeded")
-
-	// ErrRetriesExhausted is returned when all retry attempts are consumed.
-	ErrRetriesExhausted = errors.New("retries exhausted")
 )
