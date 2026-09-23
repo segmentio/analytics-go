@@ -291,9 +291,14 @@ func (c *client) send(msgs []message) {
 			delay = c.RetryAfter(retry.backoffAttempts - 1)
 		}
 
+		timer := time.NewTimer(delay)
 		select {
-		case <-time.After(delay):
+		case <-timer.C:
 		case <-c.quit:
+			// Stopped explicitly: time.After would leave the timer live until it
+			// fired, and this loop can run for hours with delays up to the
+			// Retry-After cap.
+			timer.Stop()
 			// Closing: finish the retry schedule so shutdown does not discard a
 			// batch the server asked us to resend, bounded by ShutdownTimeout
 			// rather than the much longer MaxRateLimitDuration.
@@ -412,7 +417,7 @@ func (c *client) upload(b []byte, attempt int, deadline time.Time) error {
 	req.Header.Add("Content-Length", strconv.Itoa(len(b)))
 	req.SetBasicAuth(c.key, "")
 
-	// Spec item 7: omit on first attempt, send 1-based count on retries
+	// Omitted on the first attempt so the server can tell a retry from a first try.
 	if attempt > 1 {
 		req.Header.Add("X-Retry-Count", strconv.Itoa(attempt-1))
 	}
