@@ -374,7 +374,15 @@ func (r *retryState) handleRateLimit(httpErr *httpError) retryAction {
 		return retryActionDrop
 	}
 
-	r.rateLimitDelay = time.Duration(httpErr.RetryAfter) * time.Second
+	// Clamped to what is left of the budget: the check above runs before the wait,
+	// so without this a check passing just inside the budget would sleep a full
+	// Retry-After on top and overshoot it.
+	remaining := c.MaxRateLimitDuration - c.now().Sub(r.rateLimitStartTime)
+	delay := time.Duration(httpErr.RetryAfter) * time.Second
+	if delay > remaining {
+		delay = remaining
+	}
+	r.rateLimitDelay = delay
 	return retryActionRateLimit
 }
 

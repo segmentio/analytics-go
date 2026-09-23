@@ -121,11 +121,17 @@ const DefaultMaxRetries = 10
 // DefaultMaxTotalBackoffDuration is the default wall-clock cap on total backoff time.
 const DefaultMaxTotalBackoffDuration = 12 * time.Hour
 
-// DefaultMaxRateLimitDuration is the default wall-clock cap on 429 Retry-After retries.
-const DefaultMaxRateLimitDuration = 12 * time.Hour
+// DefaultMaxRateLimitDuration is the default wall-clock cap on Retry-After retries.
+//
+// Five minutes, in line with the counted-backoff path's ~4 minute worst case. This
+// was 12 hours, meant as a backstop a retry count would stop us reaching — but
+// rate-limited attempts are deliberately uncounted, so it was the only limit.
+const DefaultMaxRateLimitDuration = 5 * time.Minute
 
-// maxRetryAfterSeconds is the cap applied to Retry-After header values.
-const maxRetryAfterSeconds = int64(300)
+// maxRetryAfterSeconds is the cap applied to Retry-After header values. Kept well
+// below DefaultMaxRateLimitDuration so the budget buys several attempts rather than
+// one long sleep; at the old 300s a single sleep consumed the whole budget.
+const maxRetryAfterSeconds = int64(60)
 
 // Verifies that fields that don't have zero-values are set to valid values,
 // returns an error describing the problem if a field was invalid.

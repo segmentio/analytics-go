@@ -1021,3 +1021,28 @@ func TestCloseIsBoundedByShutdownTimeout(t *testing.T) {
 		t.Error("expected a failure callback for the batch dropped at shutdown")
 	}
 }
+
+func TestRateLimitDelayNeverOvershootsTheBudget(t *testing.T) {
+	// The budget is checked before the wait, so without clamping a check passing
+	// just inside it would sleep a full Retry-After on top — at 5 minutes that
+	// doubles the bound rather than rounding it.
+	cl, _ := NewWithConfig("0123456789", Config{
+		Logger:               testLogger{t.Logf, t.Logf},
+		MaxRateLimitDuration: 5 * time.Minute,
+	})
+	defer cl.Close()
+
+	c := cl.(*client)
+	retry := &retryState{client: c}
+
+	// An episode that began 4m59s ago: 1s of budget left, Retry-After says 60.
+	retry.rateLimitStartTime = c.now().Add(-299 * time.Second)
+	action := retry.handleRateLimit(&httpError{StatusCode: 429, Retryable: true, RetryAfter: 60})
+
+	if action != retryActionRateLimit {
+		t.Fatalf("expected the rate-limit action, got %v", action)
+	}
+	if retry.rateLimitDelay > 2*time.Second {
+		t.Errorf("delay was %s with ~1s of budget left; it should be clamped", retry.rateLimitDelay)
+	}
+}

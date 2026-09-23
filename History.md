@@ -1,6 +1,9 @@
 Unreleased
 ==========
 
+* `Config.MaxRateLimitDuration` now defaults to 5 minutes rather than 12 hours, and `Retry-After` is capped at 60s rather than 300s. The 12 hour value was a backstop meant to be unreachable, but rate-limited attempts are deliberately uncounted, so it was the only limit on that path — and because `classify` routes any retryable status carrying `Retry-After` there, an ordinary 503 from a proxy got the same patience as a 429. Five minutes matches the counted path's ~4 minute worst case.
+* The rate-limit delay is clamped to the remaining budget. The budget is checked before the wait, so a check passing just inside it previously slept a full `Retry-After` on top.
+
 ### Upgrade note: new request header and proxy allowlists
 
 This release sends an `X-Retry-Count` request header on retries. If your
