@@ -1,26 +1,26 @@
 Unreleased
 ==========
 
-* `Config.MaxRateLimitDuration` now defaults to 5 minutes rather than 12 hours, and `Retry-After` is capped at 60s rather than 300s. The 12 hour value was a backstop meant to be unreachable, but rate-limited attempts are deliberately uncounted, so it was the only limit on that path — and because `classify` routes any retryable status carrying `Retry-After` there, an ordinary 503 from a proxy got the same patience as a 429. Five minutes matches the counted path's ~4 minute worst case.
-* The rate-limit delay is clamped to the remaining budget. The budget is checked before the wait, so a check passing just inside it previously slept a full `Retry-After` on top.
+### Upgrade note: new request header
 
-### Upgrade note: new request header and proxy allowlists
+This release sends an `X-Retry-Count` request header on retries. If traffic to
+Segment passes through a proxy, gateway or WAF that allowlists request headers,
+add it before upgrading or retried uploads will be rejected. The `Authorization`
+header is unchanged.
 
-This release sends an `X-Retry-Count` request header on retries. If your
-traffic to Segment goes through a proxy, gateway or WAF that allowlists
-request headers, add it before upgrading or retried uploads will be
-rejected. The `Authorization` header is unchanged: this client has always
-sent the write key as HTTP Basic credentials.
+### Retry handling
 
-* Send `X-Retry-Count` on retries, so the server can distinguish a retry from a first attempt. Omitted on the first attempt.
-* Unified retry handling: 429, 408, 410, 460 and 5xx (except 501, 505 and 511) are retried. `Retry-After` is honoured on all of them, not just 429, which brings 529 in through the generic 5xx rule.
-* `Retry-After` accepts numeric seconds and the RFC 7231 HTTP-date formats, capped at 300s.
-* Rate-limited retries are bounded by elapsed time rather than counted against the retry limit, so a long `Retry-After` no longer exhausts the budget.
-* New `Config.MaxTotalBackoffDuration` and `Config.MaxRateLimitDuration` (default 12 hours each) bound the two waits, reported as `ErrBackoffBudgetExceeded` and `ErrRateLimitBudgetExceeded`.
-* New `Config.ShutdownTimeout` (default 75s) bounds how long `Close` waits for in-flight retries, so shutdown neither discards a batch the server asked us to resend nor blocks for the full rate-limit budget. The final attempt carries it as a request deadline, so the bound covers the in-flight request too.
-* Negative `MaxRetries`, `MaxTotalBackoffDuration`, `MaxRateLimitDuration` and `ShutdownTimeout` are rejected at construction. A negative retry count previously dropped every batch after its first failure. Zero still means "use the default", per the zero-value convention on `Config`.
-* `Retry-After` is read before the response body, so a mid-read I/O error no longer loses it and push the attempt onto the counted-backoff budget.
-* Only 2xx responses count as a successful upload. A 3xx is now reported as a failed upload rather than silently treated as delivered. It is not retried: a redirect `net/http` already declined to follow will not succeed on a retry. The Segment endpoint does not redirect, so this only affects custom `Endpoint` values.
+* Uploads are retried on 408, 410, 429, 460, and 5xx except 501, 505 and 511.
+* A `Retry-After` header is honoured on any retryable response, not only 429. Numeric seconds and the RFC 7231 HTTP-date formats are both accepted, and the value is capped at 60 seconds.
+* Responses carrying `Retry-After` are retried for up to `Config.MaxRateLimitDuration` and do not consume the retry count. Other failures use exponential backoff from 500ms to a 60 second ceiling, limited by `Config.MaxRetries` and by `Config.MaxTotalBackoffDuration` as an upper bound. Exhausting either is reported as `ErrRateLimitBudgetExceeded` or `ErrBackoffBudgetExceeded`.
+* New `Config` fields: `MaxRateLimitDuration` (default 5 minutes), `MaxTotalBackoffDuration` (default 12 hours) and `MaxRetries` (default 10).
+* New `Config.ShutdownTimeout` (default 75s) bounds how long `Close` waits for in-flight retries, including the final request, which is issued with it as a deadline. `Close` will not discard a batch the server has asked the client to resend, nor block for the full rate-limit budget.
+* Negative values for `MaxRetries`, `MaxTotalBackoffDuration`, `MaxRateLimitDuration` and `ShutdownTimeout` are rejected at construction. Zero means "use the default", as elsewhere in `Config`.
+
+### Other changes
+
+* `X-Retry-Count` is sent on retries, allowing the server to distinguish a retry from a first attempt. It is omitted on the first attempt.
+* Only 2xx responses count as a successful upload. A 3xx is reported as a failed upload rather than treated as delivered, and is not retried: a redirect `net/http` has already declined to follow will not succeed on one. The Segment endpoint does not redirect, so this affects only custom `Endpoint` values.
 
 v3.3.0 / 2023-10-31
 ===================
