@@ -365,10 +365,17 @@ func (r *retryState) classify(uploadErr error) retryAction {
 func (r *retryState) handleRateLimit(httpErr *httpError) retryAction {
 	c := r.client
 
+	now := c.now()
 	if r.rateLimitStartTime.IsZero() {
-		r.rateLimitStartTime = c.now()
+		r.rateLimitStartTime = now
 	}
-	if c.now().Sub(r.rateLimitStartTime) > c.MaxRateLimitDuration {
+
+	// One reading serves both the budget test and the clamp below. Reading the clock
+	// twice lets the budget expire between them and yields a negative remaining,
+	// which time.NewTimer treats as "fire immediately" rather than rejecting — so it
+	// would be harmless here, but only by accident of that behaviour.
+	remaining := c.MaxRateLimitDuration - now.Sub(r.rateLimitStartTime)
+	if remaining <= 0 {
 		c.errorf("messages dropped - %s", ErrRateLimitBudgetExceeded)
 		c.notifyFailure(r.msgs, ErrRateLimitBudgetExceeded)
 		return retryActionDrop
@@ -377,7 +384,6 @@ func (r *retryState) handleRateLimit(httpErr *httpError) retryAction {
 	// Clamped to what is left of the budget: the check above runs before the wait,
 	// so without this a check passing just inside the budget would sleep a full
 	// Retry-After on top and overshoot it.
-	remaining := c.MaxRateLimitDuration - c.now().Sub(r.rateLimitStartTime)
 	delay := time.Duration(httpErr.RetryAfter) * time.Second
 	if delay > remaining {
 		delay = remaining
