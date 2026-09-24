@@ -1007,10 +1007,9 @@ func TestCloseIsBoundedByShutdownTimeout(t *testing.T) {
 	client.Close()
 	elapsed := time.Since(start)
 
-	// The tolerance used to be 8s because the bound was not real: after the
-	// clamped sleep the loop issued another upload with nothing tying that request
-	// to the remaining budget, so Close could overrun by a whole HTTP round trip.
-	// The final attempt now carries the deadline, so this can be tight.
+	// Tight on purpose. The final attempt carries the shutdown deadline as a request
+	// deadline, so Close cannot overrun by an HTTP round trip. A tolerance much wider
+	// than the timeout would pass whether that holds or not.
 	if elapsed > 3*time.Second {
 		t.Errorf("Close() took %s; ShutdownTimeout of 1s should have bounded it", elapsed)
 	}
