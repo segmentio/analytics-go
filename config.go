@@ -128,10 +128,12 @@ const DefaultMaxTotalBackoffDuration = 12 * time.Hour
 // path's own worst case.
 const DefaultMaxRateLimitDuration = 5 * time.Minute
 
-// maxRetryAfterSeconds is the cap applied to Retry-After header values. Kept well
-// below DefaultMaxRateLimitDuration so the budget buys several attempts rather than
-// one long sleep; at the old 300s a single sleep consumed the whole budget.
-const maxRetryAfterSeconds = int64(60)
+// maxRetryAfterSeconds is the cap applied to Retry-After header values. A guard
+// against an absurd header, not a second budget: waiting less than the server asked
+// for does not make the next attempt more likely to succeed, it just sends more
+// requests at something already rate-limiting us. How long we keep trying is
+// MaxRateLimitDuration's job.
+const maxRetryAfterSeconds = int64(300)
 
 // Verifies that fields that don't have zero-values are set to valid values,
 // returns an error describing the problem if a field was invalid.
