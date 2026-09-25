@@ -285,10 +285,8 @@ func (c *client) send(msgs []message) {
 		switch action {
 		case retryActionDrop:
 			return
-		case retryActionRateLimit:
-			delay = retry.rateLimitDelay
-		case retryActionBackoff:
-			delay = c.RetryAfter(retry.backoffAttempts - 1)
+		case retryActionRateLimit, retryActionBackoff:
+			delay = retry.delay
 		}
 
 		timer := time.NewTimer(delay)
@@ -335,7 +333,7 @@ type retryState struct {
 	backoffAttempts    int
 	firstFailureTime   time.Time
 	rateLimitStartTime time.Time
-	rateLimitDelay     time.Duration
+	delay              time.Duration
 }
 
 // classify determines what to do after a failed upload. It updates internal
@@ -388,17 +386,22 @@ func (r *retryState) handleRateLimit(httpErr *httpError) retryAction {
 	if delay > remaining {
 		delay = remaining
 	}
-	r.rateLimitDelay = delay
+	r.delay = delay
 	return retryActionRateLimit
 }
 
 func (r *retryState) handleBackoff(lastErr error) retryAction {
 	c := r.client
 
+	// One reading serves the budget test and the clamp below, for the same reason
+	// as handleRateLimit.
+	now := c.now()
 	if r.firstFailureTime.IsZero() {
-		r.firstFailureTime = c.now()
+		r.firstFailureTime = now
 	}
-	if c.now().Sub(r.firstFailureTime) > c.MaxTotalBackoffDuration {
+
+	remaining := c.MaxTotalBackoffDuration - now.Sub(r.firstFailureTime)
+	if remaining <= 0 {
 		c.errorf("messages dropped - %s", ErrBackoffBudgetExceeded)
 		c.notifyFailure(r.msgs, ErrBackoffBudgetExceeded)
 		return retryActionDrop
@@ -410,6 +413,19 @@ func (r *retryState) handleBackoff(lastErr error) retryAction {
 		c.notifyFailure(r.msgs, lastErr)
 		return retryActionDrop
 	}
+
+	// Clamped for the same reason as the rate-limit path: the budget is checked
+	// before the wait, so an unclamped sleep overshoots it by up to the ceiling.
+	delay := c.RetryAfter(r.backoffAttempts - 1)
+	if delay > remaining {
+		delay = remaining
+	}
+	if delay < 0 {
+		// RetryAfter is caller-supplied; a negative reaches time.NewTimer, which
+		// fires immediately and spins this loop at whatever rate the server answers.
+		delay = 0
+	}
+	r.delay = delay
 
 	return retryActionBackoff
 }

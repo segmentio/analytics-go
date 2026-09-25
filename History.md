@@ -12,9 +12,9 @@ header is unchanged.
 
 * Uploads are retried on 408, 410, 429, 460, and 5xx except 501, 505 and 511.
 * A `Retry-After` header is honoured on any retryable response, not only 429. Numeric seconds and the RFC 7231 HTTP-date formats are both accepted, and the value is capped at 300 seconds.
-* Responses carrying `Retry-After` are retried for up to `Config.MaxRateLimitDuration` and do not consume the retry count. Other failures use exponential backoff from 500ms to a 60 second ceiling, limited by `Config.MaxRetries` and by `Config.MaxTotalBackoffDuration` as an upper bound. Exhausting either is reported as `ErrRateLimitBudgetExceeded` or `ErrBackoffBudgetExceeded`.
+* Responses carrying `Retry-After` are retried for up to `Config.MaxRateLimitDuration` and do not consume the retry count. Other failures use exponential backoff from 500ms to a 60 second ceiling, limited by `Config.MaxRetries` and by `Config.MaxTotalBackoffDuration` as an upper bound. Exhausting a duration budget is reported as `ErrRateLimitBudgetExceeded` or `ErrBackoffBudgetExceeded`; exhausting `Config.MaxRetries` reports the last upload error instead, so a caller matching on the sentinels should not expect one for that case.
 * New `Config` fields: `MaxRateLimitDuration` (default 30 minutes), `MaxTotalBackoffDuration` (default 12 hours) and `MaxRetries` (default 10).
-* New `Config.ShutdownTimeout` (default 75s) bounds how long `Close` waits for in-flight retries, including the final request, which is issued with it as a deadline. `Close` will not discard a batch the server has asked the client to resend, nor block for the full rate-limit budget.
+* New `Config.ShutdownTimeout` (default 75s) bounds how long `Close` waits for retries, and the attempt issued after shutdown begins carries it as a request deadline. `Close` will not discard a batch the server has asked the client to resend, nor block for the full rate-limit budget. A request already in flight when `Close` is called is not covered: it is bounded by the HTTP client's own timeout, 10 seconds by default, and by nothing at all if a `Transport` is supplied that does not support one.
 * Negative values for `MaxRetries`, `MaxTotalBackoffDuration`, `MaxRateLimitDuration` and `ShutdownTimeout` are rejected at construction. Zero means "use the default", as elsewhere in `Config`.
 
 ### Other changes
