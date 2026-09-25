@@ -379,12 +379,16 @@ func (r *retryState) handleRateLimit(httpErr *httpError) retryAction {
 		return retryActionDrop
 	}
 
-	// Clamped to what is left of the budget: the check above runs before the wait,
-	// so without this a check passing just inside the budget would sleep a full
-	// Retry-After on top and overshoot it.
+	// A wait that will not fit ends the episode. Shortening it would send the next
+	// request inside the window the server asked us to wait out -- one it has
+	// already said it will not serve -- and since the budget is spent by then it
+	// would be the last attempt either way. Giving up here loses the same batch and
+	// sends one fewer request at something already rate-limiting us.
 	delay := time.Duration(httpErr.RetryAfter) * time.Second
 	if delay > remaining {
-		delay = remaining
+		c.errorf("messages dropped - %s", ErrRateLimitBudgetExceeded)
+		c.notifyFailure(r.msgs, ErrRateLimitBudgetExceeded)
+		return retryActionDrop
 	}
 	r.delay = delay
 	return retryActionRateLimit
@@ -414,11 +418,13 @@ func (r *retryState) handleBackoff(lastErr error) retryAction {
 		return retryActionDrop
 	}
 
-	// Clamped for the same reason as the rate-limit path: the budget is checked
-	// before the wait, so an unclamped sleep overshoots it by up to the ceiling.
+	// Same rule as the rate-limit path, for the simpler reason that a backoff
+	// outlasting the budget is a wait whose attempt can never happen.
 	delay := c.RetryAfter(r.backoffAttempts - 1)
 	if delay > remaining {
-		delay = remaining
+		c.errorf("messages dropped - %s", ErrBackoffBudgetExceeded)
+		c.notifyFailure(r.msgs, ErrBackoffBudgetExceeded)
+		return retryActionDrop
 	}
 	if delay < 0 {
 		// RetryAfter is caller-supplied; a negative reaches time.NewTimer, which
