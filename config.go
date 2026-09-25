@@ -124,9 +124,10 @@ const DefaultMaxTotalBackoffDuration = 12 * time.Hour
 // DefaultMaxRateLimitDuration is the default wall-clock cap on Retry-After retries.
 //
 // Rate-limited attempts are deliberately uncounted, so this duration is the only
-// thing bounding them. Five minutes keeps that in line with the counted-backoff
-// path's own worst case.
-const DefaultMaxRateLimitDuration = 5 * time.Minute
+// thing bounding them. It is deliberately several times maxRetryAfterSeconds: when
+// the two are equal a single maximal Retry-After consumes the whole budget, leaving
+// one attempt and no retry at all.
+const DefaultMaxRateLimitDuration = 30 * time.Minute
 
 // maxRetryAfterSeconds is the cap applied to Retry-After header values. A guard
 // against an absurd header, not a second budget: waiting less than the server asked
