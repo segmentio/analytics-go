@@ -29,7 +29,10 @@ jobs:
 
       - name: Authenticate to Artifactory
         if: ${{ !github.event.pull_request.head.repo.fork }}
-        uses: ./.github/actions/artifactory-oidc
+        uses: twilio/sdk-actions/artifactory-oidc@c94e420aa64ea686ff25bb03d4c66cdaf8e523e4 # main
+        with:
+          ecosystem: go
+          provider-name: github-actions-segmentio
 
       - name: Download dependencies
         run: go mod download
@@ -56,7 +59,10 @@ jobs:
 
       - name: Authenticate to Artifactory
         if: ${{ !github.event.pull_request.head.repo.fork }}
-        uses: ./.github/actions/artifactory-oidc
+        uses: twilio/sdk-actions/artifactory-oidc@c94e420aa64ea686ff25bb03d4c66cdaf8e523e4 # main
+        with:
+          ecosystem: go
+          provider-name: github-actions-segmentio
 
       - name: Download dependencies
         run: go mod download
@@ -86,7 +92,10 @@ jobs:
 
       - name: Authenticate to Artifactory
         if: ${{ !github.event.pull_request.head.repo.fork }}
-        uses: ./.github/actions/artifactory-oidc
+        uses: twilio/sdk-actions/artifactory-oidc@c94e420aa64ea686ff25bb03d4c66cdaf8e523e4 # main
+        with:
+          ecosystem: go
+          provider-name: github-actions-segmentio
 
       - name: Download dependencies
         run: go mod download
