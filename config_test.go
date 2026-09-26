@@ -109,4 +109,25 @@ func TestConfigZeroRetryFieldsTakeDefaults(t *testing.T) {
 	if c.ShutdownTimeout != DefaultShutdownTimeout {
 		t.Errorf("ShutdownTimeout = %s, want the default %s", c.ShutdownTimeout, DefaultShutdownTimeout)
 	}
+	if c.MaxRateLimitDuration != DefaultMaxRateLimitDuration {
+		t.Errorf("MaxRateLimitDuration = %s, want the default %s", c.MaxRateLimitDuration, DefaultMaxRateLimitDuration)
+	}
+	if c.MaxTotalBackoffDuration != DefaultMaxTotalBackoffDuration {
+		t.Errorf("MaxTotalBackoffDuration = %s, want the default %s", c.MaxTotalBackoffDuration, DefaultMaxTotalBackoffDuration)
+	}
+}
+
+func TestDefaultRateLimitBudgetExceedsTheRetryAfterCeiling(t *testing.T) {
+	// A single maximal Retry-After must not be able to consume the whole budget.
+	// When the two are equal, the elapsed check runs before the wait, so one wait
+	// spends the budget and the batch is dropped having been attempted once.
+	ceiling := time.Duration(maxRetryAfterSeconds) * time.Second
+	if DefaultMaxRateLimitDuration <= ceiling {
+		t.Fatalf("DefaultMaxRateLimitDuration (%s) must exceed the Retry-After ceiling (%s); "+
+			"at parity a single capped Retry-After leaves no room for a retry",
+			DefaultMaxRateLimitDuration, ceiling)
+	}
+	if attempts := DefaultMaxRateLimitDuration / ceiling; attempts < 2 {
+		t.Errorf("budget allows only %d capped wait(s); want room for at least 2 attempts", attempts)
+	}
 }

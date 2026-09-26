@@ -850,8 +850,8 @@ func TestRetry503WithRetryAfterUsesRateLimitPath(t *testing.T) {
 	if action != retryActionRateLimit {
 		t.Fatalf("expected retryActionRateLimit, got %v", action)
 	}
-	if r.rateLimitDelay != 2*time.Second {
-		t.Errorf("expected rateLimitDelay=2s, got %v", r.rateLimitDelay)
+	if r.delay != 2*time.Second {
+		t.Errorf("expected delay=2s, got %v", r.delay)
 	}
 }
 
@@ -869,8 +869,8 @@ func TestRetry529WithRetryAfterUsesRateLimitPath(t *testing.T) {
 	if action != retryActionRateLimit {
 		t.Fatalf("expected retryActionRateLimit, got %v", action)
 	}
-	if r.rateLimitDelay != 1*time.Second {
-		t.Errorf("expected rateLimitDelay=1s, got %v", r.rateLimitDelay)
+	if r.delay != 1*time.Second {
+		t.Errorf("expected delay=1s, got %v", r.delay)
 	}
 }
 
@@ -941,7 +941,7 @@ func TestRetryAfterOnRetryableStatusUsesRateLimitSleep(t *testing.T) {
 		Transport: transport,
 		BatchSize: 1,
 		// Counting call sites proves which path ran: the rate-limit path sleeps
-		// retry.rateLimitDelay and must never consult the backoff function.
+		// retry.delay and must never consult the backoff function.
 		RetryAfter: func(i int) time.Duration {
 			mu.Lock()
 			backoffCalls++
@@ -975,6 +975,16 @@ func TestCloseIsBoundedByShutdownTimeout(t *testing.T) {
 	// Server never stops rate-limiting, so without a bound Close would wait for
 	// MaxRateLimitDuration.
 	transport := roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		// Deliberately slow, and deliberately honouring the request context. An
+		// instant response makes this test unable to observe the thing it asserts:
+		// the deadline only shows up in the elapsed time if a round trip would
+		// otherwise outlast it, so with a fast stub the test passes whether or not
+		// the final attempt carries one.
+		select {
+		case <-time.After(30 * time.Second):
+		case <-r.Context().Done():
+			return nil, r.Context().Err()
+		}
 		hdr := http.Header{}
 		hdr.Set("Retry-After", "5")
 		return &http.Response{
@@ -1007,17 +1017,106 @@ func TestCloseIsBoundedByShutdownTimeout(t *testing.T) {
 	client.Close()
 	elapsed := time.Since(start)
 
-	// The tolerance used to be 8s because the bound was not real: after the
-	// clamped sleep the loop issued another upload with nothing tying that request
-	// to the remaining budget, so Close could overrun by a whole HTTP round trip.
-	// The final attempt now carries the deadline, so this can be tight.
-	if elapsed > 3*time.Second {
-		t.Errorf("Close() took %s; ShutdownTimeout of 1s should have bounded it", elapsed)
+	// The bound is ShutdownTimeout plus the request already in flight when Close was
+	// called. That one was issued before shutdown began, so it carries no deadline and
+	// is bounded only by http.Client's own 10s timeout; only the attempt after it gets
+	// the shutdown deadline. Hence ~11s, not ~1s.
+	//
+	// The tolerance still discriminates: the stub blocks for 30s, so without the
+	// deadline on the second attempt this would run well past it.
+	if elapsed > 13*time.Second {
+		t.Errorf("Close() took %s; want at most ShutdownTimeout plus one HTTP timeout", elapsed)
 	}
 
 	select {
 	case <-failures:
 	case <-time.After(2 * time.Second):
 		t.Error("expected a failure callback for the batch dropped at shutdown")
+	}
+}
+
+func TestRateLimitWaitThatCannotFitTheBudgetDrops(t *testing.T) {
+	// Shortening the wait would send the next request inside the window the server
+	// asked us to wait out, and the budget is spent by then, so it would be the
+	// last attempt either way. Run at the shipped default rather than a bespoke
+	// budget, so the test exercises what customers actually get.
+	cl, _ := NewWithConfig("0123456789", Config{Logger: testLogger{t.Logf, t.Logf}})
+	defer cl.Close()
+
+	c := cl.(*client)
+	if c.MaxRateLimitDuration != DefaultMaxRateLimitDuration {
+		t.Fatalf("expected the shipped default, got %s", c.MaxRateLimitDuration)
+	}
+	retry := &retryState{client: c, msgs: []message{{}}}
+
+	// 30s of budget left, against a Retry-After at the cap. It cannot fit.
+	retry.rateLimitStartTime = c.now().Add(-(DefaultMaxRateLimitDuration - 30*time.Second))
+	action := retry.handleRateLimit(&httpError{StatusCode: 429, Retryable: true, RetryAfter: maxRetryAfterSeconds})
+
+	if action != retryActionDrop {
+		t.Errorf("expected the batch to be dropped, got %v", action)
+	}
+	if retry.delay != 0 {
+		t.Errorf("delay was %s; nothing should have been scheduled", retry.delay)
+	}
+}
+
+func TestRateLimitWaitThatFitsIsHonouredInFull(t *testing.T) {
+	// The counterpart: "never shorten" must not become "never wait".
+	cl, _ := NewWithConfig("0123456789", Config{Logger: testLogger{t.Logf, t.Logf}})
+	defer cl.Close()
+
+	c := cl.(*client)
+	retry := &retryState{client: c, msgs: []message{{}}}
+
+	retry.rateLimitStartTime = c.now()
+	action := retry.handleRateLimit(&httpError{StatusCode: 429, Retryable: true, RetryAfter: 60})
+
+	if action != retryActionRateLimit {
+		t.Fatalf("expected the rate-limit action, got %v", action)
+	}
+	if retry.delay != 60*time.Second {
+		t.Errorf("delay was %s; the full Retry-After should be honoured", retry.delay)
+	}
+}
+
+func TestBackoffThatCannotFitTheBudgetDrops(t *testing.T) {
+	// Same rule as the rate-limit path: a backoff outlasting the budget is a wait
+	// whose attempt can never happen.
+	cl, _ := NewWithConfig("0123456789", Config{
+		Logger:                  testLogger{t.Logf, t.Logf},
+		MaxTotalBackoffDuration: 90 * time.Second,
+	})
+	defer cl.Close()
+
+	c := cl.(*client)
+	retry := &retryState{client: c, msgs: []message{{}}}
+
+	// 1s of budget left, with backoff well into the 60s ceiling.
+	retry.firstFailureTime = c.now().Add(-89 * time.Second)
+	retry.backoffAttempts = 8
+
+	action := retry.handleBackoff(errors.New("500 server error"))
+
+	if action != retryActionDrop {
+		t.Errorf("expected the batch to be dropped, got %v", action)
+	}
+}
+
+func TestBackoffThatFitsIsHonouredInFull(t *testing.T) {
+	cl, _ := NewWithConfig("0123456789", Config{Logger: testLogger{t.Logf, t.Logf}})
+	defer cl.Close()
+
+	c := cl.(*client)
+	retry := &retryState{client: c, msgs: []message{{}}}
+	retry.firstFailureTime = c.now()
+
+	action := retry.handleBackoff(errors.New("500 server error"))
+
+	if action != retryActionBackoff {
+		t.Fatalf("expected the backoff action, got %v", action)
+	}
+	if retry.delay <= 0 {
+		t.Errorf("delay was %s; a non-positive delay spins the retry loop", retry.delay)
 	}
 }
