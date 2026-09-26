@@ -22,8 +22,8 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 }
 
-// This function instantiate an object that statisfies the analytics.Logger
-// interface and send logs to standard logger passed as argument.
+// This function instantiates an object that satisfies the analytics.Logger
+// interface and sends logs to a standard logger passed as an argument.
 func StdLogger(logger *log.Logger) Logger {
 	return stdLogger{
 		logger: logger,
