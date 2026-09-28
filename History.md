@@ -1,5 +1,5 @@
-Unreleased
-==========
+3.4.0 / 2026-09-28
+==================
 
 ### Upgrade note: new request header
 
